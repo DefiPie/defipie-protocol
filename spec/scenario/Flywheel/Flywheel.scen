@@ -1,0 +1,225 @@
+-- NewController, but with markets listed so that we can make them comp markets in constructor
+Macro FlywheelController price=1.0 borrowRate=0.000005 compInitAmount=5000000e18
+    Unitroller Deploy
+    PriceOracle Deploy Fixed price
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    ----g3
+    ControllerImpl Deploy ScenarioG3 ControllerScen
+    Unitroller SetPendingImpl ControllerScen
+    ControllerImpl ControllerScen Become 1e18 []
+    Assert Equal (Controller PieRate) 1e18
+    --list some tokens
+    NewPToken ZRX pZRX borrowRate 2e9 0 8
+    NewPToken BAT pBAT borrowRate 2e9 0 8
+    Controller SetPriceOracle (PriceOracleProxy Address)
+    Controller SetMaxAssets 20
+    Controller SetCloseFactor 0.5
+    Controller LiquidationIncentive 1.1
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.5
+    -- final
+    Controller AddPieMarkets pZRX
+    Controller AddPieMarkets pBAT
+    Erc20 Deploy Standard COMP "COMP Token" 18
+    Give (Address Controller) compInitAmount COMP
+    Controller Send "setPieAddress(address)" (Address COMP)
+    Assert Equal (Controller PieAddress) (Address COMP)
+
+Macro InitSpeeds
+    Prep Geoff 100e18 ZRX pZRX
+    Mint Geoff 50e18 pZRX--tokenbalance = 50e18 / 2e9 = 2.5e10
+    Prep Coburn Some BAT pBAT
+    Mint Coburn 6e18 pBAT--tokenbalance = 6e18 / 2e9 = 3e9
+    EnterMarkets Coburn pBAT
+    Borrow Coburn 1e18 pZRX
+    Controller RefreshPieSpeeds
+
+Test "Accrue COMP during a mint"
+    FlywheelController
+    InitSpeeds
+    Assert Equal (Controller BlockNumber) 0
+    Assert Equal (Controller PieSupplyState pZRX "block") 0
+    FastForward 300000 Blocks
+    Assert Equal (Controller BlockNumber) 300000
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Mint Geoff 1e18 pZRX
+    -- new index = initVal + deltaBlocks * supplySpeed * 1e36 / totalSupply
+    -- new index = 1e36 + 300000 * 1e18 * 1e36 / 2.5e10 = 1.2000000000001e49
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (Controller PieSupplyState pZRX "index") 1.2000000000001e49
+    Assert Equal (Controller PieSupplyState pZRX "block") 300000
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 300000e18
+    Assert Equal (Controller PieSupplierIndex pZRX Geoff) 1.2000000000001e49
+
+Test "Accrue COMP during a borrow"
+    FlywheelController
+    InitSpeeds
+    Controller FastForward 300000 Blocks
+    Assert Equal (Controller PieAccrued Coburn) 0
+    Borrow Coburn 0.1e18 pZRX
+    -- new index = initVal + deltaBlocks * borrowSpeed * 1e36 / totalBorrows
+    -- new index = 1e36 + 300000 * 1e18 * 1e36 / 1e18 =  3.00001e41
+    Assert Equal (Controller PieAccrued Coburn) 0
+    Assert Equal (Controller PieBorrowState pZRX "index") 3.00001e41
+    Assert Equal (Controller PieBorrowState pZRX "block") 300000
+    Assert Equal (Erc20 COMP TokenBalance Coburn) 300000e18
+    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 3.00001e41
+
+Test "Accrue COMP during a redeem"
+    FlywheelController
+    InitSpeeds
+    FastForward 300000 Blocks
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Redeem Geoff 1e9 pZRX
+    -- new index = initVal + deltaBlocks * supplySpeed * 1e36 / totalSupply
+    -- new index = 1e36 + 300000 * 1e18 * 1e36 / 2.5e10 = 1.2000000000001e49
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (Controller PieSupplyState pZRX "index") 1.2000000000001e49
+    Assert Equal (Controller PieSupplyState pZRX "block") 300000
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 300000e18
+    Assert Equal (Controller PieSupplierIndex pZRX Geoff) 1.2000000000001e49
+
+Test "Accrue COMP during a repayBorrow"
+    FlywheelController
+    InitSpeeds
+    FastForward 300000 Blocks
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Prep Coburn 0.5e18 ZRX pZRX
+    RepayBorrow Coburn 0.5e18 pZRX
+    -- new index = initVal + deltaBlocks * borrowSpeed * 1e36 / totalBorrows
+    -- new index = 1e36 + 300000 * 1e18 * 1e36 / 1e18 =  3.00001e41
+    Assert Equal (Controller PieAccrued Coburn) 0
+    Assert Equal (Controller PieBorrowState pZRX "index") 3.00001e41
+    Assert Equal (Controller PieBorrowState pZRX "block") 300000
+    Assert Equal (Erc20 COMP TokenBalance Coburn) 300000e18
+    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 3.00001e41
+
+Test "Accrue COMP during a repayBorrowBehalf of 0"
+    FlywheelController
+    InitSpeeds
+    FastForward 300000 Blocks
+    Assert Equal (Controller PieAccrued Geoff) 0
+    -- confirm we can init all flywheel accounts for free
+    RepayBorrowBehalf Jared Coburn 0 pZRX
+    -- new index = initVal + deltaBlocks * borrowSpeed * 1e36 / totalBorrows
+    -- new index = 1e36 + 300000 * 1e18 * 1e36 / 1e18 = 3.00001e41
+    Assert Equal (Controller PieAccrued Coburn) 0
+    Assert Equal (Controller PieBorrowState pZRX "index") 3.00001e41
+    Assert Equal (Controller PieBorrowState pZRX "block") 300000
+    Assert Equal (Erc20 COMP TokenBalance Coburn) 300000e18
+    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 3.00001e41
+
+Test "Accrue COMP during a liquidation"
+    FlywheelController
+    InitSpeeds
+    Assert Equal (Controller PieSpeed pZRX) 1e18
+    Assert Equal (Controller PieSpeed pBAT) 0
+    --coburn zrx borrow, bat supply. geoff zrx supply
+    FastForward 600000 Blocks--1e18 borrow * (1 + 600000 * 0.000005) = 3.5e18 borrow > 6e18 collateral * 0.5 CF
+    Prep Geoff Some ZRX pZRX
+    From Geoff (PToken pZRX Liquidate Coburn pBAT 0.5e18)
+    -- zrx borrow index is updated and comp distributed
+    -- * new index = initVal + deltaBlocks * borrowSpeed * 1e36 / totalBorrows
+    -- * new index = 1e36 + 600000 * 1e18 * 1e36 / 1e18 = 6.00001E41
+    Assert Equal (Controller PieBorrowState pZRX "index") 6.00001e41
+    Assert Equal (Controller PieBorrowState pZRX "block") 600000
+    -- zrx supply index isnt updated and comp isnt distributed for zrx supply
+    Assert Equal (Controller PieSupplyState pZRX "index") 1e36
+    Assert Equal (Controller PieSupplyState pZRX "block") 0
+    Assert Equal (Controller PieSupplierIndex pZRX Geoff) 1e36--no change, minted in init
+    -- bat supply/borrow index is not updated, since there is no comp speed
+    Assert Equal (Controller PieSupplyState pBAT "index") 1e36
+    Assert Equal (Controller PieSupplyState pBAT "block") 600000
+    -- neither is borrow state. block is 0 because update fn is never even called
+    Assert Equal (Controller PieBorrowState pBAT "index") 1e36
+    Assert Equal (Controller PieBorrowState pBAT "block") 0
+    --
+    Assert Equal (Controller PieSupplierIndex pBAT Coburn) 1e36
+    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 6.00001e41
+    Assert Equal (Erc20 COMP TokenBalance Coburn) 600000e18
+    Assert Equal (Controller PieAccrued Coburn) 0
+    --
+    Assert Equal (Controller PieSupplierIndex pBAT Geoff) 1e36
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 0
+    Assert Equal (Controller PieAccrued Geoff) 0
+
+Test "Accrue COMP during a transfer"
+    FlywheelController
+    InitSpeeds
+    FastForward 300000 Blocks
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 0
+    Assert Equal (Controller PieSupplierIndex pZRX Geoff) 1e36
+    Transfer Geoff Jared 2.5e10 pZRX
+    -- new index = initVal + deltaBlocks * supplySpeed * 1e36 / totalSupply
+    -- new index = 1e36 + 300000 * 1e18 * 1e36 / 2.5e10 = 1.2000000000001e49
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 300000e18
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (Controller PieSupplyState pZRX "index") 1.2000000000001e49
+    Assert Equal (Controller PieSupplyState pZRX "block") 300000
+    Assert Equal (Controller PieSupplierIndex pZRX Geoff) 1.2000000000001e49
+    --
+    Assert Equal (Controller PieAccrued Jared) 0
+    Assert Equal (Controller PieSupplyState pZRX "index") 1.2000000000001e49
+    Assert Equal (Controller PieSupplyState pZRX "block") 300000
+    Assert Equal (Controller PieSupplierIndex pZRX Jared) 1.2000000000001e49
+
+Test "Accrues correctly when market is added, deactivated, and activated again"
+    FlywheelController
+    InitSpeeds
+    NewPToken DAI pDAI
+    --
+    Support pDAI collateralFactor:0.5
+    Controller AddPieMarkets pDAI
+    Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pBAT) (Address pDAI)]
+    Prep Jared Some DAI pDAI
+    Mint Jared 6e18 pDAI
+    EnterMarkets Geoff pZRX
+    Borrow Geoff 0.5e18 pDAI
+    Borrow Coburn 0.5e18 pDAI
+    Controller RefreshPieSpeeds
+    Assert Equal (Controller PieSpeed pZRX) 0.5e18
+    Assert Equal (Controller PieSpeed pDAI) 0.5e18
+    --
+    FastForward 100 Blocks
+    Controller DropPieMarket pDAI
+    Controller ClaimPie Geoff
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 75e18--half of cdai, all of zrx(.25e18 + .5e18) * 100
+    Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pBAT)]
+    Assert Equal (Controller PieSpeed pZRX) 1e18
+    Assert Equal (Controller PieSpeed pDAI) 0
+    --
+    FastForward 100 Blocks
+    Controller ClaimPie Geoff
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 175e18-- += 1e18 * 100
+    Assert Equal (Controller PieAccrued Geoff) 0
+    --
+    Controller AddPieMarkets pDAI
+    FastForward 100 Blocks
+    Controller ClaimPie Geoff
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 250e18--half of cdai, all of zrx. += (.25 + .5) * 100
+    Assert Equal (Controller PieAccrued Geoff) 0
+
+Test "TransferPie handles running out of COMP in Controller correctly"
+    FlywheelController price:1.0 borrowRate:0.000005 compInitAmount:1e18
+    InitSpeeds
+    FastForward 2 Blocks
+    Controller ClaimPie Geoff
+    Assert Equal (Controller PieAccrued Geoff) 2e18
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 0
+    Give (Address Controller) 1e18 COMP
+    Controller ClaimPie Geoff
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 2e18
+
+Test "Changing COMP rate continues to distribute at the correct speed"
+    FlywheelController
+    InitSpeeds
+    --
+    Assert Equal (Controller PieSpeed pZRX) 1e18
+    FastForward 10 Blocks
+    Controller SetPieRate 2e18
+    Assert Equal (Controller PieSpeed pZRX) 2e18
+    FastForward 10 Blocks
+    Controller ClaimPie Geoff
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 30e18

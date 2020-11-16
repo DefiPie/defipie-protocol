@@ -1,0 +1,20 @@
+
+Test "Set admin"
+    NewController
+    NewPToken ZRX pZRX
+    Assert Equal (PToken pZRX Admin) (Address Root)
+    RegistryProxy SetPendingAdmin (Address Geoff)
+    From Geoff (RegistryProxy AcceptAdmin)
+    Assert Equal (PToken pZRX Admin) (Address Geoff)
+    From Geoff (RegistryProxy SetPendingAdmin (Address Root))
+    RegistryProxy AcceptAdmin
+    Assert Equal (PToken pZRX Admin) (Address Root)
+
+Test "Fail to set admin"
+    NewController
+    NewPToken ZRX pZRX
+    Invariant Remains (PToken pZRX Admin) (Address Root)
+    AllowFailures
+    From Geoff (RegistryProxy SetPendingAdmin (Address Geoff))
+    Assert Failure UNAUTHORIZED SET_PENDING_ADMIN_OWNER_CHECK
+

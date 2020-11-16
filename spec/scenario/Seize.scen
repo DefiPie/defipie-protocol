@@ -1,0 +1,50 @@
+
+Test "Fail to seize calling directly"
+    NewController
+    ListedPToken ZRX pZRX initialExchangeRate:1e9
+    ListedPToken BAT pBAT initialExchangeRate:1e9
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 50e18 pZRX
+    Invariant Remains (Erc20 pZRX TokenBalance Geoff) 50e9
+    AllowFailures
+    Seize 1e9 pZRX caller:Geoff liquidator:Geoff borrower:Torrey
+    -- The caller must be from another pToken market, thus this fails
+    Assert Failure CONTROLLER_REJECTION LIQUIDATE_SEIZE_CONTROLLER_REJECTION MARKET_NOT_LISTED
+
+Test "Seize tokens with a paused WBTC pToken-- like normal"
+    NewController
+    ListedPToken ZRX pZRX initialExchangeRate:1e9
+    ListedPToken WBTC pWBTC initialExchangeRate:0.1 tokenType:WBTC
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 50e18 pZRX
+    Erc20 WBTC Pause
+    Invariant Remains (Erc20 pZRX TokenBalance Geoff) 50e9
+    AllowFailures
+    Seize 1e9 pWBTC caller:Geoff liquidator:Geoff borrower:Torrey
+    -- The caller must be from another pToken market, thus this fails
+    Assert Failure CONTROLLER_REJECTION LIQUIDATE_SEIZE_CONTROLLER_REJECTION MARKET_NOT_LISTED
+
+Test "Not able to seize tokens with a malicious unlisted pToken"
+    NewController
+    ListedPToken ZRX pZRX initialExchangeRate:1e9
+    NewPTokenImmutable EVL pEVL initialExchangeRate:1e9 pTokenType:PEvil
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 50e18 pZRX
+    Invariant Remains (Erc20 pZRX TokenBalance Geoff) 50e9
+    Invariant Static (Erc20 pZRX TokenBalance Geoff)
+    Invariant Static (Erc20 pZRX TokenBalance Torrey)
+    AllowFailures
+    EvilSeize pEVL 1e9 pZRX seizer:Geoff seizee:Torrey
+    -- The caller must be from another pToken market, thus this fails
+    Assert Failure CONTROLLER_REJECTION LIQUIDATE_SEIZE_CONTROLLER_REJECTION MARKET_NOT_LISTED
+
+Test "Able to seize tokens with a malicious listed pToken"
+    NewController
+    ListedPToken ZRX pZRX initialExchangeRate:1e9
+    ListedPTokenImmutable EVL pEVL initialExchangeRate:1e9 pTokenType:PEvil
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 50e18 pZRX
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 50e9
+    Expect Changes (Erc20 pZRX TokenBalance Geoff) -1e9
+    Expect Changes (Erc20 pZRX TokenBalance Torrey) +1e9
+    EvilSeize pEVL 1e9 pZRX seizer:Torrey seizee:Geoff

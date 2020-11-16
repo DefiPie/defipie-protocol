@@ -1,0 +1,211 @@
+-- Timelock Tests
+Test "Reverts if calling setDelay directly"
+    Timelock Deploy Geoff 604800
+    AllowFailures
+    Timelock SetDelay 604
+    Assert Revert "revert Timelock::setDelay: Call must come from Timelock."
+
+Test "Reverts if calling setPendingAdmin directly"
+    Timelock Deploy Geoff 604800
+    AllowFailures
+    Timelock SetPendingAdmin Jared
+    Assert Revert "revert Timelock::setPendingAdmin: Call must come from Timelock."
+
+Test "Reverts if calling acceptAdmin while not being pendingAdmin"
+    Timelock Deploy Geoff 604800
+    AllowFailures
+    From Jared (Timelock AcceptAdmin)
+    Assert Revert "revert Timelock::acceptAdmin: Call must come from pendingAdmin."
+
+Test "Queuing and execute a transaction for setDelay"
+    FreezeTime 90
+    -- Admin:Geoff Delay:1 week
+    Timelock Deploy Geoff 604800
+    Assert Equal (Timelock Delay) 604800
+    -- eta = 1 week (604800) + blockTimestamp (100) = 604900
+    Assert False (Timelock QueuedTransaction (Timelock TxHash (Timelock Address) 0 604900 "setDelay(uint256)" "1209600"))
+    From Geoff (Timelock QueueTransaction (Timelock Address) 0 604900 "setDelay(uint256)" "1209600")
+    Assert True (Timelock QueuedTransaction (Timelock TxHash (Timelock Address) 0 604900 "setDelay(uint256)" "1209600"))
+    --  Now execute after delay time
+    FreezeTime 604900
+    From Geoff (Timelock ExecuteTransaction (Timelock Address) 0 604900 "setDelay(uint256)" "1209600")
+    Assert False (Timelock QueuedTransaction (Timelock TxHash (Timelock Address) 0 604900 "setDelay(uint256)" "1209600"))
+    Assert Equal (Timelock Delay) 1209600
+
+Test "Accept unitroller admin from Timelock"
+    -- Admin:Geoff Delay:1 week
+    Timelock Deploy Geoff 604800
+    Assert Equal (Timelock Admin) (User Geoff Address)
+    NewController
+    Assert Equal (Unitroller Admin) (Address Root)
+    Assert Equal (Unitroller PendingAdmin) (Address Zero)
+    From Root (Unitroller SetPendingAdmin (Timelock Address))
+    Assert Equal (Unitroller PendingAdmin) (Timelock Address)
+    -- eta = 1 week (604800) + blockTimestamp (100) = 604900
+    Assert False (Timelock QueuedTransaction (Timelock TxHash (Unitroller Address) 0 604900 "_acceptAdmin()" ""))
+    FreezeTime 90
+    From Geoff (Timelock QueueTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
+    Assert True (Timelock QueuedTransaction (Timelock TxHash (Unitroller Address) 0 604900 "_acceptAdmin()" ""))
+    --  Now execute after delay time
+    FreezeTime 604900
+    From Geoff (Timelock ExecuteTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
+    Assert False (Timelock QueuedTransaction (Timelock TxHash (Unitroller Address) 0 604900 "_acceptAdmin()" ""))
+    Assert Equal (Unitroller Admin) (Timelock Address)
+    Assert Equal (Unitroller PendingAdmin) (Address Zero)
+
+Test "Reduce reserves for PErc20 from Timelock and send reserves to external address"
+    NewController
+    ListedPToken ZRX pZRX initialExchangeRate:1e9
+    Prep Geoff 50e18 ZRX pZRX
+    Mint Geoff 50e18 pZRX
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) (Exactly 500e8)
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 50e18)
+    Assert Equal (PToken pZRX ExchangeRate) (Exactly 1e9)
+    -- We've accrued 10% interest for 5 blocks, or 50% of the amount,
+    --   thus, we should have accrued 5e18 of interest for the protocol
+    --   The reserves should get 20% of this, or 1e18, and the rest
+    --   is due pro-rata to all holders. We just have one, so
+    --   let's check that account is given correct new balance.
+    InterestRateModel Deploy Fixed Std 0.000001
+    PToken pZRX SetInterestRateModel (InterestRateModel Std Address)
+    PToken pZRX SetReserveFactor 0.2
+    Timelock Deploy Jared 604800
+    From Root (RegistryProxy SetPendingAdmin (Timelock Address))
+    -- Queue Transactions
+    FreezeTime 90
+    From Jared (Timelock QueueTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
+    FreezeTime 604900
+    From Jared (Timelock ExecuteTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
+    ListedPToken COLLAT pCOLLAT
+    Controller SetCollateralFactor pCOLLAT 0.9
+    Prep Torrey 1e30 COLLAT pCOLLAT
+    Mint Torrey 1e30 pCOLLAT
+    EnterMarkets Torrey pCOLLAT pZRX
+    Assert True (Controller CheckMembership Torrey pCOLLAT)
+    Assert True (Controller CheckMembership Torrey pZRX)
+    Borrow Torrey 10e18 pZRX
+    -- Cool, we've borrowed, now let's accrue interest then repay all
+    FastForward 500000 Blocks
+    -- RepayBorrow Torrey (PToken BorrowBalance Torrey) pZRX
+    From Torrey (Erc20 ZRX Approve pZRX 10e18)
+    RepayBorrow Torrey 10e18 pZRX
+    From Torrey (Erc20 ZRX Approve pZRX 5e18)
+    Give Torrey 5e18 ZRX
+    RepayBorrow Torrey 5e18 pZRX
+    Assert Equal (PToken pZRX BorrowBalance Torrey) Zero
+    Assert Equal (Erc20 ZRX TokenBalance pZRX) (Exactly 55e18)
+    Assert Equal (Erc20 ZRX TokenBalance (Timelock Address)) (Exactly 0e18)
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) (Exactly 500e8)
+    Assert Equal (PToken pZRX Reserves) (Exactly 1e18)
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 54e18)
+    -- (55.0e18+0.0e18-1.0e18)/500.0e8
+    Assert Equal (PToken pZRX ExchangeRate) (Exactly 1.08e9)
+    -- Queue Transactions
+    FreezeTime 90
+    From Jared (Timelock QueueTransaction (PToken pZRX Address) 0 604900 "_reduceReserves(uint256)" "1000000000000000000")
+    From Jared (Timelock QueueTransaction (Erc20 ZRX Address) 0 604900 "transfer(address,uint256)" "0x0000000000000000000000000000000000000001" "1000000000000000000")
+    FreezeTime 604900
+    -- Now, let's pull out all of our reserves (1e18)
+    From Jared (Timelock ExecuteTransaction (PToken pZRX Address) 0 604900 "_reduceReserves(uint256)" "1000000000000000000")
+    Assert Equal (Erc20 ZRX TokenBalance pZRX) (Exactly 54e18)
+    Assert Equal (Erc20 ZRX TokenBalance (Timelock Address)) (Exactly 1e18)
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) (Exactly 500e8)
+    Assert Equal (PToken pZRX Reserves) (Exactly 0e18)
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 54e18)
+    -- (54.0e18+0.0e18-0.0e18)/500.0e8
+    Assert Equal (PToken pZRX ExchangeRate) (Exactly 1.08e9)
+    Assert Equal (Erc20 ZRX TokenBalance "0x0000000000000000000000000000000000000001") (Exactly 0e18)
+    From Jared (Timelock ExecuteTransaction (Erc20 ZRX Address) 0 604900 "transfer(address,uint256)" "0x0000000000000000000000000000000000000001" "1000000000000000000")
+    Assert Equal (Erc20 ZRX TokenBalance (Timelock Address)) (Exactly 0e18)
+    Assert Equal (Erc20 ZRX TokenBalance "0x0000000000000000000000000000000000000001") (Exactly 1e18)
+
+Test "Reduce reserves for PEther from Timelock and send reserves to external address"
+    NewController
+    ListedEtherToken pETH initialExchangeRate:1e9
+    CallMintEth Geoff 50e18 pETH
+    Assert Equal (Erc20 pETH TokenBalance Geoff) (Exactly 500e8)
+    Assert Equal (PToken pETH UnderlyingBalance Geoff) (Exactly 50e18)
+    Assert Equal (PToken pETH ExchangeRate) (Exactly 1e9)
+    -- We've accrued 10% interest for 5 blocks, or 50% of the amount,
+    --   thus, we should have accrued 5e18 of interest for the protocol
+    --   The reserves should get 20% of this, or 1e18, and the rest
+    --   is due pro-rata to all holders. We just have one, so
+    --   let's check that account is given correct new balance.
+    InterestRateModel Deploy Fixed Std 0.000001
+    PToken pETH SetInterestRateModel (InterestRateModel Std Address)
+    PToken pETH SetReserveFactor 0.2
+    Timelock Deploy Jared 604800
+    From Root (RegistryProxy SetPendingAdmin (Timelock Address))
+    -- Queue Transactions
+    FreezeTime 90
+    From Jared (Timelock QueueTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
+    FreezeTime 604900
+    From Jared (Timelock ExecuteTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
+    ListedPToken COLLAT pCOLLAT
+    Controller SetCollateralFactor pCOLLAT 0.9
+    Prep Torrey 1e30 COLLAT pCOLLAT
+    Mint Torrey 1e30 pCOLLAT
+    EnterMarkets Torrey pCOLLAT pETH
+    Assert True (Controller CheckMembership Torrey pCOLLAT)
+    Assert True (Controller CheckMembership Torrey pETH)
+    Borrow Torrey 10e18 pETH
+    -- Cool, we've borrowed, now let's accrue interest then repay all
+    FastForward 500000 Blocks
+    -- RepayBorrow Torrey (PToken BorrowBalance Torrey) pETH
+    RepayBorrowEth Torrey 10e18 pETH
+    RepayBorrowEth Torrey 5e18 pETH
+    Assert Equal (PToken pETH BorrowBalance Torrey) Zero
+    FreezeTime 90
+    Assert Equal (EtherBalance pETH) (Exactly 55e18)
+    Assert Equal (EtherBalance (Timelock Address)) (Exactly 0e18)
+    Assert Equal (Erc20 pETH TokenBalance Geoff) (Exactly 500e8)
+    Assert Equal (PToken pETH Reserves) (Exactly 1e18)
+    Assert Equal (PToken pETH UnderlyingBalance Geoff) (Exactly 54e18)
+    -- (55.0e18+0.0e18-1.0e18)/500.0e8
+    Assert Equal (PToken pETH ExchangeRate) (Exactly 1.08e9)
+    -- Queue Transactions
+    From Jared (Timelock QueueTransaction (PToken pETH Address) 0 604900 "_reduceReserves(uint256)" "1000000000000000000")
+    From Jared (Timelock QueueTransaction Jared 1000000000000000000 604900 "" "")
+    FreezeTime 604900
+    -- Now, let's pull out all of our reserves (1e18)
+    From Jared (Timelock ExecuteTransaction (PToken pETH Address) 0 604900 "_reduceReserves(uint256)" "1000000000000000000")
+    Assert Equal (EtherBalance (Timelock Address)) 1e18
+    Assert Equal (EtherBalance pETH) (Exactly 54e18)
+    Assert Equal (Erc20 pETH TokenBalance Geoff) (Exactly 500e8)
+    Assert Equal (PToken pETH Reserves) (Exactly 0e18)
+    Assert Equal (PToken pETH UnderlyingBalance Geoff) (Exactly 54e18)
+    -- (54.0e18+0.0e18-0.0e18)/500.0e8
+    Assert Equal (PToken pETH ExchangeRate) (Exactly 1.08e9)
+    Expect Changes (EtherBalance Jared) 1e18
+    Trx GasPrice 0 (From Jared (Timelock ExecuteTransaction Jared 1000000000000000000 604900 "" ""))
+    Assert Equal (EtherBalance (Timelock Address)) (Exactly 0e18)
+
+Test "Set Pending Controller implementation on Unitroller from Timelock"
+    Unitroller Deploy
+    PriceOracle Deploy Simple
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    Unitroller SetPendingImpl ScenControllerG1
+    Assert Equal (Unitroller PendingImplementation) (ControllerImpl ScenControllerG1 Address)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
+    ControllerImpl ScenControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracleProxy Address)
+    Controller SetCloseFactor 0.1
+    Controller SetMaxAssets 20
+    Assert Equal (Unitroller PendingImplementation) (Address Zero)
+    Assert Equal (Unitroller Implementation) (Address ScenControllerG1)
+    Timelock Deploy Coburn 604800
+    ControllerImpl Deploy Scenario ScenController
+    Unitroller SetPendingImpl ScenController
+    Unitroller SetPendingAdmin (Timelock Address)
+    Assert Equal (Unitroller PendingAdmin) (Timelock Address)
+    Assert Equal (Unitroller PendingImplementation) (ControllerImpl ScenController Address)
+    FreezeTime 90
+    From Coburn (Timelock QueueTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
+    From Coburn (Timelock QueueTransaction (ControllerImpl ScenController Address) 0 604900 "_become(address)" (Unitroller Address))
+    FreezeTime 604900
+    From Coburn (Timelock ExecuteTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
+    Assert Equal (Unitroller Admin) (Timelock Address)
+    Assert Equal (Unitroller PendingAdmin) (Address Zero)
+    From Coburn (Timelock ExecuteTransaction (ControllerImpl ScenController Address) 0 604900 "_become(address)" (Unitroller Address))
+    Assert Equal (Unitroller Implementation) (Address ScenController)
+    Assert Equal (Unitroller PendingImplementation) (Address Zero)

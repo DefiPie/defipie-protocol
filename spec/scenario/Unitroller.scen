@@ -1,0 +1,291 @@
+
+Test "Standard Upgrade"
+    Unitroller Deploy
+    PriceOracle Deploy Fixed 1.0
+    -- Upgrade to G1
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    Unitroller SetPendingImpl ScenControllerG1
+    ControllerImpl ScenControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracle Address)
+    Controller SetCloseFactor 0.2
+    Controller SetMaxAssets 20
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG1)
+    ListedPToken ZRX pZRX
+    ListedPToken DAI pDAI
+    -- Upgrade to G2
+    ControllerImpl Deploy StandardG3 StandardControllerG2
+    Unitroller SetPendingImpl StandardControllerG2
+    ControllerImpl StandardControllerG2 Become 1e18 []
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address StandardControllerG2)
+    -- Upgrade to G3
+    ControllerImpl Deploy StandardG3 ScenControllerG3
+    Unitroller SetPendingImpl ScenControllerG3
+    ControllerImpl ScenControllerG3 Become 1e18 []
+    Controller AddPieMarkets pZRX
+    Controller AddPieMarkets pDAI
+    -- Not checks allMarkets array
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG3)
+
+Test "Standard Upgrade, then downgrade then upgrade again"
+    Unitroller Deploy
+    PriceOracle Deploy Fixed 1.0
+    -- Upgrade to G1
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    Unitroller SetPendingImpl ScenControllerG1
+    ControllerImpl ScenControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracle Address)
+    Controller SetCloseFactor 0.2
+    Controller SetMaxAssets 20
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG1)
+    -- Upgrade to G2
+    ControllerImpl Deploy StandardG3 ControllerG2
+    Unitroller SetPendingImpl ControllerG2
+    ControllerImpl ControllerG2 Become 1e18 []
+    Controller SetPauseGuardian Coburn
+    Assert Equal (Controller PauseGuardian) (Address Coburn)
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ControllerG2)
+    -- Upgrade to G3
+    ControllerImpl Deploy ScenarioG3 ScenControllerG3
+    Unitroller SetPendingImpl ScenControllerG3
+    ControllerImpl ScenControllerG3 Become 1e18 []
+    Assert Equal (Controller PauseGuardian) (Address Coburn)
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG3)
+    -- Downgrade to G2
+    Unitroller SetPendingImpl ControllerG2
+    ControllerImpl ControllerG2 Become 1e18 []
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ControllerG2)
+    -- Upgrade to G3 again
+    Unitroller SetPendingImpl ScenControllerG3
+    ControllerImpl ScenControllerG3 Become 1e18 []
+    ListedPToken ZRX pZRX
+    ListedPToken DAI pDAI
+    Controller AddPieMarkets pZRX
+    Controller AddPieMarkets pDAI
+    Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pDAI)]
+    Assert Equal (Controller PauseGuardian) (Address Coburn)
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG3)
+
+Test "Once become, can become again"
+    -- TODO: See why ABI is broken here
+    Unitroller Deploy
+    PriceOracle Deploy Fixed 1.0
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    Unitroller SetPendingImpl ScenControllerG1
+    ControllerImpl ScenControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracle Address)
+    Controller SetCloseFactor 0.2
+    Controller SetMaxAssets 20
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG1)
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1_2
+    Unitroller SetPendingImpl ScenControllerG1_2
+    ControllerImpl ScenControllerG1_2 Become 1e18 []
+    Controller SetPriceOracle (PriceOracle Address)
+    Controller SetCloseFactor 0.4
+    Controller SetMaxAssets 40
+    Assert Equal (Controller CloseFactor) 0.4
+    Assert Equal (Controller MaxAssets) 40
+    Assert Equal (Controller Implementation) (Address ScenControllerG1_2)
+
+--G1 recome
+Test "Recome has default values"
+    Unitroller Deploy
+    PriceOracle Deploy Fixed 1.0
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    Unitroller SetPendingImpl ScenControllerG1
+    ControllerImpl ScenControllerG1 Recome
+    Assert Equal (Controller CloseFactor) 0.0
+    Assert Equal (Controller MaxAssets) 0
+    Assert Equal (Controller Implementation) (Address ScenControllerG1)
+
+--G1 bork
+Test "Bork and unbork"
+    Unitroller Deploy
+    PriceOracle Deploy Fixed 1.0
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    -- Set a normal impl
+    Unitroller SetPendingImpl ScenControllerG1
+    ControllerImpl ScenControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracle Address)
+    Controller SetCloseFactor 0.2
+    Controller SetMaxAssets 20
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG1)
+    -- Now move to a borked one that's bad
+    ControllerImpl Deploy Borked MyBork
+    Unitroller SetPendingImpl MyBork
+    ControllerImpl MyBork Become 1e18 []
+    Assert ReadRevert (Controller CloseFactor) "revert"
+    Assert Equal (Controller Implementation) (Address MyBork)
+    -- Now change back to the first good one
+    Unitroller SetPendingImpl ScenControllerG1
+    ControllerImpl ScenControllerG1 Recome
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (Controller Implementation) (Address ScenControllerG1)
+
+Macro CheckUnitrollerStorage implementation
+    -- Admin; 0
+    Assert Equal (Controller Admin) (Address Root)
+    Assert Equal (StorageAt Controller 0 0 "address") (Address Root)
+    -- PendingAdmin; 1
+    Assert Equal (Controller PendingAdmin) (Address Coburn)
+    Assert Equal (StorageAt Controller 1 0 "address") (Address Coburn)
+    -- ControllerImplementation; 2
+    Assert Equal (Unitroller Implementation) implementation
+    Assert Equal (StorageAt Controller 2 0 "address") implementation
+    -- PendingControllerImplementation; 3
+    -- check as number since casting address 0 is not defined
+    Assert Equal (StorageAt Controller 3 0 "number") 0
+
+Macro CheckV1Storage
+    -- Oracle; 4
+    Assert Equal (Controller PriceOracle) (Address PriceOracle)
+    Assert Equal (StorageAt Controller 4 0 "address") (Address PriceOracle)
+    -- CloseFactorMantissa; 5
+    Assert Equal (Controller CloseFactor) 0.2
+    Assert Equal (StorageAt Controller 5 0 "number") 0.2e18
+    -- LiquidationIncentiveMantissa; 6
+    Assert Equal (Controller LiquidationIncentive) 1
+    Assert Equal (StorageAt Controller 6 0 "number") 1e18
+    -- MaxAssets; 7
+    Assert Equal (Controller MaxAssets) 20
+    Assert Equal (StorageAt Controller 7 0 "number") 20
+    -- AccountAssets; 8 *
+    Assert Equal (StorageAt Controller 8 0 "number") 0
+    Assert Equal (StorageAtMapping Controller 8 (Address Geoff) "number") 2
+    Assert Equal (StorageAtMapping Controller 8 (Address Geoff) "list(address)") [(Address pZRX) (Address pBAT)]
+    Assert Equal (Controller AssetsIn Geoff) [(Address pZRX) (Address pBAT)]
+    -- Markets; 9 *
+    Assert Equal (StorageAt Controller 9 0 "number") 0
+    Assert Equal (StorageAtNestedMapping Controller 9 (Address pZRX) Geoff "marketStruct") [True 0.5 True]
+    Assert Equal (StorageAtNestedMapping Controller 9 (Address pBAT) Geoff "marketStruct") [True 0.4 True]
+    Assert Equal (StorageAtNestedMapping Controller 9 (Address pBAT) Coburn "marketStruct") [True 0.4 False]
+    Assert Equal (Controller CollateralFactor pZRX) 0.5
+    Assert Equal (Controller CollateralFactor pBAT) 0.4
+    Assert Equal (Controller CheckMembership Geoff pZRX) True
+    Assert Equal (Controller CheckMembership Geoff pBAT) True
+
+Macro CheckV2Storage
+    -- PauseGuardian; 10
+    Assert Equal (Controller PauseGuardian) (Address Coburn)
+    Assert Equal (StorageAt Controller 10 0 "address") (Address Coburn)
+    -- MintGuardianPaused; 11
+    Assert Equal (StorageAt Controller 10 40 "bool") False
+    Assert Equal (Controller _MintGuardianPaused) False
+    -- BorrowGuardianPaused; 12
+    Assert Equal (StorageAt Controller 10 42 "bool") False
+    Assert Equal (Controller _BorrowGuardianPaused) False
+    -- TransferGuardianPaused; 13
+    Assert Equal (StorageAt Controller 10 44 "bool") False
+    From Coburn (Controller SetGuardianPaused "Transfer" True)
+    Assert Equal (Controller TransferGuardianPaused) True
+    Assert Equal (StorageAt Controller 10 44 "bool") True
+    Controller SetGuardianPaused "Transfer" False
+    -- SeizeGuardianPaused; 14
+    Assert Equal (StorageAt Controller 10 46 "bool") False
+    From Coburn (Controller SetGuardianPaused "Seize" True)
+    Assert Equal (Controller SeizeGuardianPaused) True
+    Assert Equal (StorageAt Controller 10 46 "bool") True
+    Controller SetGuardianPaused "Seize" False
+    --
+    -- Pause by market storage
+    --
+    -- MintGuardianPaused; 15
+    Assert Equal (StorageAtMapping Controller 11 (Address pZRX) "bool") False
+    From Coburn (Controller SetGuardianMarketPaused pZRX "Mint" True)
+    Assert Equal (Controller MintGuardianMarketPaused pZRX) True
+    Assert Equal (StorageAtMapping Controller 11 (Address pZRX) "bool") True
+    Controller SetGuardianMarketPaused pZRX "Mint" False
+    -- BorrowGuardianPaused; 16
+    Assert Equal (StorageAtMapping Controller 12 (Address pZRX) "bool") False
+    From Coburn (Controller SetGuardianMarketPaused pZRX "Borrow" True)
+    Assert Equal (Controller BorrowGuardianMarketPaused pZRX) True
+    Assert Equal (StorageAtMapping Controller 12 (Address pZRX) "bool") True
+    Controller SetGuardianMarketPaused pZRX "Borrow" False
+
+Macro CheckV3Storage
+    -- AllMarkets; 17
+    Assert Equal (StorageAt Controller 13 0 "number") 2
+    -- TODO: StorageAtArray Controller 13?
+    -- PieRate; 18
+    Assert Equal (StorageAt Controller 14 0 "number") 1e18
+    -- PieSpeeds; 19
+    Assert Equal (StorageAt Controller 15 0 "number") 0
+    -- PieSupplyState; 20
+    Assert Equal (StorageAt Controller 16 0 "number") 0
+    -- PieBorrowState; 21
+    Assert Equal (StorageAt Controller 17 0 "number") 0
+    -- PieSupplierIndex; 22
+    Assert Equal (StorageAt Controller 18 0 "number") 0
+    -- PieBorrowerIndex; 23
+    Assert Equal (StorageAt Controller 19 0 "number") 0
+    -- PieAccrued; 24
+    Assert Equal (StorageAt Controller 20 0 "number") 0
+
+-- Times out coverage, disable for now - ideally set flag to not run in coverage
+Pending "Keeps all storage"
+    Unitroller Deploy
+    PriceOracle Deploy Fixed 1.0
+    ControllerImpl Deploy StandardG3 ControllerG1
+    Unitroller SetPendingImpl ControllerG1
+    ControllerImpl ControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracle Address)
+    Controller SetCloseFactor 0.2
+    Controller SetMaxAssets 20
+    Controller SetPendingAdmin Coburn
+    ---
+    NewPToken ZRX pZRX delegatorType:PErc20Delegator cTokenType:PErc20Delegate
+    NewPToken BAT pBAT delegatorType:PErc20Delegator cTokenType:PErc20Delegate
+    Give pBAT 10e18 BAT -- Faucet some bat to borrow
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.4
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX pBAT
+    Borrow Geoff 1e18 pBAT
+    --
+    CheckUnitrollerStorage (Address ControllerG1)
+    CheckStorage
+    --
+    ControllerImpl Deploy StandardG3 ControllerG2
+    Unitroller SetPendingImpl ControllerG2
+    Assert Equal (Unitroller PendingImplementation) (Address ControllerG2)
+    Assert Equal (StorageAt Controller 3 0 "address") (Address ControllerG2)
+    ControllerImpl ControllerG2 Become 1e18 []
+    Controller SetPauseGuardian Coburn
+    --
+    CheckUnitrollerStorage (Address ControllerG2)
+    CheckStorage
+    --
+    ControllerImpl Deploy StandardG3 ControllerG3
+    Unitroller SetPendingImpl ControllerG3
+    ControllerImpl ControllerG3 Become 1e18 [pZRX pBAT]
+    --
+    CheckUnitrollerStorage (Address ControllerG3)
+    CheckStorage
+    --
+    ControllerImpl Deploy StandardG3 ControllerG4
+    Unitroller SetPendingImpl ControllerG4
+    ControllerImpl ControllerG4 Become 1e18 []
+    --
+    CheckUnitrollerStorage (Address ControllerG4)
+    CheckStorage

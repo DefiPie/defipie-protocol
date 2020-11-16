@@ -1,0 +1,117 @@
+
+Test "Borrow some BAT and enters BAT if BAT not entered"
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken BAT pBAT
+    Give pBAT 10e18 BAT -- Faucet some bat to borrow
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX
+    Borrow Geoff 1e18 pBAT
+    Assert Equal (pToken pBAT BorrowBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance pBAT) (Exactly 9e18)
+    Assert Equal (Controller MembershipLength Geoff) (Exactly 2)
+    Assert True (Controller CheckMembership Geoff pZRX)
+    Assert True (Controller CheckMembership Geoff pBAT)
+
+Test "Borrow some BAT fails, but user still entered"
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken BAT pBAT
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX
+    Invariant Static (Erc20 BAT TokenBalance Geoff)
+    Invariant Static (Erc20 BAT TokenBalance pBAT)
+    AllowFailures
+    Borrow Geoff 1e18 pBAT
+    Assert Failure TOKEN_INSUFFICIENT_CASH BORROW_CASH_NOT_AVAILABLE
+    Assert Equal (Controller MembershipLength Geoff) (Exactly 2)
+    Assert True (Controller CheckMembership Geoff pZRX)
+    Assert True (Controller CheckMembership Geoff pBAT)
+
+Test "Borrow some BAT fails when no BAT available"
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken BAT pBAT
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX pBAT
+    Invariant Static (PToken pZRX ExchangeRateStored)
+    AllowFailures
+    Borrow Geoff 1e18 pBAT
+    Assert Failure TOKEN_INSUFFICIENT_CASH BORROW_CASH_NOT_AVAILABLE
+
+Test "Borrow some BAT fails when already entered max assets"
+    NewController price:1.0 maxAssets:1
+    NewPToken ZRX pZRX
+    NewPToken BAT pBAT
+    Give pBAT 10e18 BAT -- Faucet some bat to borrow
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX
+    AllowFailures
+    Borrow Geoff 1e18 pBAT
+    Assert Failure CONTROLLER_REJECTION BORROW_CONTROLLER_REJECTION TOO_MANY_ASSETS
+
+Test "Borrow fails if market not listed"
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken BAT pBAT
+    Give pBAT 10e18 BAT -- Faucet some bat to borrow
+    Support pZRX collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX
+    AllowFailures
+    Borrow Geoff 1e18 pBAT
+    Assert Failure CONTROLLER_REJECTION BORROW_CONTROLLER_REJECTION MARKET_NOT_LISTED
+
+Test "Borrow some BAT from Excess Cash"
+    Invariant Success
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken BAT pBAT
+    Give pBAT 10e18 BAT -- Faucet some bat to borrow
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX pBAT
+    Borrow Geoff 1e18 pBAT
+    Assert Equal (pToken pBAT BorrowBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance pBAT) (Exactly 9e18)
+
+Test "Borrow some BAT reverts if borrow is paused"
+    NewController price:1.0
+    Controller SetPauseGuardian Coburn
+    NewPToken ZRX pZRX
+    NewPToken BAT pBAT
+    Give pBAT 10e18 BAT -- Faucet some bat to borrow
+    Support pZRX collateralFactor:0.5
+    Support pBAT collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX pBAT
+    From Coburn (Controller SetGuardianMarketPaused pBAT "Borrow" True)
+    AllowFailures
+    Borrow Geoff 1e18 pBAT
+    Assert Revert "revert borrow is paused"
+    Assert Equal (pToken pBAT BorrowBalance Geoff) 0
+    Assert Equal (Erc20 BAT TokenBalance Geoff) 0
+    Assert Equal (Erc20 BAT TokenBalance pBAT) (Exactly 10e18)
+    Controller SetGuardianMarketPaused pBAT "Borrow" False
+    Borrow Geoff 1e18 pBAT
+    Assert Equal (pToken pBAT BorrowBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance pBAT) (Exactly 9e18)

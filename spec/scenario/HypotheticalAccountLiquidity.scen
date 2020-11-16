@@ -1,0 +1,49 @@
+
+Test "Calculates hypothetical account liquidity"
+    -- Note, this comes a bit from `EnterExitMarkets` Scenario
+    PricedController
+    ListedPToken ZRX pZRX initialExchangeRate:1e9
+    SetPriceCF pZRX 0.002 0.4
+    ListedEtherToken pETH initialExchangeRate:1e9
+    Controller SetCollateralFactor pETH 0.8
+    ListedPToken BAT pBAT initialExchangeRate:1e9
+    SetPriceCF pBAT 0.0015 0.3
+    ListedPToken OMG pOMG initialExchangeRate:1e9
+    NewPToken REP pREP
+    -- Mint some pZRX and pETH
+    Prep Geoff 1250e18 ZRX pZRX
+    Mint Geoff 1250e18 pZRX -- Liquidity -> 0.4 * 0.002 * 1250e18 = 1.0e18
+    SendMintEth Geoff 2.5e18 pETH -- Liqiuidity -> 0.8 * 1.0 * 2.5e18 = 2.0e18
+    -- Check liquidity is zero when not in any markets
+    Assert Equal (Controller Liquidity Geoff) Zero
+    -- Enter ZRX and check liquidity
+    EnterMarkets Geoff pZRX
+    Assert Equal (Controller Liquidity Geoff) 1.0e18
+    -- Now let's look at some hypotheticals
+    Assert Equal (Controller Hypothetical Geoff Redeems 1000e9 pZRX) 0.2e18 -- 0.4 * 0.002 * -1000e18 = -0.8e18
+    Assert Equal (Controller Hypothetical Geoff Borrows 1000e18 pZRX) -1e18 -- 0.002 * -1000e18 = -2e18
+    -- Note, if you're not in an asset, this function returns no effect
+    Assert Equal (Controller Hypothetical Geoff Redeems 0.002e9 pETH) 1.0e18 -- 0.8 * 1000.0 * -0.002e18 = -1.6e18
+    Assert Equal (Controller Hypothetical Geoff Borrows 0.002e18 pETH) 1.0e18 -- 1000.0 * -0.002e18 = -2e18
+    EnterMarkets Geoff pETH
+    Assert Equal (Controller Liquidity Geoff) 3.0e18
+    Assert Equal (Controller Hypothetical Geoff Redeems 1000e9 pZRX) 2.2e18 -- 0.4 * 0.002 * -1000e18 = -0.8e18
+    Assert Equal (Controller Hypothetical Geoff Borrows 1000e18 pZRX) 1e18 -- 0.002 * -1000e18 = -2e18
+    Assert Equal (Controller Hypothetical Geoff Redeems 2e9 pETH) 1.4e18 -- 0.8 * 1.0 * -2e18 = -1.6e18
+    Assert Equal (Controller Hypothetical Geoff Borrows 2e18 pETH) 1.0e18 -- 1.0 * -2e18 = -2e18
+    EnterMarkets Geoff pBAT
+    Assert Equal (Controller Hypothetical Geoff Redeems 1000e9 pBAT) 2.55e18 -- 0.3 * 0.0015 * -1000e18 = -0.45e18e18
+    Assert Equal (Controller Hypothetical Geoff Borrows 1000e18 pBAT) 1.5e18 -- 0.0015 * -1000e18 = -1.5e18
+    EnterMarkets Geoff pOMG
+    -- Fails if the given asset doesn't have a price
+    Assert ReadError (Controller Hypothetical Geoff Redeems 1e20 pOMG) "Failed to compute account hypothetical liquidity: error code = 13"
+    Assert ReadError (Controller Hypothetical Geoff Borrows 1e20 pOMG) "Failed to compute account hypothetical liquidity: error code = 13"
+    PriceOracle SetPrice pOMG 0.01
+    -- Has a price and now is listed
+    Assert Equal (Controller Hypothetical Geoff Redeems 100e9 pOMG) 3.0e18 -- No collateral factor
+    Assert Equal (Controller Hypothetical Geoff Borrows 100e18 pOMG) 2.0e18 -- 0.01 * -100e18 = -1e18
+    -- For a token has no price and isn't listed
+    -- Note: we can't actually enter the unlisted market without some harness function
+    --       we could consider testing this, but it would be out of the scope of scenarios
+    Assert Equal (Controller Hypothetical Geoff Redeems 100e18 pREP) 3.0e18 -- No effect
+    Assert Equal (Controller Hypothetical Geoff Borrows 100e18 pREP) 3.0e18 -- No effect

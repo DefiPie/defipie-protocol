@@ -1,0 +1,11 @@
+-- Delegate upgrade tests
+
+Test "Change the delegate"
+    NewController
+    NewPToken DEL pDEL
+    Support pDEL collateralFactor:0.5
+    Prep Jared Some DEL pDEL
+    Mint Jared 100e18 pDEL
+    PTokenDelegate Deploy PErc20Delegate pErc20Delegate2
+    RegistryProxy SetPTokenImplementation (PTokenDelegate pErc20Delegate2 Address)
+    Redeem Jared 50e9 pDEL

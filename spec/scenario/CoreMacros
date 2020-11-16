@@ -1,0 +1,277 @@
+-- These are included in each scenario
+
+Macro Successfully
+    Invariant Success
+
+Macro AllowFailures
+    ClearInvariants Success
+
+Macro PricedController closeFactor=0.1 maxAssets=20
+    Unitroller Deploy
+    PriceOracle Deploy Simple
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    Unitroller SetPendingImpl ScenControllerG1
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
+    ControllerImpl ScenControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracleProxy Address)
+    Controller SetCloseFactor closeFactor
+    Controller SetMaxAssets maxAssets
+    ControllerImpl Deploy Scenario ScenController
+    Unitroller SetPendingImpl ScenController
+    ControllerImpl ScenController Become 1e18 []
+
+Macro NewController price=1.0 closeFactor=0.1 maxAssets=20
+    --g1
+    Unitroller Deploy
+    PriceOracle Deploy Fixed price
+    ControllerImpl Deploy ScenarioG1 ScenControllerG1
+    Unitroller SetPendingImpl ScenControllerG1
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
+    ControllerImpl ScenControllerG1 Become 1e18 []
+    Controller SetPriceOracle (PriceOracleProxy Address)
+    Controller SetCloseFactor closeFactor
+    Controller SetMaxAssets maxAssets
+    --g2
+    ControllerImpl Deploy StandardG3 ControllerG2
+    Unitroller SetPendingImpl ControllerG2
+    ControllerImpl ControllerG2 Become 1e18 []
+    --g3
+    ControllerImpl Deploy StandardG3 ControllerG3
+    Unitroller SetPendingImpl ControllerG3
+    ControllerImpl ControllerG3 Become 1e18 []
+    --g4
+    ControllerImpl Deploy Scenario ScenController
+    Unitroller SetPendingImpl ScenController
+    ControllerImpl ScenController Become 1e18 []
+
+Macro NewRegistryProxy borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 delegatorType=PErc20DelegatorScenario pTokenType=PErc20DelegateScenario
+    InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
+    PTokenDelegate Deploy pTokenType pErc20Delegate
+    Registry Deploy
+    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
+
+Macro NewPToken erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=8 tokenType=Standard delegatorType=PErc20DelegatorScenario pTokenType=PErc20DelegateScenario
+    Erc20 Deploy tokenType erc20 erc20
+    InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
+    PTokenDelegate Deploy pTokenType pErc20Delegate
+    Registry Deploy
+    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
+    PToken Deploy delegatorType pToken pToken (Erc20 erc20 Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals (RegistryProxy Address)
+
+-- Same as NewPToken but does not deploy an ERC20. Used for special ERC20s that are initialized differently
+Macro NewPTokenBringERC20 erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=8 delegatorType=PErc20DelegatorScenario pTokenType=PErc20DelegateScenario
+    InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
+    PTokenDelegate Deploy pTokenType pErc20Delegate
+    Registry Deploy
+    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
+    PToken Deploy delegatorType pToken pToken (Erc20 erc20 Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals (RegistryProxy Address)
+
+Macro NewPTokenImmutable erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=8 tokenType=Standard pTokenType=Scenario
+    Erc20 Deploy tokenType erc20 erc20
+    InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
+    PTokenDelegate Deploy PErc20DelegateScenario pErc20Delegate
+    Registry Deploy
+    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
+    PToken Deploy pTokenType pToken pToken (Erc20 erc20 Address) (RegistryProxy Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals
+
+Macro NewEtherToken pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=8
+    InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
+    PTokenDelegate Deploy PErc20DelegateScenario pErc20Delegate
+    Registry Deploy
+    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
+    PToken Deploy PEtherScenario pToken pToken (RegistryProxy Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals
+
+Macro ListedPToken erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 tokenType=Standard delegatorType=PErc20DelegatorScenario pTokenType=PErc20DelegateScenario
+    NewPToken erc20 pToken borrowRate initialExchangeRate initialReserveFactor decimals tokenType delegatorType pTokenType
+    Controller SupportMarket pToken
+
+Macro ListedPTokenImmutable erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 tokenType=Standard pTokenType=Scenario admin=Admin
+    NewPTokenImmutable erc20 pToken borrowRate initialExchangeRate initialReserveFactor decimals tokenType pTokenType admin
+    Controller SupportMarket pToken
+
+Macro ListedEtherToken pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 admin=Admin
+    NewEtherToken pToken borrowRate initialExchangeRate initialReserveFactor decimals
+    Controller SupportMarket pToken
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address pETH) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    Controller SetPriceOracle (PriceOracleProxy Address)
+
+Macro ListedEtherTokenMinted pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 admin=Admin
+    NewEtherToken pToken borrowRate initialExchangeRate initialReserveFactor decimals
+    Controller SupportMarket pToken
+    CallMintEth Root 1e18 pToken
+
+Macro NewPPIEToken pToken underlying borrowRate=0.000005 initialExchangeRate=0.02 initialReserveFactor=1e17 decimals=18
+    InterestRateModel Deploy Fixed StdInterest borrowRate
+    PTokenDelegate Deploy PErc20DelegateScenario pErc20Delegate
+    Registry Deploy
+    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
+    PToken Deploy PPIEScenario (underlying Address) pToken pToken (RegistryProxy Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals
+    RegistryProxy AddPPIE pToken
+
+Macro ListedPPIEToken pToken underlying borrowRate=0.000005 initialExchangeRate=0.02 initialReserveFactor=1e17 decimals=18
+    NewPPIEToken pToken underlying borrowRate initialExchangeRate initialReserveFactor decimals
+    Controller SupportMarket pToken
+
+Macro SetPriceCF pToken price collateralFactor
+    PriceOracle SetPrice pToken price
+    Controller SetCollateralFactor pToken collateralFactor
+
+Macro Give user amount erc20
+    Erc20 erc20 Faucet user amount
+
+Macro Donate token amount
+    (Trx Value amount (PToken token Donate))
+
+Macro Prep user amount erc20 token allowanceAmount=Nothing
+    Erc20 erc20 Faucet user amount
+    From user (Erc20 erc20 Approve token (Default allowanceAmount amount))
+
+Macro Allow user token
+    From user (Erc20 (PToken token Underlying) Approve token UInt256Max)
+
+Macro AccrueInterest token
+    PToken token AccrueInterest
+
+Macro Mint user amount token
+    From user (PToken token Mint amount)
+
+Macro SendMintEth user amount token
+    From user (Trx GasPrice 0 (Trx Value amount (Send token amount)))
+
+Macro CallMintEth user amount token
+    From user (Trx GasPrice 0 (Trx Value amount (PToken token Mint)))
+
+Macro Redeem user amount token
+    From user (PToken token Redeem amount)
+
+Macro RedeemEth user amount token
+    Trx GasPrice 0 (From user (PToken token Redeem amount))
+
+Macro RedeemUnderlying user amount token
+    From user (PToken token RedeemUnderlying amount)
+
+Macro RedeemUnderlyingEth user amount token
+    Trx GasPrice 0 (From user (PToken token RedeemUnderlying amount))
+
+Macro BorrowEth user amount token
+    Trx GasPrice 0 (From user (PToken token Borrow amount))
+
+Macro Borrow user amount token
+    From user (PToken token Borrow amount)
+
+Macro RepayBorrow user amount token
+    From user (PToken token RepayBorrow amount)
+
+Macro RepayBorrowEth user amount token
+    From user (Trx GasPrice 0 (Trx Value amount (PToken token RepayBorrow)))
+
+Macro RepayBorrowEthMax user amount token
+    From user (Trx GasPrice 0 (Trx Value amount (Maximillion RepayBehalf user)))
+
+Macro RepayBorrowBehalf user behalf amount token
+    From user (PToken token RepayBorrowBehalf behalf amount)
+
+Macro RepayBorrowEthBehalf user behalf amount token
+    From user (Trx GasPrice 0 (Trx Value amount (PToken token RepayBorrowBehalf behalf)))
+
+Macro Liquidate liquidator _ borrower amount token _ collateral
+    From liquidator (PToken token Liquidate borrower collateral amount)
+
+Macro LiquidateEthColl liquidator _ borrower amount token _ collateral
+    From liquidator (Trx GasPrice 0 (PToken token Liquidate borrower collateral amount))
+
+Macro LiquidateEthBorrow liquidator _ borrower amount token _ collateral
+    From liquidator (Trx GasPrice 0 (Trx Value amount (PToken token Liquidate borrower collateral)))
+
+Macro Seize amount token caller liquidator borrower
+    From caller (PToken token Seize liquidator borrower amount)
+
+Macro EvilSeize token amount treasure seizer seizee
+    PToken token EvilSeize treasure seizer seizee amount
+
+Macro Support pToken collateralFactor=0.5
+    Controller SupportMarket pToken
+    Controller SetCollateralFactor pToken collateralFactor
+
+Macro SetCollateralFactor pToken collateralFactor=0.5
+    Controller SetCollateralFactor pToken collateralFactor
+
+Macro AddReserves amount token user=Root
+    From user (PToken token AddReserves amount)
+
+Macro ReduceReserves amount token
+    PToken token ReduceReserves amount
+
+Macro FastForward n blocks
+    Controller FastForward n blocks
+
+Macro EnterMarkets user ...markets
+    From user (Controller EnterMarkets markets)
+
+Macro ExitMarket user market
+    From user (Controller ExitMarket market)
+
+Macro Transfer from to amount token
+    From from (Erc20 token Transfer to amount)
+
+Macro Cash pToken
+    Read Erc20 (PToken pToken Underlying) TokenBalance pToken
+
+Macro QuickMint amount pToken from=Me
+    Give from amount (PToken pToken Underlying)
+    Allow from pToken
+    From from (PToken pToken Mint amount)
+
+Macro QuickBorrow amount pToken ...collateral
+    From Me (Controller EnterMarkets collateral)
+    From Me (Controller EnterMarkets (pToken))
+    From Me (PToken pToken Borrow amount)
+
+-- Macro for performing a borrow with the sole
+-- purpose of adding interest to the erc20 market
+Macro BorrowAndRepayWithInterest erc20 pToken amount interestAmount interestRate blocks reserveRate=0
+    -- TODO: Make invariant success for these?
+    -- TODO: Named args as macros
+    InterestRateModel Deploy Fixed Std interestRate
+    PToken pToken SetInterestRateModel (InterestRateModel Std Address)
+    PToken pToken SetReserveFactor reserveRate
+    ListedPToken COLLAT pCOLLAT
+    Controller SetCollateralFactor pCOLLAT 0.9
+    Prep Torrey 1e30 COLLAT pCOLLAT
+    Mint Torrey 1e30 pCOLLAT
+    EnterMarkets Torrey pCOLLAT pToken
+    Assert True (Controller CheckMembership Torrey pCOLLAT)
+    Assert True (Controller CheckMembership Torrey pToken)
+    Borrow Torrey amount pToken
+    -- Cool, we've borrowed, now let's accrue interest then repay all
+    FastForward blocks Blocks
+    -- RepayBorrow Torrey (PToken BorrowBalance Torrey) pToken
+    From Torrey (Erc20 erc20 Approve pToken amount)
+    RepayBorrow Torrey amount pToken
+    From Torrey (Erc20 erc20 Approve pToken interestAmount)
+    Give Torrey interestAmount erc20
+    RepayBorrow Torrey interestAmount pToken
+    Assert Equal (PToken pToken BorrowBalance Torrey) Zero
+
+-- Macro for performing a borrow with the sole
+-- purpose of adding interest to the ether market
+Macro BorrowAndRepayEthWithInterest pEther amount interestAmount interestRate blocks reserveRate=0
+    -- TODO: Make invariant success for these?
+    -- TODO: Named args as macros
+    InterestRateModel Deploy Fixed Std interestRate
+    PToken pEther SetInterestRateModel (InterestRateModel Std Address)
+    PToken pEther SetReserveFactor reserveRate
+    ListedPToken COLLAT pCOLLAT
+    Controller SetCollateralFactor pCOLLAT 0.9
+    Prep Torrey 1e30 COLLAT pCOLLAT
+    Mint Torrey 1e30 pCOLLAT
+    EnterMarkets Torrey pCOLLAT pEther
+    Assert True (Controller CheckMembership Torrey pCOLLAT)
+    Assert True (Controller CheckMembership Torrey pEther)
+    Borrow Torrey amount pEther
+    -- Cool, we've borrowed, now let's accrue interest then repay all
+    FastForward blocks Blocks
+    -- RepayBorrow Torrey (PToken BorrowBalance Torrey) pEther
+    RepayBorrowEth Torrey amount pEther
+    RepayBorrowEth Torrey interestAmount pEther
+    Assert Equal (PToken pEther BorrowBalance Torrey) Zero

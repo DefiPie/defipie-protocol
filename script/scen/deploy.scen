@@ -1,0 +1,31 @@
+#!/usr/bin/env yarn run repl -s
+-- Deploys new Controller with some ERC20 and some pTokens
+
+-- First deploy a price oracle
+Gate (PriceOracle Address) (PriceOracle Deploy Simple)
+
+-- Next a controller
+Gate (Controller Address) (Controller Deploy YesNo)
+
+-- Next an interest rate model
+Gate (InterestRateModel InterestRateModel Address) (InterestRateModel Deploy Fixed InterestRateModel 0.0004)
+
+-- Now deploy some ERC-20 faucet tokens
+Gate (Erc20 ZRX Address) (Erc20 Deploy Standard ZRX "0x")
+Gate (Erc20 BAT Address) (Erc20 Deploy NonStandard BAT "Basic Attention Token")
+Gate (Erc20 DAI Address) (Erc20 Deploy Standard DAI "Dai")
+Gate (Erc20 REP Address) (Erc20 Deploy Standard REP "Augur")
+Gate (Erc20 USDC Address) (Erc20 Deploy Standard USDC "USD Coin" 6)
+
+-- Now deploy our pTokens
+Gate (PToken pZRX Address) (PToken Deploy PErc20 pZRX "Test 0x 📈" (Erc20 ZRX Address) (Controller Address) (InterestRateModel InterestRateModel Address) 0.2e9 8)
+Gate (PToken pBAT Address) (PToken Deploy PErc20 pBAT "Test Basic Attention Token 📈" (Erc20 BAT Address) (Controller Address) (InterestRateModel InterestRateModel Address) 0.2e9 8)
+Gate (PToken pDAI Address) (PToken Deploy PErc20 pDAI "Test Dai 📈" (Erc20 DAI Address) (Controller Address) (InterestRateModel InterestRateModel Address) 0.2e9 8)
+Gate (PToken pREP Address) (PToken Deploy PErc20 pREP "Test Augur 📈" (Erc20 REP Address) (Controller Address) (InterestRateModel InterestRateModel Address) 0.2e9 8)
+Gate (PToken pETH Address) (PToken Deploy PEther pETH "Test Ether 📈" (Controller Address) (InterestRateModel InterestRateModel Address) 0.2e9 8)
+Gate (PToken pUSDC Address) (PToken Deploy PErc20 pUSDC "Test USD Coin 📈" (Erc20 USDC Address) (Controller Address) (InterestRateModel InterestRateModel Address) 2e-4 8)
+
+-- Deploy Maximillion
+Gate (Maximillion Address) (Maximillion Deploy pETH)
+
+Print "Deployed Controller and pTokens: pETH, pBAT, pDAI, pREP, pUSDC and pZRX"

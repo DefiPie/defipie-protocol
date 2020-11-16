@@ -1,0 +1,59 @@
+#!/usr/bin/env yarn run repl -s
+-- Deploys basic ControllerG3
+
+Unitroller Deploy
+PriceOracle Deploy Fixed 1.0
+PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+----g2
+ControllerImpl Deploy ScenarioG2 ControllerScenG2
+Unitroller SetPendingImpl ControllerScenG2
+ControllerImpl ControllerScenG2 BecomeG2
+--list some tokens
+Controller SetPriceOracle (PriceOracleProxy Address)
+Controller SetMaxAssets 20
+Controller SetCloseFactor 0.5
+Controller LiquidationIncentive 1.1
+NewCToken ZRX pZRX
+NewCToken BAT pBAT
+Support pZRX collateralFactor:0.5
+Support pBAT collateralFactor:0.5
+-- final
+ControllerImpl Deploy Scenario ControllerScen
+Unitroller SetPendingImpl ControllerScen
+
+Prep Geoff 100e18 ZRX pZRX
+Mint Geoff 50e18 pZRX--tokenbalance = 50e18 / 2e9 = 2.5e10
+
+Prep Fourth Some BAT 
+Mint Fourth 6e18 pBAT
+EnterMarkets Fourth pBAT
+Borrow Fourth 1e18 pZRX
+
+Prep Fifth Some BAT pBAT
+Mint Fifth 6e18 pBAT
+EnterMarkets Fifth pBAT
+Borrow Fifth 1e18 pZRX
+
+Prep Sixth Some BAT pBAT
+Mint Sixth 6e18 pBAT
+EnterMarkets Sixth pBAT
+Borrow Sixth 1e18 pZRX
+
+Prep Seventh Some BAT pBAT
+Mint Seventh 6e18 pBAT
+EnterMarkets Seventh pBAT
+Borrow Seventh 1e18 pZRX
+
+ControllerImpl ControllerScen Become 1e18 [pZRX pBAT]
+Erc20 Deploy Standard PIE "PIE Token" 18
+Give (Address Controller) 5000000e18 PIE
+Controller Send "setPIEAddress(address)" (Address PIE)
+
+Controller RefreshCompSpeeds
+
+FastForward 300000 Blocks
+Read (Controller Address)
+Read (Address Fourth)
+Read (Address Fifth)
+Read (Address Sixth)
+Read (Address Seventh)

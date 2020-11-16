@@ -1,0 +1,151 @@
+-- Enter and Exit Markets Tests
+
+Test "Enter Markets Idempotent"
+	NewController
+	Assert Equal (Controller MembershipLength Geoff) Zero
+	Assert Equal (Controller AssetsIn Geoff) []
+	ListedPToken ZRX pZRX
+	EnterMarkets Geoff pZRX
+	Assert Log MarketEntered (pToken (Address pZRX)) (account (Address Geoff))
+	Assert Equal (Controller MembershipLength Geoff) (Exactly 1)
+	Assert True (Controller CheckMembership Geoff pZRX)
+	ListedPToken OMG pOMG
+	EnterMarkets Geoff pZRX pOMG
+	Assert Equal (Controller MembershipLength Geoff) (Exactly 2)
+	Assert True (Controller CheckMembership Geoff pZRX)
+	Assert True (Controller CheckMembership Geoff pOMG)
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX) (Address pOMG)]
+
+Test "Entered Market Must Be Supported"
+	NewController
+	Assert Equal (Controller MembershipLength Geoff) Zero
+	ListedPToken ZRX pZRX
+	EnterMarkets Geoff pZRX
+	Assert Equal (Controller MembershipLength Geoff) (Exactly 1)
+	NewPToken OMG pOMG
+	EnterMarkets Geoff pZRX pOMG
+	Assert Equal (Controller MembershipLength Geoff) (Exactly 1)
+	Assert True (Controller CheckMembership Geoff pZRX)
+	Assert False (Controller CheckMembership Geoff pOMG)
+	Support pOMG
+	EnterMarkets Geoff pZRX pOMG
+	Assert Equal (Controller MembershipLength Geoff) (Exactly 2)
+	Assert True (Controller CheckMembership Geoff pZRX)
+	Assert True (Controller CheckMembership Geoff pOMG)
+
+Test "Cannot enter Markets beyond max assets"
+	NewController
+	Controller SetMaxAssets 1
+	Assert Equal (Controller MembershipLength Geoff) Zero
+	ListedPToken ZRX pZRX
+	ListedPToken OMG pOMG
+	EnterMarkets Geoff pZRX pOMG
+	Assert Equal (Controller MembershipLength Geoff) (Exactly 1)
+	Assert True (Controller CheckMembership Geoff pZRX)
+	Assert False (Controller CheckMembership Geoff pOMG)
+
+Test "Exit single market"
+	NewController
+	ListedPToken ZRX pZRX
+	EnterMarkets Geoff pZRX
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX)]
+	ExitMarket Geoff pZRX
+	Assert Equal (Controller AssetsIn Geoff) []
+
+Test "Exit non-entered market"
+	NewController
+	ListedPToken ZRX pZRX
+	ExitMarket Geoff pZRX
+	Assert Equal (Controller AssetsIn Geoff) []
+
+Test "Exit one of two market from the front"
+	NewController
+	ListedPToken ZRX pZRX
+	ListedPToken OMG pOMG
+	EnterMarkets Geoff pZRX pOMG
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX) (Address pOMG)]
+	ExitMarket Geoff pZRX
+	Assert Equal (Controller AssetsIn Geoff) [(Address pOMG)]
+
+Test "Exit one of two market from the back"
+	NewController
+	ListedPToken ZRX pZRX
+	ListedPToken OMG pOMG
+	EnterMarkets Geoff pZRX pOMG
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX) (Address pOMG)]
+	ExitMarket Geoff pOMG
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX)]
+
+Test "Exit multiple markets"
+	NewController
+	ListedPToken ZRX pZRX
+	ListedPToken OMG pOMG
+	ListedPToken BAT pBAT
+	ListedPToken REP pREP
+	ListedPToken DAI pDAI
+	EnterMarkets Geoff pZRX pOMG pBAT pREP pDAI
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX) (Address pOMG) (Address pBAT) (Address pREP) (Address pDAI)]
+	ExitMarket Geoff pZRX
+	Assert Equal (Controller AssetsIn Geoff) [(Address pDAI) (Address pOMG) (Address pBAT) (Address pREP)]
+	ExitMarket Geoff pREP
+	Assert Equal (Controller AssetsIn Geoff) [(Address pDAI) (Address pOMG) (Address pBAT)]
+	ExitMarket Geoff pOMG
+	Assert Equal (Controller AssetsIn Geoff) [(Address pDAI) (Address pBAT)]
+	ExitMarket Geoff pDAI
+	Assert Equal (Controller AssetsIn Geoff) [(Address pBAT)]
+	ExitMarket Geoff pBAT
+	Assert Equal (Controller AssetsIn Geoff) []
+
+Test "Realistic Market Scenario"
+	PricedController
+	ListedPToken ZRX pZRX
+	SetPriceCF pZRX 0.002 0.4
+	ListedEtherToken pETH
+	Controller SetCollateralFactor pETH 0.8
+	ListedPToken BAT pBAT
+	SetPriceCF pBAT 0.0015 0.3
+	-- Mint some pZRX and pETH
+	Prep Geoff 1250e18 ZRX pZRX
+	Mint Geoff 1250e18 pZRX -- Liquidity -> 0.4 * 0.002 * 1250e18 = 1.0e18
+	SendMintEth Geoff 2.5e18 pETH -- Liqiuidity -> 0.8 * 1.0 * 2.5e18 = 2.0e18
+	-- Check liquidity is zero when not in any markets
+	Assert Equal (Controller Liquidity Geoff) Zero
+	-- Enter ZRX and check liquidity
+	EnterMarkets Geoff pZRX
+	Assert Equal (Controller Liquidity Geoff) 1.0e18
+	-- Fail to borrow BAT due to liquidity
+	Give pBAT 1000e18 BAT
+	HoldInvariants
+	Borrow Geoff 1000e18 pBAT -- 1000e18 * 0.0015 = 1.5e18 required liquidity
+							  -- But since we're only in ZRX, we only have 1.0e18 liquidity
+	Assert Failure CONTROLLER_REJECTION BORROW_CONTROLLER_REJECTION INSUFFICIENT_LIQUIDITY
+	-- Enter pETH and check liquidity
+	EnterMarkets Geoff pETH
+	Assert Equal (Controller Liquidity Geoff) 3.0e18 -- Sum of pETH and pZRX liquidity from above
+	-- Borrow previous BAT amount given liquidity
+	Borrow Geoff 1000e18 pBAT
+	Assert Equal (Controller Liquidity Geoff) 1.5e18 -- Less the borrow amount's toll
+	-- Try to exit a eth market but fail due to given borrow requiring eth as collateral
+	HoldInvariants
+	ExitMarket Geoff pETH
+	Assert Failure REJECTION EXIT_MARKET_REJECTION INSUFFICIENT_LIQUIDITY -- Liquidity check fails
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX) (Address pBAT) (Address pETH)]
+	-- Repay some borrow and exit market OMG
+	Allow Geoff pBAT
+	RepayBorrow Geoff 500e18 pBAT
+	Assert Equal (Controller Liquidity Geoff) 2.25e18 -- With 0.75e18 repaid
+	ExitMarket Geoff pETH
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX) (Address pBAT)]
+	Assert Equal (Controller Liquidity Geoff) 0.25e18 -- Less Eth's 2.0e18 collateral weight
+	-- Try and exit pBAT (firist without, then after, repaying)
+	HoldInvariants
+	ExitMarket Geoff pBAT
+	Assert Failure NONZERO_BORROW_BALANCE EXIT_MARKET_BALANCE_OWED
+	RepayBorrow Geoff UInt256Max pBAT
+	ExitMarket Geoff pBAT
+	Assert Equal (Controller AssetsIn Geoff) [(Address pZRX)]
+	Assert Equal (Controller Liquidity Geoff) 1.0e18 -- Back to just pZRX
+	-- Exit pZRX
+	ExitMarket Geoff pZRX
+	Assert Equal (Controller AssetsIn Geoff) []
+	Assert Equal (Controller Liquidity Geoff) 0e18 -- Back to nothing

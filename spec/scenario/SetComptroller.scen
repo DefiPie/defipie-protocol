@@ -1,0 +1,26 @@
+-- Sets for `_setController` Admin Function
+
+Test "Set Controller"
+    NewController
+    NewPToken ZRX pZRX
+    Assert Equal (PToken pZRX Controller) (Unitroller Address)
+    ControllerImpl Deploy Scenario NewController
+    From Root (PToken pZRX SetController (ControllerImpl NewController Address))
+    -- TODO: Fix log assertion
+    -- Assert Log "NewController" ("oldController" (Unitroller Address)) ("newController" (ControllerImpl NewController Address))
+    Assert Equal (PToken pZRX Controller) (ControllerImpl NewController Address)
+
+Test "Fail when is not a controller"
+    NewController
+    NewPToken ZRX pZRX
+    Invariant Remains (PToken pZRX Controller) (Unitroller Address)
+    AllowFailures
+    From Root (PToken pZRX SetController (PriceOracle Address))
+    Assert Revert
+
+Test "Fail to set controller as not admin"
+    NewController
+    NewPToken ZRX pZRX
+    AllowFailures
+    From Geoff (PToken pZRX SetController (PriceOracle Address))
+    Assert Failure UNAUTHORIZED SET_CONTROLLER_OWNER_CHECK

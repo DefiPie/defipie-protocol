@@ -1,0 +1,63 @@
+
+Test "Borrow some WBTC enters WBTC and succeeds when not entered"
+    Invariant Success
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken WBTC pWBTC tokenType:WBTC
+    Give pWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Support pZRX collateralFactor:0.5
+    Support pWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX
+    Borrow Geoff 1e8 pWBTC
+    Assert Equal (pToken pWBTC BorrowBalance Geoff) (Exactly 1e8)
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) (Exactly 1e8)
+    Assert Equal (Erc20 WBTC TokenBalance pWBTC) (Exactly 9e8)
+
+Test "Borrow some WBTC fails when no WBTC available"
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken WBTC pWBTC tokenType:WBTC
+    Support pZRX collateralFactor:0.5
+    Support pWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX pWBTC
+    Invariant Static (PToken pZRX ExchangeRateStored)
+    AllowFailures
+    Borrow Geoff 1e8 pWBTC
+    Assert Failure TOKEN_INSUFFICIENT_CASH BORROW_CASH_NOT_AVAILABLE
+
+Test "Borrow some WBTC fails when WBTC paused"
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken WBTC pWBTC tokenType:WBTC
+    Give pWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Support pZRX collateralFactor:0.5
+    Support pWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX pWBTC
+    Invariant Static (PToken pZRX ExchangeRateStored)
+    Erc20 WBTC Pause
+    AllowFailures
+    Borrow Geoff 1e8 pWBTC
+    Assert Revert
+
+Test "Borrow some WBTC from Excess Cash"
+    Invariant Success
+    NewController price:1.0
+    NewPToken ZRX pZRX
+    NewPToken WBTC pWBTC tokenType:WBTC
+    Give pWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Support pZRX collateralFactor:0.5
+    Support pWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX pZRX
+    Mint Geoff 100e18 pZRX
+    EnterMarkets Geoff pZRX pWBTC
+    Borrow Geoff 1e8 pWBTC
+    EnterMarkets Geoff pZRX pWBTC
+    Assert Equal (pToken pWBTC BorrowBalance Geoff) (Exactly 1e8)
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) (Exactly 1e8)
+    Assert Equal (Erc20 WBTC TokenBalance pWBTC) (Exactly 9e8)

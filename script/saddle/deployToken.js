@@ -1,0 +1,67 @@
+let { loadConf } = require('./support/tokenConfig');
+
+function printUsage() {
+  console.log(`
+usage: npx saddle script token:deploy {tokenConfig}
+
+note: pass VERIFY=true and ETHERSCAN_API_KEY=<api key> to verify contract on Etherscan
+
+example:
+
+npx saddle -n ropsten script token:deploy '{
+  "underlying": "0x516de3a7a567d81737e3a46ec4ff9cfd1fcb0136",
+  "controller": "$Controller",
+  "interestRateModel": "$Base200bps_Slope3000bps",
+  "initialExchangeRateMantissa": "2.0e18",
+  "name": "DeFiPie USDT",
+  "symbol": "pUSDT",
+  "decimals": "18",
+  "admin": "$Timelock"
+}'
+  `);
+}
+
+function sleep(timeout) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve();
+    }, timeout);
+  });
+}
+
+(async function() {
+  if (args.length !== 1) {
+    return printUsage();
+  }
+
+  let conf = loadConf(args[0], addresses);
+  if (!conf) {
+    return printUsage();
+  }
+
+  console.log(`Deploying pToken with ${JSON.stringify(conf)}`);
+
+  let deployArgs = [conf.underlying, conf.controller, conf.interestRateModel, conf.initialExchangeRateMantissa.toString(), conf.name, conf.symbol, conf.decimals, conf.admin];
+  let contract = await saddle.deploy('CErc20Immutable', deployArgs);
+
+  console.log(`Deployed contract to ${contract._address}`);
+
+  if (env['VERIFY']) {
+    const etherscanApiKey = env['ETHERSCAN_API_KEY'];
+    if (etherscanApiKey === undefined || etherscanApiKey.length === 0) {
+      throw new Error(`ETHERSCAN_API_KEY must be set if using VERIFY flag...`);
+    }
+
+    console.log(`Sleeping for 30 seconds then verifying contract on Etherscan...`);
+    await sleep(30000); // Give Etherscan time to learn about contract
+    console.log(`Now verifying contract on Etherscan...`);
+
+    await saddle.verify(etherscanApiKey, contract._address, 'CErc20Immutable', deployArgs, 0);
+    console.log(`Contract verified at https://${network}.etherscan.io/address/${contract._address}`);
+  }
+
+  return {
+    ...conf,
+    address: contract._address
+  };
+})();

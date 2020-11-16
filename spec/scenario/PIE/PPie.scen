@@ -1,0 +1,256 @@
+Test "Check self-transfer updates balances correctly, emits Transfer event, and returns true"
+    Pie Deploy Geoff
+    NewController
+    NewPPIEToken pPIE Pie
+    Assert Equal (PToken pPIE Underlying) (Address Pie)
+    Expect Changes (PToken pPIE VotesLength Geoff) Zero
+    Expect Changes (Erc20 pPIE TokenBalance Geoff) Zero
+    From Geoff (Pie Transfer Geoff 10)
+    Assert Log Transfer (from (Address Geoff)) (to (Address Geoff)) (amount "10")
+    Expect Changes (PToken pPIE VotesLength Geoff) Zero
+    Expect Changes (Erc20 pPIE TokenBalance Geoff) Zero
+    From Geoff (Pie Transfer Geoff 0)
+    Assert Log Transfer (from (Address Geoff)) (to (Address Geoff)) (amount "0")
+
+Test "Delegate with zero balance doesn't change votes checkpoints"
+    Pie Deploy Geoff
+    NewController
+    NewPPIEToken pPIE Pie
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+
+Test "Delegate from address(0) to account with zero checkpoints"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    Assert Log Mint (minter (Address Geoff)) (mintAmount 10e18) (mintTokens 500e18)
+    Assert Log Transfer (from (Address Geoff)) (to (Address pPIE)) (amount 10e18)
+    Assert Equal (PToken pPIE TokenBalance Geoff) 500e18
+    From Geoff (PToken pPIE Transfer Jared 10)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Equal (PToken pPIE VotesLength Zero) 0
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+
+Test "Delegate from address(0) to account with existing checkpoints"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    From Geoff (PToken pPIE Transfer Jared 10)
+    From Geoff (PToken pPIE Transfer Torrey 14)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    From Torrey (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 24
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Equal (PToken pPIE VotesLength Zero) 0
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "24")
+
+Test "Delegate to address(0)"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    From Geoff (PToken pPIE Transfer Jared 10)
+    From Geoff (PToken pPIE Transfer Torrey 14)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    From Torrey (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 24
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "24")
+    From Torrey (PToken pPIE Delegate Zero)
+    Assert Equal (PToken pPIE VotesLength Geoff) 3
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Geoff)) (toDelegate (Address Zero))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "24") (newBalance "10")
+    Assert Equal (PToken pPIE VotesLength Zero) 0
+
+Test "Delegate from one account to another account with zero checkpoints"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    From Geoff (PToken pPIE Transfer Jared 10)
+    From Geoff (PToken pPIE Transfer Torrey 14)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    From Torrey (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 24
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Equal (PToken pPIE VotesLength Coburn) 0
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "24")
+    From Torrey (PToken pPIE Delegate Coburn)
+    Assert Equal (PToken pPIE VotesLength Coburn) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Coburn) 14
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Coburn) LastBlock
+    Assert Equal (PToken pPIE VotesLength Geoff) 3
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Geoff)) (toDelegate (Address Coburn))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "24") (newBalance "10")
+    Assert Log DelegateVotesChanged (delegate (Address Coburn)) (previousBalance "0") (newBalance "14")
+
+Test "Delegate from one account to another account with multiple checkpoints"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    From Geoff (PToken pPIE Transfer Jared 10)
+    From Geoff (PToken pPIE Transfer Torrey 14)
+    From Geoff (PToken pPIE Transfer Coburn 2)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    From Torrey (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 24
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Equal (PToken pPIE VotesLength Coburn) 0
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "24")
+    From Coburn (PToken pPIE Delegate Coburn)
+    Assert Equal (PToken pPIE VotesLength Coburn) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Coburn) 2
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Coburn) LastBlock
+    Assert Log DelegateChanged (delegator (Address Coburn)) (fromDelegate (Address Zero)) (toDelegate (Address Coburn))
+    Assert Log DelegateVotesChanged (delegate (Address Coburn)) (previousBalance "0") (newBalance "2")
+    From Torrey (PToken pPIE Delegate Coburn)
+    Assert Equal (PToken pPIE VotesLength Coburn) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Coburn) 16
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Coburn) LastBlock
+    Assert Equal (PToken pPIE VotesLength Geoff) 3
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Geoff)) (toDelegate (Address Coburn))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "24") (newBalance "10")
+    Assert Log DelegateVotesChanged (delegate (Address Coburn)) (previousBalance "2") (newBalance "16")
+
+Test "Vote checkpoints don't change on transfer when to and from accounts delegate to same account"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    From Geoff (PToken pPIE Transfer Jared 10)
+    From Geoff (PToken pPIE Transfer Torrey 14)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    From Torrey (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 24
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "24")
+    Invariant Static (PToken pPIE VotesLength Geoff)
+    Invariant Static (PToken pPIE GetCurrentVotes Geoff)
+    Invariant Static (PToken pPIE GetCurrentVotesBlock Geoff)
+    From Torrey (PToken pPIE Transfer Jared 14)
+
+Test "Only one checkpoint is added per block for multiple increased balance updates"
+    Pie Deploy Scenario Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    From Torrey (PToken pPIE Delegate Geoff)
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    From Geoff (PToken pPIE TransferScenario (Jared Torrey) 10)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 20
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Equal (PToken pPIE VotesLength Zero) 0
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "20")
+
+Test "Only one checkpoint is added per block for multiple decreased balance updates"
+    Pie Deploy Scenario Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    From Geoff (PToken pPIE Transfer Jared 10)
+    From Geoff (PToken pPIE Transfer Torrey 10)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    From Torrey (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 20
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "20")
+    From Jared (Erc20 pPIE Approve Geoff 10)
+    From Torrey (Erc20 pPIE Approve Geoff 10)
+    From Geoff (PToken pPIE TransferFromScenario (Jared Torrey) 10)
+    Assert Equal (PToken pPIE VotesLength Geoff) 3
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 0
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Equal (PToken pPIE VotesLength Zero) 0
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "20") (newBalance "10")
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "0")
+
+Test "Check transfer reverts when block number exceeds 32 bits"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    From Jared (PToken pPIE Delegate Geoff)
+    AllowFailures
+    SetBlockNumber 5000000000
+    From Geoff (PToken pPIE Transfer Jared 10000000e18)
+    Assert Revert "revert block number exceeds 32 bits"
