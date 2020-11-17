@@ -3,7 +3,7 @@
 pragma solidity ^0.7.4;
 
 contract MockPriceFeed {
-    int public latestPrice = 400e18;
+    int public latestPrice = 400e8; // chainlink USD with 8 decimals of precision
     bool public pairExist = true;
 
     uint public reserve0 = 1265853603707383427790000;

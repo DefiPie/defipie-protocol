@@ -118,22 +118,19 @@ async function makePToken(opts = {}) {
   const symbol = opts.symbol || (kind === 'pether' ? 'pETH' : 'pOMG');
   const name = opts.name || `PToken ${symbol}`;
 
+  const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
+  const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
+  const uniswapOracle = opts.uniswapOracle || await deploy('UniswapPriceOracleHarness', [
+      registryProxy._address,
+      mockPriceFeed._address,
+      mockPriceFeed._address,
+      mockPriceFeed._address
+  ]);
+
   let pToken, underlying;
   let pTokenFactory;
-  let mockPriceFeed, uniswapOracle;
   let tokenAddress;
   let tx1, tx2, tx3;
-
-  const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
-
-  mockPriceFeed = await deploy('MockPriceFeed');
-
-  uniswapOracle =  await deploy('UniswapPriceOracleHarness', [
-    registryProxy._address,
-    mockPriceFeed._address,
-    mockPriceFeed._address,
-    mockPriceFeed._address
-  ]);
 
   pTokenFactory = await deploy('PTokenFactoryHarness', [
     registryProxy._address,
@@ -161,6 +158,7 @@ async function makePToken(opts = {}) {
 
     case 'ppie':
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
+      await send(mockPriceFeed, 'setToken0Address', [underlying._address]);
 
       let pPIEImplementation = await deploy('PPIEDelegateHarness');
 
@@ -174,6 +172,7 @@ async function makePToken(opts = {}) {
     case 'perc20':
     default:
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
+      await send(mockPriceFeed, 'setToken0Address', [underlying._address]);
 
       tx3 = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
@@ -272,13 +271,9 @@ async function makePTokenFactory(opts = {}) {
     const reserveFactor = etherMantissa(dfn(opts.reserveFactor, 0.1));
 
     let pTokenFactory;
-    let oracle, mockPriceFeed;
-
     const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
-
-    mockPriceFeed = await deploy('MockPriceFeed');
-
-    oracle = await deploy('UniswapPriceOracleHarness', [
+    const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
+    const uniswapOracle = opts.uniswapOracle || await deploy('UniswapPriceOracleMock', [
         registryProxy._address,
         mockPriceFeed._address,
         mockPriceFeed._address,
@@ -288,7 +283,7 @@ async function makePTokenFactory(opts = {}) {
     pTokenFactory = await deploy('PTokenFactoryHarness', [
         registryProxy._address,
         0,
-        oracle._address,
+        uniswapOracle._address,
         controller._address,
         interestRateModel._address,
         exchangeRate,

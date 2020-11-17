@@ -156,8 +156,8 @@ describe('GovernorAlpha#propose/5', () => {
         values: values,
         signatures: signatures,
         calldatas: callDatas,
-        startBlock: 43,
-        endBlock: 17323,
+        startBlock: 44,
+        endBlock: 17324,
         description: "second proposal",
         proposer: accounts[3]
       });
