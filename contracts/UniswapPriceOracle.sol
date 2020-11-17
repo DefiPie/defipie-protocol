@@ -92,6 +92,8 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
         cumulativePrices[asset].price1CumulativePrevious = pair.price1CumulativeLast();
         cumulativePrices[asset].blockTimestampPrevious = blockTimestamp;
 
+        emit PriceUpdated(asset, getPriceInUSD(asset));
+
         return uint(Error.NO_ERROR);
     }
 
@@ -117,7 +119,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
     }
 
     // Get the most recent price for a asset in USD with 18 decimals of precision.
-    function getPriceInUSD(address asset) public view returns (uint) {
+    function getPriceInUSD(address asset) public view virtual returns (uint) {
         uint ETHUSDPrice = uint(AggregatorInterface(ETHUSDPriceFeed).latestAnswer());
         uint AssetETHCourse = getCourseInETH(asset);
 
