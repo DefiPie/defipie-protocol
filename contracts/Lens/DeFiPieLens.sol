@@ -116,7 +116,10 @@ contract DeFiPieLens {
         });
     }
 
-    function pTokenBalancesAll(PToken[] calldata pTokens, address payable account) external returns (PTokenBalances[] memory) {
+    function pTokenBalancesAll(
+        PToken[] calldata pTokens,
+        address payable account
+    ) external returns (PTokenBalances[] memory) {
         uint pTokenCount = pTokens.length;
         PTokenBalances[] memory res = new PTokenBalances[](pTokenCount);
         for (uint i = 0; i < pTokenCount; i++) {
@@ -125,7 +128,10 @@ contract DeFiPieLens {
         return res;
     }
 
-    function pTokenBalancesAllMarkets(address controller, address payable account) external returns (PTokenBalances[] memory) {
+    function pTokenBalancesAllMarkets(
+        address controller,
+        address payable account
+    ) external returns (PTokenBalances[] memory) {
         PToken[] memory pTokens = ControllerLensInterface(controller).getAllMarkets();
         PTokenBalances[] memory res = new PTokenBalances[](pTokens.length);
         for (uint i = 0; i < pTokens.length; i++) {
@@ -164,7 +170,10 @@ contract DeFiPieLens {
         uint shortfall;
     }
 
-    function getAccountLimits(ControllerLensInterface controller, address account) public view returns (AccountLimits memory) {
+    function getAccountLimits(
+        ControllerLensInterface controller,
+        address account
+    ) public view returns (AccountLimits memory) {
         (uint errorCode, uint liquidity, uint shortfall) = controller.getAccountLiquidity(account);
         require(errorCode == 0);
 
@@ -182,7 +191,11 @@ contract DeFiPieLens {
         uint96 votes;
     }
 
-    function getGovReceipts(GovernorAlpha governor, address voter, uint[] memory proposalIds) public view returns (GovReceipt[] memory) {
+    function getGovReceipts(
+        GovernorAlpha governor,
+        address voter,
+        uint[] memory proposalIds
+    ) public view returns (GovReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovReceipt[] memory res = new GovReceipt[](proposalCount);
         for (uint i = 0; i < proposalCount; i++) {
@@ -236,7 +249,10 @@ contract DeFiPieLens {
         res.executed = executed;
     }
 
-    function getGovProposals(GovernorAlpha governor, uint[] calldata proposalIds) external view returns (GovProposal[] memory) {
+    function getGovProposals(
+        GovernorAlpha governor,
+        uint[] calldata proposalIds
+    ) external view returns (GovProposal[] memory) {
         GovProposal[] memory res = new GovProposal[](proposalIds.length);
         for (uint i = 0; i < proposalIds.length; i++) {
             (
@@ -286,7 +302,11 @@ contract DeFiPieLens {
         uint allocated;
     }
 
-    function getPPieBalanceMetadataExt(PPIE pPIE, ControllerLensInterface controller, address account) external returns (PPieBalanceMetadataExt memory) {
+    function getPPieBalanceMetadataExt(
+        PPIE pPIE,
+        ControllerLensInterface controller,
+        address account
+    ) external returns (PPieBalanceMetadataExt memory) {
         uint balance = pPIE.balanceOf(account);
         controller.claimPie(account);
         uint newBalance = pPIE.balanceOf(account);
@@ -307,7 +327,11 @@ contract DeFiPieLens {
         uint votes;
     }
 
-    function getPPieVotes(PPIE pPIE, address account, uint32[] calldata blockNumbers) external view returns (PPieVotes[] memory) {
+    function getPPieVotes(
+        PPIE pPIE,
+        address account,
+        uint32[] calldata blockNumbers
+    ) external view returns (PPieVotes[] memory) {
         PPieVotes[] memory res = new PPieVotes[](blockNumbers.length);
         for (uint i = 0; i < blockNumbers.length; i++) {
             res[i] = PPieVotes({

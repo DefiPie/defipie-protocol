@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./PriceOracle.sol";
 import "./ErrorReporter.sol";
-import "./PErc20.sol";
+import "./PTokenInterfaces.sol";
 import "./SafeMath.sol";
 import "./IPriceFeeds.sol";
 import "./UniswapPriceOracleStorage.sol";
@@ -105,13 +105,13 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
             return getPriceInUSD(registry.pETH());
         }
 
-        address asset = address(PErc20(address(pToken)).underlying());
+        address asset = address(PErc20Interface(address(pToken)).underlying());
 
         return getPriceInUSD(asset);
     }
 
     function updateUnderlyingPrice(PToken pToken) public override returns (uint) {
-        address asset = address(PErc20(address(pToken)).underlying());
+        address asset = address(PErc20Interface(address(pToken)).underlying());
 
         return update(asset);
     }
@@ -131,7 +131,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
             return 1e18;
         }
 
-        uint power = PErc20(asset).decimals();
+        uint power = PTokenInterface(asset).decimals();
         uint amountIn = 10**power;
         uint amountOut;
 

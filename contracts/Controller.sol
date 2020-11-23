@@ -416,8 +416,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address payer,
         address borrower,
         uint repayAmount
-    )
-        external override returns (uint)
+    ) external override returns (uint)
     {
         // Shh - currently unused
         payer;
@@ -477,8 +476,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address liquidator,
         address borrower,
         uint repayAmount
-    )
-        external override returns (uint)
+    ) external override returns (uint)
     {
         // Shh - currently unused
         liquidator;
@@ -553,8 +551,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address liquidator,
         address borrower,
         uint seizeTokens
-    )
-        external override returns (uint)
+    ) external override returns (uint)
     {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!seizeGuardianPaused, "seize is paused");
@@ -614,7 +611,12 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param transferTokens The number of pTokens to transfer
      * @return 0 if the transfer is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function transferAllowed(address pToken, address src, address dst, uint transferTokens) external override returns (uint) {
+    function transferAllowed(
+        address pToken,
+        address src,
+        address dst,
+        uint transferTokens
+    ) external override returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!transferGuardianPaused, "transfer is paused");
 
@@ -709,7 +711,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address account,
         address pTokenModify,
         uint redeemTokens,
-        uint borrowAmount) public view virtual returns (uint, uint, uint) {
+        uint borrowAmount
+    ) public view virtual returns (uint, uint, uint) {
         (Error err, uint liquidity, uint shortfall) = getHypotheticalAccountLiquidityInternal(account, PToken(pTokenModify), redeemTokens, borrowAmount);
         return (uint(err), liquidity, shortfall);
     }
@@ -730,7 +733,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address account,
         PToken pTokenModify,
         uint redeemTokens,
-        uint borrowAmount) internal view returns (Error, uint, uint) {
+        uint borrowAmount
+    ) internal view returns (Error, uint, uint) {
 
         AccountLiquidityLocalVars memory vars; // Holds all our calculation results
         uint oErr;
@@ -808,7 +812,11 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param actualRepayAmount The amount of pTokenBorrowed underlying to convert into pTokenCollateral tokens
      * @return (errorCode, number of pTokenCollateral tokens to be seized in a liquidation)
      */
-    function liquidateCalculateSeizeTokens(address pTokenBorrowed, address pTokenCollateral, uint actualRepayAmount) external view override returns (uint, uint) {
+    function liquidateCalculateSeizeTokens(
+        address pTokenBorrowed,
+        address pTokenCollateral,
+        uint actualRepayAmount
+    ) external view override returns (uint, uint) {
         /* Read oracle prices for borrowed and collateral markets */
         uint priceBorrowedMantissa = oracle.getUnderlyingPrice(PToken(pTokenBorrowed));
         uint priceCollateralMantissa = oracle.getUnderlyingPrice(PToken(pTokenCollateral));
@@ -1109,7 +1117,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return state;
     }
 
-    function _setFactoryContract(address _factory) external returns(uint) {
+    function _setFactoryContract(address _factory) external returns (uint) {
         if (msg.sender != admin) {
             return uint(Error.UNAUTHORIZED);
         }
@@ -1255,7 +1263,12 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param pToken The market in which the borrower is interacting
      * @param borrower The address of the borrower to distribute PIE to
      */
-    function distributeBorrowerPie(address pToken, address borrower, Exp memory marketBorrowIndex, bool distributeAll) internal {
+    function distributeBorrowerPie(
+        address pToken,
+        address borrower,
+        Exp memory marketBorrowIndex,
+        bool distributeAll
+    ) internal {
         PieMarketState storage borrowState = pieBorrowState[pToken];
         Double memory borrowIndex = Double({mantissa: borrowState.index});
         Double memory borrowerIndex = Double({mantissa: pieBorrowerIndex[pToken][borrower]});

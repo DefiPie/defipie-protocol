@@ -189,7 +189,7 @@ contract PTokenFactory is FactoryErrorReporter {
      *  Sets address of actual controller contract
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setController(address newController) external returns(uint256) {
+    function setController(address newController) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_CONTROLLER);
         }
@@ -202,7 +202,7 @@ contract PTokenFactory is FactoryErrorReporter {
      *  Sets address of actual interestRateModel contract
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setInterestRateModel(address newInterestRateModel) external returns(uint256) {
+    function setInterestRateModel(address newInterestRateModel) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_INTEREST_RATE_MODEL);
         }
@@ -216,7 +216,7 @@ contract PTokenFactory is FactoryErrorReporter {
      *  Sets initial exchange rate
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setInitialExchangeRateMantissa(uint256 _initialExchangeRateMantissa) external returns(uint256) {
+    function setInitialExchangeRateMantissa(uint _initialExchangeRateMantissa) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_EXCHANGE_RATE);
         }
@@ -226,7 +226,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function setInitialReserveFactorMantissa(uint256 _initialReserveFactorMantissa) external returns(uint256) {
+    function setInitialReserveFactorMantissa(uint _initialReserveFactorMantissa) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_RESERVE_FACTOR);
         }
@@ -240,7 +240,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return registry.admin();
     }
 
-    function _createPTokenNameAndSymbol(address underlying) private view returns (string memory, string memory) {
+    function _createPTokenNameAndSymbol(address underlying) internal view returns (string memory, string memory) {
         string memory name = ("DeFiPie ".toSlice().concat(EIP20Interface(underlying).name().toSlice()));
         string memory symbol = ("p".toSlice().concat(EIP20Interface(underlying).symbol().toSlice()));
         return (name, symbol);
