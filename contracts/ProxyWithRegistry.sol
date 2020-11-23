@@ -18,7 +18,7 @@ abstract contract ProxyWithRegistryInterface is ProxyWithRegistryStorage {
 contract ProxyWithRegistry is ProxyWithRegistryInterface {
     /**
      *  Returns actual address of the implementation contract from current registry
-     *  @return registry    Address of the registry
+     *  @return registry Address of the registry
      */
     function _pTokenImplementation() internal view override returns (address) {
         return RegistryInterface(registry).pTokenImplementation();

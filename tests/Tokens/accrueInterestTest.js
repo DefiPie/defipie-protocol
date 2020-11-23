@@ -2,6 +2,7 @@ const {
   etherMantissa,
   etherUnsigned
 } = require('../Utils/Ethereum');
+
 const {
   makePToken,
   setBorrowRate
@@ -98,6 +99,7 @@ describe('PToken', () => {
       const startingTotalBorrows = 1e22;
       const startingTotalReserves = 1e20;
       const reserveFactor = 1e17;
+      const exchangeRateDefault = 1e18;
 
       await send(pToken, 'harnessExchangeRateDetails', [0, etherUnsigned(startingTotalBorrows), etherUnsigned(startingTotalReserves)]);
       await send(pToken, 'harnessSetReserveFactorFresh', [etherUnsigned(reserveFactor)]);
@@ -114,7 +116,8 @@ describe('PToken', () => {
         cashPrior: 0,
         interestAccumulated: etherUnsigned(expectedTotalBorrows).sub(etherUnsigned(startingTotalBorrows)),
         borrowIndex: etherUnsigned(expectedBorrowIndex),
-        totalBorrows: etherUnsigned(expectedTotalBorrows)
+        totalBorrows: etherUnsigned(expectedTotalBorrows),
+        exchangeRate: exchangeRateDefault
       });
       expect(await call(pToken, 'accrualBlockNumber')).toEqualNumber(expectedAccrualBlockNumber);
       expect(await call(pToken, 'borrowIndex')).toEqualNumber(expectedBorrowIndex);

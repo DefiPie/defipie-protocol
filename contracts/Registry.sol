@@ -42,7 +42,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
      *  Sets address of actual pToken implementation contract
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setPTokenImplementation(address newImplementation) external returns(uint256) {
+    function setPTokenImplementation(address newImplementation) external returns (uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
         }
@@ -55,7 +55,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function _setFactoryContract(address _factory) external returns(uint) {
+    function _setFactoryContract(address _factory) external returns (uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_FACTORY);
         }
@@ -64,7 +64,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function addPToken(address underlying, address pToken) public returns(uint) {
+    function addPToken(address underlying, address pToken) public returns (uint) {
         require(msg.sender == admin || msg.sender == factory, "Only admin or factory can add PTokens");
 
         PTokenInterface(pToken).isPToken(); // Sanity check to make sure its really a PToken
@@ -75,7 +75,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function addPETH(address pETH_) public returns(uint) {
+    function addPETH(address pETH_) public returns (uint) {
         require(msg.sender == admin || msg.sender == factory, "Only admin or factory can add PETH");
 
         PTokenInterface(pETH_).isPToken(); // Sanity check to make sure its really a PToken
@@ -86,7 +86,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function addPPIE(address pPIE_) public returns(uint) {
+    function addPPIE(address pPIE_) public returns (uint) {
         require(msg.sender == admin || msg.sender == factory, "Only admin or factory can add PPIE");
 
         PTokenInterface(pPIE_).isPToken(); // Sanity check to make sure its really a PToken
