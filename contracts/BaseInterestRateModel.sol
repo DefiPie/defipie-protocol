@@ -4,10 +4,10 @@ import "./InterestRateModel.sol";
 import "./SafeMath.sol";
 
 /**
-  * @title DefiPie's WhitePaperInterestRateModel Contract
+  * @title DefiPie's BaseInterestRateModel Contract
   * @author DefiPie
   */
-contract WhitePaperInterestRateModel is InterestRateModel {
+contract BaseInterestRateModel is InterestRateModel {
     using SafeMath for uint;
 
     event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock);
