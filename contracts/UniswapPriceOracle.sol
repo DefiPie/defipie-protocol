@@ -46,7 +46,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
             uniswapFactory == address(0) &&
             WETHUniswap == address(0) &&
             ETHUSDPriceFeed == address(0)
-        , "UniswapPriceOracle may only be initialized once"
+            , "UniswapPriceOracle may only be initialized once"
         );
 
         registry = IRegistry(registry_);
@@ -111,6 +111,10 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
     }
 
     function updateUnderlyingPrice(PToken pToken) public override returns (uint) {
+        if (address(pToken) == registry.pETH()) {
+            return uint(Error.NO_ERROR);
+        }
+
         address asset = address(PErc20Interface(address(pToken)).underlying());
 
         return update(asset);
