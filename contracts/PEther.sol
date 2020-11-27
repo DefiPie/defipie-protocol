@@ -118,7 +118,10 @@ contract PEther is ImplementationStorage, PToken {
     /**
      * @notice Add reserves to PEther
      */
-    receive() external payable {}
+    receive() external payable {
+        (uint err,) = mintInternal(msg.value);
+        requireNoError(err, "mint failed");
+    }
 
     /*** Safe Token ***/
 
