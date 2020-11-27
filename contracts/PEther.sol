@@ -116,7 +116,7 @@ contract PEther is ImplementationStorage, PToken {
     }
 
     /**
-     * @notice Add reserves to PEther
+     * @notice Send Ether to PEther to mint
      */
     receive() external payable {
         (uint err,) = mintInternal(msg.value);
