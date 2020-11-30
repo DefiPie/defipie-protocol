@@ -7,7 +7,7 @@ function utilizationRate(cash, borrows, reserves) {
   return borrows ? borrows / (cash + borrows - reserves) : 0;
 }
 
-function whitePaperRateFn(base, slope, kink = 0.9, jump = 5) {
+function baseModelRateFn(base, slope, kink = 0.9, jump = 5) {
   return (cash, borrows, reserves) => {
     const ur = utilizationRate(cash, borrows, reserves);
 
@@ -23,7 +23,7 @@ function whitePaperRateFn(base, slope, kink = 0.9, jump = 5) {
 
 function supplyRateFn(base, slope, jump, kink, cash, borrows, reserves, reserveFactor = 0.1) {
   const ur = utilizationRate(cash, borrows, reserves);
-  const borrowRate = whitePaperRateFn(base, slope, jump, kink)(cash, borrows, reserves);
+  const borrowRate = baseRateModelFn(base, slope, jump, kink)(cash, borrows, reserves);
 
   return borrowRate * (1 - reserveFactor) * ur;
 }
@@ -65,9 +65,9 @@ describe('InterestRateModel', () => {
   });
 
   const expectedRates = {
-    'baseP025-slopeP20': { base: 0.025, slope: 0.20, model: 'white-paper' },
-    'baseP05-slopeP45': { base: 0.05, slope: 0.45, model: 'white-paper' },
-    'white-paper': { base: 0.1, slope: 0.45, model: 'white-paper' },
+    'baseP025-slopeP20': { base: 0.025, slope: 0.20, model: 'base-model' },
+    'baseP05-slopeP45': { base: 0.05, slope: 0.45, model: 'base-model' },
+    'base-model': { base: 0.1, slope: 0.45, model: 'base-model' },
     'jump-rate': { base: 0.1, slope: 0.45, model: 'jump-rate' }
   };
 
@@ -99,14 +99,14 @@ describe('InterestRateModel', () => {
 
         // XXS Add back for ${cash}, ${borrows}, ${reserves}
         await Promise.all(rateInputs.map(async ([cash, borrows, reserves = 0]) => {
-          const rateFn = whitePaperRateFn(info.base, info.slope);
+          const rateFn = baseModelRateFn(info.base, info.slope);
           const expected = rateFn(cash, borrows, reserves);
           expect(await getBorrowRate(model, cash, borrows, reserves) / 1e18).toBeWithinDelta(expected, 1e7);
         }));
       });
 
       if (kind == 'jump-rate') {
-        // Only need to do these for the WhitePaper
+        // Only need to do these for the baseModel
 
         it('handles overflowed cash + borrows', async () => {
           await expect(getBorrowRate(model, -1, -1, 0)).rejects.toRevert("revert SafeMath: addition overflow");

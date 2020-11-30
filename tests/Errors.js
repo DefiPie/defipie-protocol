@@ -34,8 +34,8 @@ const CarefulMath = solparse.parseFile(carefulMathPath).body.find(k => k.type ==
 const MathErrorInv = CarefulMath.body.find(k => k.name == 'MathError').members;
 const MathError = invert(MathErrorInv);
 
-const whitePaperModelPath = path.join(__dirname, '..', 'contracts', 'WhitePaperInterestRateModel.sol');
-const whitePaperModel = solparse.parseFile(whitePaperModelPath).body.find(k => k.type === 'ContractStatement');
+const baseModelPath = path.join(__dirname, '..', 'contracts', 'BaseInterestRateModel.sol');
+const baseModel = solparse.parseFile(baseModelPath).body.find(k => k.type === 'ContractStatement');
 
 module.exports = {
   ControllerErr: parse(ControllerErrorReporter),

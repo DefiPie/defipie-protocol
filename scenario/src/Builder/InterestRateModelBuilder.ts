@@ -18,7 +18,7 @@ import {storeAndSaveContract} from '../Networks';
 import {getContract, getTestContract} from '../Contract';
 
 const FixedInterestRateModel = getTestContract('InterestRateModelHarness');
-const WhitePaperInterestRateModel = getContract('WhitePaperInterestRateModel');
+const BaseInterestRateModel = getContract('BaseInterestRateModel');
 const JumpRateModel = getContract('JumpRateModel');
 const DAIInterestRateModel = getContract('DAIInterestRateModelV2');
 
@@ -56,22 +56,22 @@ export async function buildInterestRateModel(world: World, from: string, event: 
     ),
 
     new Fetcher<{name: StringV, baseRate: NumberV, multiplier: NumberV}, InterestRateModelData>(`
-        #### WhitePaper
+        #### BaseModel
 
-        * "WhitePaper name:<String> baseRate:<Number> multiplier:<Number>" - The WhitePaper interest rate
-          * E.g. "InterestRateModel Deploy WhitePaper MyInterestRateModel 0.05 0.2" - 5% base rate and 20% utilization multiplier
+        * "BaseModel name:<String> baseRate:<Number> multiplier:<Number>" - The BaseModel interest rate
+          * E.g. "InterestRateModel Deploy BaseModel MyInterestRateModel 0.05 0.2" - 5% base rate and 20% utilization multiplier
       `,
-      "WhitePaper",
+      "BaseModel",
       [
         new Arg("name", getStringV),
         new Arg("baseRate", getExpNumberV),
         new Arg("multiplier", getExpNumberV)
       ],
       async (world, {name, baseRate, multiplier}) => ({
-        invokation: await WhitePaperInterestRateModel.deploy<InterestRateModel>(world, from, [baseRate.encode(), multiplier.encode()]),
+        invokation: await BaseInterestRateModel.deploy<InterestRateModel>(world, from, [baseRate.encode(), multiplier.encode()]),
         name: name.val,
-        contract: "WhitePaperInterestRateModel",
-        description: `WhitePaper baseRate=${baseRate.encode().toString()} multiplier=${multiplier.encode().toString()}`,
+        contract: "BaseInterestRateModel",
+        description: `BaseModel baseRate=${baseRate.encode().toString()} multiplier=${multiplier.encode().toString()}`,
         base: baseRate.encode().toString(),
         slope: multiplier.encode().toString()
       })

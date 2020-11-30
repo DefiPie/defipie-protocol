@@ -215,6 +215,14 @@ describe('UniswapPriceOracle', () => {
         });
     });
 
+    describe("check updateUnderlyingPrice function", () => {
+        it("Returns 0 for pEth", async () => {
+            let answer = await call(uniswapPriceOracle, "updateUnderlyingPrice", [pEth._address]);
+
+            expect(answer).toEqual('0');
+        });
+    });
+
     describe("check getCourseToETH function", () => {
         it("Returns course to ETH for ETH", async () => {
             let ethInEth = new BigNumber(1e18); // 1 eth = 1 eth

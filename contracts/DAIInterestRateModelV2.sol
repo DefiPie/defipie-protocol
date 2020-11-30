@@ -15,7 +15,6 @@ contract DAIInterestRateModelV2 is JumpRateModel {
 
     /**
      * @notice The additional margin per block separating the base borrow rate from the roof (2% / block).
-     * Note that this value has been increased from the original value of 0.05% per block.
      */
     uint public constant gapPerBlock = 2e16 / blocksPerYear;
 
@@ -66,7 +65,7 @@ contract DAIInterestRateModelV2 is JumpRateModel {
      */
     function dsrPerBlock() public view returns (uint) {
         return pot
-        .dsr().sub(1e27)  // scaled 1e27 aka RAY, and includes an extra "ONE" before subraction
+        .dsr().sub(1e27)  // scaled 1e27 aka RAY, and includes an extra "ONE" before subtraction
         .div(1e9) // descale to 1e18
         .mul(15); // 15 seconds per block
     }

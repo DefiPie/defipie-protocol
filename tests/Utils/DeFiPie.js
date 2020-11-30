@@ -219,10 +219,10 @@ async function makeInterestRateModel(opts = {}) {
     return await deploy('FalseMarkerMethodInterestRateModel', [borrowRate]);
   }
 
-  if (kind == 'white-paper') {
+  if (kind == 'base-model') {
     const baseRate = etherMantissa(dfn(opts.baseRate, 0));
     const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
-    return await deploy('WhitePaperInterestRateModel', [baseRate, multiplier]);
+    return await deploy('BaseInterestRateModel', [baseRate, multiplier]);
   }
 
   if (kind == 'jump-rate') {

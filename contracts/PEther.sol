@@ -115,6 +115,9 @@ contract PEther is ImplementationStorage, PToken {
         requireNoError(err, "mint failed");
     }
 
+    /**
+     * @notice Send Ether to PEther to mint
+     */
     receive() external payable {
         (uint err,) = mintInternal(msg.value);
         requireNoError(err, "mint failed");
