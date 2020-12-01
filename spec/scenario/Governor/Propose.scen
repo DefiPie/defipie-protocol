@@ -6,7 +6,7 @@ Macro DeployGov
     ListedPPIEToken pPIE Pie
     From Bank (Pie Approve pPIE 10000000e18)
     From Bank (PToken pPIE Mint 10000000e18)
-    Governor Deploy Alpha LegitGov (Address Timelock) (Address RegistryProxy) Guardian
+    Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
     Enfranchise Root 100001e18
 
@@ -61,28 +61,28 @@ Test "Propose fails when insufficient sender votes"
     Counter Deploy
     AllowFailures
     From Geoff (Governor LegitGov Propose "Add 5" [(Address Counter)] [1] ["increment(uint256)"] [["5"]])
-    Assert Revert "revert GovernorAlpha::propose: proposer votes below proposal threshold"
+    Assert Revert "revert Governor::propose: proposer votes below proposal threshold"
 
 Test "Propose fails when no actions given"
     DeployGov
     Counter Deploy
     AllowFailures
     Governor LegitGov Propose "Add 5" [] [] [] [[]]
-    Assert Revert "revert GovernorAlpha::propose: must provide actions"
+    Assert Revert "revert Governor::propose: must provide actions"
 
 Test "Propose fails when too many actions given"
     DeployGov
     Counter Deploy
     AllowFailures
     Governor LegitGov Propose "Add 5" [(Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov) (Address LegitGov)] [0 1 2 3 4 5 6 7 8 9 10] ["0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10"] [[] [] [] [] [] [] [] [] [] [] []]
-    Assert Revert "revert GovernorAlpha::propose: too many actions"
+    Assert Revert "revert Governor::propose: too many actions"
 
 Test "Propose fails when actions mismatch length"
     DeployGov
     Counter Deploy
     AllowFailures
     Governor LegitGov Propose "Add 5" [(Address Counter)] [1 2] ["increment(uint256)"] [["5"]]
-    Assert Revert "revert GovernorAlpha::propose: proposal function information arity mismatch"
+    Assert Revert "revert Governor::propose: proposal function information parity mismatch"
 
 Test "Propose fails when proposer has active proposal"
     DeployGov
@@ -90,7 +90,7 @@ Test "Propose fails when proposer has active proposal"
     Governor LegitGov Propose "Add 5" [(Address Counter)] [1] ["increment(uint256)"] [["5"]]
     AllowFailures
     Governor LegitGov Propose "Add 5" [(Address Counter)] [1] ["increment(uint256)"] [["5"]]
-    Assert Revert "revert GovernorAlpha::propose: one live proposal per proposer, found an already pending proposal"
+    Assert Revert "revert Governor::propose: one live proposal per proposer, found an already pending proposal"
 
 Test "Can re-propose after vote completes"
     DeployGov

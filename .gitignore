@@ -16,4 +16,5 @@ networks/development*.json
 .idea/
 yarn.lock
 scenario/yarn.lock
+scenario/package-lock.json
 *.log

@@ -19,7 +19,7 @@ async function enfranchise(pie, ppie, actor, amount) {
     await send(ppie, 'delegate', [actor], {from: actor});
 }
 
-describe("governorAlpha#castVote/2", () => {
+describe("governor#castVote/2", () => {
     let pie, ppie, registryAddress, gov, root, a1, accounts;
     let targets, values, signatures, callDatas, proposalId;
 
@@ -28,7 +28,7 @@ describe("governorAlpha#castVote/2", () => {
         pie = await deploy('Pie', [root]);
         ppie = await makePToken({ kind: 'ppie', underlying: pie});
         registryAddress = await call(ppie, 'registry');
-        gov = await deploy('GovernorAlpha', [address(0), registryAddress, root]);
+        gov = await deploy('Governor', [address(0), registryAddress, root]);
 
         targets = [a1];
         values = ["0"];
@@ -45,7 +45,7 @@ describe("governorAlpha#castVote/2", () => {
         it("There does not exist a proposal with matching proposal id where the current block number is between the proposal's start block (exclusive) and end block (inclusive)", async () => {
             await expect(
                 call(gov, 'castVote', [proposalId, true])
-            ).rejects.toRevert("revert GovernorAlpha::_castVote: voting is closed");
+            ).rejects.toRevert("revert Governor::_castVote: voting is closed");
         });
 
         it("Such proposal already has an entry in its voters set matching the sender", async () => {
@@ -55,7 +55,7 @@ describe("governorAlpha#castVote/2", () => {
             await send(gov, 'castVote', [proposalId, true], { from: accounts[4] });
             await expect(
                 gov.methods['castVote'](proposalId, true).call({ from: accounts[4] })
-            ).rejects.toRevert("revert GovernorAlpha::_castVote: voter already voted");
+            ).rejects.toRevert("revert Governor::_castVote: voter already voted");
         });
     });
 
@@ -102,7 +102,7 @@ describe("governorAlpha#castVote/2", () => {
 
         describe('castVoteBySig', () => {
             const Domain = (gov) => ({
-                name: 'DeFiPie Governor Alpha',
+                name: 'DeFiPie Governor',
                 chainId: 1, // await web3.eth.net.getId(); See: https://github.com/trufflesuite/ganache-core/issues/515
                 verifyingContract: gov._address
             });
@@ -114,7 +114,7 @@ describe("governorAlpha#castVote/2", () => {
             };
 
             it('reverts if the signatory is invalid', async () => {
-                await expect(send(gov, 'castVoteBySig', [proposalId, false, 0, '0xbad', '0xbad'])).rejects.toRevert("revert GovernorAlpha::castVoteBySig: invalid signature");
+                await expect(send(gov, 'castVoteBySig', [proposalId, false, 0, '0xbad', '0xbad'])).rejects.toRevert("revert Governor::castVoteBySig: invalid signature");
             });
 
             it('casts vote on behalf of the signatory', async () => {

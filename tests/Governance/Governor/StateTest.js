@@ -22,7 +22,7 @@ const statesInverted = [
 
 const states = Object.entries(statesInverted).reduce((obj, [key, value]) => ({ ...obj, [value]: key }), {});
 
-describe('GovernorAlpha#state/1', () => {
+describe('Governor#state/1', () => {
   let pie, ppie, registryAddress, gov, root, acct, delay, timelock, proposalId;
 
   beforeAll(async () => {
@@ -33,7 +33,7 @@ describe('GovernorAlpha#state/1', () => {
     timelock = await deploy('TimelockHarness', [root, delay]);
     ppie = await makePToken({ kind: 'ppie', underlying: pie});
     registryAddress = await call(ppie, 'registry');
-    gov = await deploy('GovernorAlpha', [timelock._address, registryAddress, root]);
+    gov = await deploy('Governor', [timelock._address, registryAddress, root]);
     await send(timelock, "harnessSetAdmin", [gov._address]);
     await send(pie, 'transfer', [acct, etherMantissa(400001)]);
     await send(pie, 'approve', [ppie._address, etherMantissa(400001)]);
@@ -56,7 +56,7 @@ describe('GovernorAlpha#state/1', () => {
   });
 
   it("Invalid for proposal not found", async () => {
-    await expect(call(gov, 'state', ["5"])).rejects.toRevert("revert GovernorAlpha::state: invalid proposal id")
+    await expect(call(gov, 'state', ["5"])).rejects.toRevert("revert Governor::state: invalid proposal id")
   });
 
   it("Pending", async () => {

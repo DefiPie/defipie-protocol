@@ -42,8 +42,6 @@ import { fork } from './Hypothetical';
 import { buildContractEvent } from './EventBuilder';
 import { Counter } from './Contract/Counter';
 import { DeFiPieLens } from './Contract/DeFiPieLens';
-import { Reservoir } from './Contract/Reservoir';
-import Web3 from 'web3';
 
 export class EventProcessingError extends Error {
   error: Error;
@@ -837,7 +835,6 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
 
   buildContractEvent<Counter>("Counter", false),
   buildContractEvent<DeFiPieLens>("DeFiPieLens", false),
-  buildContractEvent<Reservoir>("Reservoir", true),
 
   new View<{ event: EventV }>(
     `

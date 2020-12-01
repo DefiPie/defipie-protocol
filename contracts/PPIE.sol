@@ -241,7 +241,7 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @param delegatee The address to delegate votes to
      */
     function delegate(address delegatee) external override {
-        return _delegate(msg.sender, delegatee);
+        _delegate(msg.sender, delegatee);
     }
 
     /**
@@ -261,7 +261,7 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
         require(signatory != address(0), "PPie::delegateBySig: invalid signature");
         require(nonce == nonces[signatory]++, "PPie::delegateBySig: invalid nonce");
         require(block.timestamp <= expiry, "PPie::delegateBySig: signature expired");
-        return _delegate(signatory, delegatee);
+        _delegate(signatory, delegatee);
     }
 
     /**

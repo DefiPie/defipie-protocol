@@ -6,7 +6,7 @@ Macro DeployGov
     ListedPPIEToken pPIE Pie
     From Bank (Pie Approve pPIE 10000000e18)
     From Bank (PToken pPIE Mint 10000000e18)
-    Governor Deploy Alpha LegitGov (Address Timelock) (Address RegistryProxy) Guardian
+    Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
     Enfranchise Root 400001e18
     MineBlock
@@ -72,13 +72,13 @@ Test "Revert on repeated proposal items"
     SucceedProposal
     AllowFailures
     Governor LegitGov Proposal LastProposal Queue
-    Assert Revert "revert GovernorAlpha::_queueOrRevert: proposal action already queued at eta"
+    Assert Revert "revert Governor::_queueOrRevert: proposal action already queued at eta"
 
 Test "Revert queue when proposal Id is Invalid"
     DeployGov
     AllowFailures
     Governor LegitGov Proposal LastProposal Queue
-    Assert Revert "revert GovernorAlpha::state: invalid proposal id"
+    Assert Revert "revert Governor::state: invalid proposal id"
 
 Test "Revert queue when proposal is Pending"
     DeployGov
@@ -86,13 +86,13 @@ Test "Revert queue when proposal is Pending"
     Assert Equal ("Pending") (Governor LegitGov Proposal LastProposal State)
     AllowFailures
     Governor LegitGov Proposal LastProposal Queue
-    Assert Revert "revert GovernorAlpha::queue: proposal can only be queued if it is succeeded"
+    Assert Revert "revert Governor::queue: proposal can only be queued if it is succeeded"
 
 Test "Revert queue proposal is Active"
     GivenActiveProposal
     AllowFailures
     Governor LegitGov Proposal LastProposal Queue
-    Assert Revert "revert GovernorAlpha::queue: proposal can only be queued if it is succeeded"
+    Assert Revert "revert Governor::queue: proposal can only be queued if it is succeeded"
 
 Test "Revert queue when proposal is Defeated"
     GivenActiveProposal
@@ -101,7 +101,7 @@ Test "Revert queue when proposal is Defeated"
     AllowFailures
     Assert Equal ("Defeated") (Governor LegitGov Proposal LastProposal State)
     Governor LegitGov Proposal LastProposal Queue
-    Assert Revert "revert GovernorAlpha::queue: proposal can only be queued if it is succeeded"
+    Assert Revert "revert Governor::queue: proposal can only be queued if it is succeeded"
 
 Test "Revert queue when proposal is Queued"
     GivenSucceededProposal
@@ -109,7 +109,7 @@ Test "Revert queue when proposal is Queued"
     Assert Equal ("Queued") (Governor LegitGov Proposal LastProposal State)
     AllowFailures
     Governor LegitGov Proposal LastProposal Queue
-    Assert Revert "revert GovernorAlpha::queue: proposal can only be queued if it is succeeded"
+    Assert Revert "revert Governor::queue: proposal can only be queued if it is succeeded"
 
 Test "Revert when queuing an already executed proposal"
     GivenSucceededProposal
@@ -118,7 +118,7 @@ Test "Revert when queuing an already executed proposal"
     Governor LegitGov Proposal LastProposal Execute
     AllowFailures
     Governor LegitGov Proposal LastProposal Queue
-    Assert Revert "revert GovernorAlpha::queue: proposal can only be queued if it is succeeded"
+    Assert Revert "revert Governor::queue: proposal can only be queued if it is succeeded"
 
 Test "Revert when queuing on invalid Timelock"
     Counter Deploy CNT1
@@ -128,7 +128,7 @@ Test "Revert when queuing on invalid Timelock"
     From Bank (Pie Approve pPIE 10000000e18)
     From Bank (PToken pPIE Mint 10000000e18)
     Enfranchise Root 600001e18
-    Governor Deploy Alpha LegitGov (Address Zero) (Address RegistryProxy) Guardian
+    Governor Deploy Governor LegitGov (Address Zero) (Address RegistryProxy) Guardian
     Governor LegitGov Propose "Add 5" [(Address CNT1)] [1] ["increment(uint256)"] [["2"]]
     MineBlock
     Governor LegitGov Proposal LastProposal Vote For

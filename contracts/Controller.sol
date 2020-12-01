@@ -1308,7 +1308,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param holder The address to claim PIE for
      */
     function claimPie(address holder) public {
-        return claimPie(holder, allMarkets);
+        claimPie(holder, allMarkets);
     }
 
     /**
