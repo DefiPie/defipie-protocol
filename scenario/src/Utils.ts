@@ -114,6 +114,11 @@ export function sendRPC(world: World, method: string, params: any[]) {
       return reject(`cannot send from currentProvider=${world.web3.currentProvider}`);
     }
 
+    if (world.web3.currentProvider.send == undefined) {
+
+    } else {
+
+
     world.web3.currentProvider.send(
       {
         jsonrpc: '2.0',
@@ -129,5 +134,6 @@ export function sendRPC(world: World, method: string, params: any[]) {
         }
       }
     );
+    }
   });
 }

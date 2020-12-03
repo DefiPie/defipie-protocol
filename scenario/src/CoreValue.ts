@@ -418,7 +418,7 @@ const fetchers = [
       new Arg('valType', getStringV)
     ],
     async (world, { addr, slot, start, valType }) => {
-      const startVal = start.toNumber()
+      const startVal = start.toNumber();
       const reverse = s => s.split('').reverse().join('');
       const storage = await world.web3.eth.getStorageAt(addr.val, slot.toNumber());
       const stored = reverse(storage.slice(2)); // drop leading 0x and reverse since items are packed from the back of the slot
@@ -458,7 +458,7 @@ const fetchers = [
       const areEqual = (v, x) => toBN(v).eq(toBN(x));
       let paddedSlot = slot.toNumber().toString(16).padStart(64, '0');
       let paddedKey = padLeft(key.val, 64);
-      let newKey = sha3(paddedKey + paddedSlot);
+      let newKey = sha3(paddedKey + paddedSlot) as string;
       let val = await world.web3.eth.getStorageAt(addr.val, newKey);
 
       switch (valType.val) {
@@ -470,7 +470,7 @@ const fetchers = [
           let userMarketBaseKey = padLeft(toBN(newKey).add(toBN(2)).toString(16), 64);
           let paddedSlot = padLeft(userMarketBaseKey, 64);
           let paddedKey = padLeft(nestedKey.val, 64);
-          let newKeyTwo = sha3(paddedKey + paddedSlot);
+          let newKeyTwo = sha3(paddedKey + paddedSlot) as string;
           let userInMarket = await world.web3.eth.getStorageAt(addr.val, newKeyTwo);
 
           let isPieKey = '0x' + toBN(newKey).add(toBN(3)).toString(16);
@@ -507,13 +507,13 @@ const fetchers = [
     async (world, { addr, slot, key, valType }) => {
       let paddedSlot = slot.toNumber().toString(16).padStart(64, '0');
       let paddedKey = padLeft(key.val, 64);
-      let newKey = sha3(paddedKey + paddedSlot);
+      let newKey = sha3(paddedKey + paddedSlot) as string;
       let val = await world.web3.eth.getStorageAt(addr.val, newKey);
 
       switch (valType.val) {
         case 'list(address)':
           let p = new Array(toDecimal(val)).fill(undefined).map(async (_v, index) => {
-            let newKeySha = sha3(newKey);
+            let newKeySha = sha3(newKey) as string;
             let itemKey = toBN(newKeySha).add(toBN(index));
             let address = await world.web3.eth.getStorageAt(addr.val, padLeft(toHex(itemKey), 40));
             return new AddressV(address);
