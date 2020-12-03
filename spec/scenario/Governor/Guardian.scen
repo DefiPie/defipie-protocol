@@ -7,7 +7,7 @@ Macro GivenGov
     ListedPPIEToken pPIE Pie
     From Bank (Pie Approve pPIE 10000000e18)
     From Bank (PToken pPIE Mint 10000000e18)
-    Governor Deploy Alpha LegitGov (Address Timelock) (Address RegistryProxy) Guardian
+    Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
 
 Test "Guardian can switch to a new governor"
@@ -22,7 +22,7 @@ Test "Only guardian can queue"
     GivenGov
     AllowFailures
     Governor LegitGov Guardian QueueSetTimelockPendingAdmin Geoff 604900
-    Assert Revert "revert GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian"
+    Assert Revert "revert Governor::__queueSetTimelockPendingAdmin: sender must be gov guardian"
 
 Test "Only guardian can execute"
     GivenGov
@@ -30,7 +30,7 @@ Test "Only guardian can execute"
     AllowFailures
     IncreaseTime 604901
     Governor LegitGov Guardian ExecuteSetTimelockPendingAdmin Geoff 604900
-    Assert Revert "revert GovernorAlpha::__executeSetTimelockPendingAdmin: sender must be gov guardian"
+    Assert Revert "revert Governor::__executeSetTimelockPendingAdmin: sender must be gov guardian"
 
 Test "Guardian can abdicate"
     GivenGov
@@ -42,12 +42,12 @@ Test "Only guardian can abdicate"
     GivenGov
     AllowFailures
     Governor LegitGov Guardian Abdicate
-    Assert Revert "revert GovernorAlpha::__abdicate: sender must be gov guardian"
+    Assert Revert "revert Governor::__abdicate: sender must be gov guardian"
 
 Test "Guardian can accept admin"
     Timelock Deploy Jared 604800
     Pie Deploy Bank
-    Governor Deploy Alpha LegitGov (Address Timelock) (Address Pie) Guardian
+    Governor Deploy Governor LegitGov (Address Timelock) (Address Pie) Guardian
     From Jared (Timelock QueueTransaction (Timelock Address) 0 604900 "setPendingAdmin(address)" (Governor LegitGov Address))
     IncreaseTime 604901
     From Jared (Timelock ExecuteTransaction (Timelock Address) 0 604900 "setPendingAdmin(address)" (Governor LegitGov Address))
@@ -61,7 +61,7 @@ Test "Only guardian can accept admin"
     SetTime 10
     Timelock Deploy Jared 604800
     Pie Deploy Bank
-    Governor Deploy Alpha LegitGov (Address Timelock) (Address Pie) Guardian
+    Governor Deploy Governor LegitGov (Address Timelock) (Address Pie) Guardian
     From Jared (Timelock QueueTransaction (Timelock Address) 0 604900 "setPendingAdmin(address)" (Governor LegitGov Address))
     IncreaseTime 604901
     From Jared (Timelock ExecuteTransaction (Timelock Address) 0 604900 "setPendingAdmin(address)" (Governor LegitGov Address))
@@ -69,4 +69,4 @@ Test "Only guardian can accept admin"
     Assert Equal (Timelock PendingAdmin) (Governor LegitGov Address)
     AllowFailures
     Governor LegitGov Guardian AcceptAdmin
-    Assert Revert "revert GovernorAlpha::__acceptAdmin: sender must be gov guardian"
+    Assert Revert "revert Governor::__acceptAdmin: sender must be gov guardian"

@@ -7,7 +7,7 @@ Macro DeployGov
     ListedPPIEToken pPIE Pie
     From Bank (Pie Approve pPIE 10000000e18)
     From Bank (PToken pPIE Mint 10000000e18)
-    Governor Deploy Alpha LegitGov (Address Timelock) (Address RegistryProxy) Guardian
+    Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
     Enfranchise Root 200001e18
     Enfranchise Jared 200000e18
@@ -60,7 +60,7 @@ Test "Revert when trying to execute a succeeded but unqueued proposal"
     SucceedProposal
     AllowFailures
     Governor LegitGov Proposal LastProposal Execute
-    Assert Revert "revert GovernorAlpha::execute: proposal can only be executed if it is queued"
+    Assert Revert "revert Governor::execute: proposal can only be executed if it is queued"
 
 Test "Revert when executing a proposal that reverts"
     DeployGov
@@ -80,7 +80,7 @@ Test "Revert when executing an expired proposal"
     Assert Equal ("Expired") (Governor LegitGov Proposal LastProposal State)
     AllowFailures
     Governor LegitGov Proposal LastProposal Execute
-    Assert Revert "revert GovernorAlpha::execute: proposal can only be executed if it is queued"
+    Assert Revert "revert Governor::execute: proposal can only be executed if it is queued"
 
 Test "Assert execution order"
     DeployGov
@@ -96,4 +96,4 @@ Test "Cannot execute cancelled proposal"
     From Guardian (Governor LegitGov Proposal LastProposal Cancel)
     AllowFailures
     Governor LegitGov Proposal LastProposal Execute
-    Assert Revert "revert GovernorAlpha::execute: proposal can only be executed if it is queued"
+    Assert Revert "revert Governor::execute: proposal can only be executed if it is queued"

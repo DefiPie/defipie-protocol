@@ -18,7 +18,7 @@ async function enfranchise(pie, ppie, actor, amount) {
   await send(ppie, 'delegate', [actor], {from: actor});
 }
 
-describe('GovernorAlpha#queue/1', () => {
+describe('Governor#queue/1', () => {
   let root, a1, a2, accounts;
   beforeAll(async () => {
     [root, a1, a2, ...accounts] = saddle.accounts;
@@ -31,7 +31,7 @@ describe('GovernorAlpha#queue/1', () => {
       const ppie = await makePToken({ kind: 'ppie', underlying: pie});
       const registryAddress = await call(ppie, 'registry');
 
-      const gov = await deploy('GovernorAlpha', [timelock._address, registryAddress, root]);
+      const gov = await deploy('Governor', [timelock._address, registryAddress, root]);
       const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
 
       await enfranchise(pie, ppie, a1, 3e6);
@@ -49,7 +49,7 @@ describe('GovernorAlpha#queue/1', () => {
 
       await expect(
         send(gov, 'queue', [proposalId1])
-      ).rejects.toRevert("revert GovernorAlpha::_queueOrRevert: proposal action already queued at eta");
+      ).rejects.toRevert("revert Governor::_queueOrRevert: proposal action already queued at eta");
     });
 
     it("reverts on queueing overlapping actions in different proposals, works if waiting", async () => {
@@ -57,7 +57,7 @@ describe('GovernorAlpha#queue/1', () => {
       const pie = await deploy('Pie', [root]);
       const ppie = await makePToken({ kind: 'ppie', underlying: pie});
       const registryAddress = await call(ppie, 'registry');
-      const gov = await deploy('GovernorAlpha', [timelock._address, registryAddress, root]);
+      const gov = await deploy('Governor', [timelock._address, registryAddress, root]);
       const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
 
       await enfranchise(pie, ppie, a1, 3e6);
@@ -80,7 +80,7 @@ describe('GovernorAlpha#queue/1', () => {
       const txQueue1 = await send(gov, 'queue', [proposalId1]);
       await expect(
         send(gov, 'queue', [proposalId2])
-      ).rejects.toRevert("revert GovernorAlpha::_queueOrRevert: proposal action already queued at eta");
+      ).rejects.toRevert("revert Governor::_queueOrRevert: proposal action already queued at eta");
 
       await freezeTime(101);
       const txQueue2 = await send(gov, 'queue', [proposalId2]);

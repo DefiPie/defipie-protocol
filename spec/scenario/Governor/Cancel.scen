@@ -7,7 +7,7 @@ Macro DeployGov
     ListedPPIEToken pPIE Pie
     From Bank (Pie Approve pPIE 10000000e18)
     From Bank (PToken pPIE Mint 10000000e18)
-    Governor Deploy Alpha LegitGov (Address Timelock) (Address RegistryProxy) Guardian
+    Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
     Enfranchise Root 200001e18
     Enfranchise Jared 200000e18
@@ -89,13 +89,13 @@ Test "Revert when trying to cancel an executed proposal"
     From Root (PToken pPIE Delegate Geoff)
     AllowFailures
     Governor LegitGov Proposal LastProposal Cancel
-    Assert Revert "revert GovernorAlpha::cancel: cannot cancel executed proposal"
+    Assert Revert "revert Governor::cancel: cannot cancel executed proposal"
 
 Test "Revert when canceling if proposer has votes"
     GivenPendingProposal
     AllowFailures
     Governor LegitGov Proposal LastProposal Cancel
-    Assert Revert "revert GovernorAlpha::cancel: proposer above threshold"
+    Assert Revert "revert Governor::cancel: proposer above threshold"
 
 Test "Guardian can cancel any proposal"
     GivenActiveProposal

@@ -89,7 +89,7 @@ export function governorCommands() {
         #### Deploy
 
         * "Deploy ...params" - Generates a new Governor
-          * E.g. "Governor Deploy Alpha"
+          * E.g. "Governor Deploy"
       `,
       "Deploy",
       [

@@ -122,7 +122,6 @@ contract PEther is ImplementationStorage, PToken {
         (uint err,) = mintInternal(msg.value);
         requireNoError(err, "mint failed");
     }
-
     /*** Safe Token ***/
 
     /**

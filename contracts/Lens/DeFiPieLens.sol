@@ -5,7 +5,7 @@ import "../PErc20.sol";
 import "../PToken.sol";
 import "../PriceOracle.sol";
 import "../EIP20Interface.sol";
-import "../Governance/GovernorAlpha.sol";
+import "../Governance/Governor.sol";
 import "../Governance/Pie.sol";
 import "../PPIE.sol";
 
@@ -192,14 +192,14 @@ contract DeFiPieLens {
     }
 
     function getGovReceipts(
-        GovernorAlpha governor,
+        Governor governor,
         address voter,
         uint[] memory proposalIds
     ) public view returns (GovReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovReceipt[] memory res = new GovReceipt[](proposalCount);
         for (uint i = 0; i < proposalCount; i++) {
-            GovernorAlpha.Receipt memory receipt = governor.getReceipt(proposalIds[i], voter);
+            Governor.Receipt memory receipt = governor.getReceipt(proposalIds[i], voter);
             res[i] = GovReceipt({
                 proposalId: proposalIds[i],
                 hasVoted: receipt.hasVoted,
@@ -226,7 +226,7 @@ contract DeFiPieLens {
         bool executed;
     }
 
-    function setProposal(GovProposal memory res, GovernorAlpha governor, uint proposalId) internal view {
+    function setProposal(GovProposal memory res, Governor governor, uint proposalId) internal view {
         (
             ,
             address proposer,
@@ -250,7 +250,7 @@ contract DeFiPieLens {
     }
 
     function getGovProposals(
-        GovernorAlpha governor,
+        Governor governor,
         uint[] calldata proposalIds
     ) external view returns (GovProposal[] memory) {
         GovProposal[] memory res = new GovProposal[](proposalIds.length);
