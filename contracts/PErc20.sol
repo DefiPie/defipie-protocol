@@ -119,7 +119,7 @@ contract PErc20 is PToken, PErc20Interface {
 
     /**
      * @notice The sender adds to reserves.
-     * @param addAmount The amount fo underlying token to add as reserves
+     * @param addAmount The amount of underlying token to add as reserves
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function _addReserves(uint addAmount) external override returns (uint) {
