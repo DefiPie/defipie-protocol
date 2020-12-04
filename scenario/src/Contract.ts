@@ -128,7 +128,7 @@ export async function decodeCall(world: World, contract: Contract, input: string
   let funsMapped = contract._jsonInterface.reduce((acc, fun) => {
     if (fun.type === 'function') {
       let functionAbi = `${fun.name}(${(fun.inputs || []).map((i) => i.type).join(',')})`;
-      let sig = world.web3.utils.sha3(functionAbi).slice(2, 10);
+      let sig = (world.web3.utils.sha3(functionAbi) as string).slice(2, 10);
 
       return {
         ...acc,

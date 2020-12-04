@@ -12,9 +12,9 @@ junit.xml
 coverage
 tests/Scenarios
 networks/development*.json
-#package-lock.json
+package-lock.json
 .idea/
-yarn.lock
-scenario/yarn.lock
+#yarn.lock
+#scenario/yarn.lock
 scenario/package-lock.json
 *.log

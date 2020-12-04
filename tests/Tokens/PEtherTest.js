@@ -222,4 +222,15 @@ describe('PEther', function () {
       expect(result).toEqualNumber(0);
     });
   });
+
+  describe('add reserves', () => {
+    it("add reserves", async () => {
+      const pToken = await makePToken({kind: 'pether'});
+
+      const value = 100;
+      await send (pToken, '_addReserves', {value: value});
+      const result = await call(pToken, 'getCash');
+      expect(result).toEqualNumber(value);
+    });
+  });
 });

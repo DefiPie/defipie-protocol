@@ -24,7 +24,7 @@ export async function getProposalId(world: World, governor: Governor, proposalId
   if (typeof proposalIdent === 'string' && proposalIdent === 'LastProposal') {
     return Number(await governor.methods.proposalCount().call());
   } else if (Array.isArray(proposalIdent) && proposalIdent[0] === 'ActiveProposal' && typeof proposalIdent[1] === 'string') {
-    let proposer = getAddress(world, proposalIdent[1]);
+    let proposer = getAddress(world, (proposalIdent[1] as string));
 
     return Number(await governor.methods.latestProposalIds(proposer).call());
   } else {

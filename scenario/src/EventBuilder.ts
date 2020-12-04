@@ -63,7 +63,7 @@ const typeMappings = () => ({
 });
 
 function buildArg(contractName: string, name: string, input: AbiInput): Arg<Value> {
-  let { getter } = typeMappings()[input.type] || {};
+  let { getter } = typeMappings()[input.type] || { getter : {}};
 
   if (!getter) {
     throw new Error(`Unknown ABI Input Type: ${input.type} of \`${name}\` in ${contractName}`);
@@ -262,7 +262,7 @@ export async function buildContractFetcher<T extends Contract>(world: World, con
     async function buildOutput(world: World, fn: string, inputs: object, output: AbiItem): Promise<Value> {
       const callable = <Callable<any>>(inputs['contract'].methods[fn](...Object.values(inputs).slice(1)));
       let value = await callable.call();
-      let { builder } = typeMappings()[output.type] || {};
+      let { builder } = typeMappings()[output.type] || { builder : {}};
 
       if (!builder) {
         throw new Error(`Unknown ABI Output Type: ${output.type} of \`${fn}\` in ${contractName}`);

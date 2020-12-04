@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "./script/compile",
-    "console": "if node -v | grep -E \"v(12|13)\" > /dev/null; then flags=\"-n --experimental-repl-await\"; fi; npx $flags saddle console",
+    "console": "if node -v | grep -E \"v(12|13|14)\" > /dev/null; then flags=\"-n --experimental-repl-await\"; fi; npx $flags saddle console",
     "coverage": "./script/coverage",
     "deploy": "./scenario/script/repl -s ./scenario/scen/deploy.scen",
     "lint": "./script/lint",
@@ -18,12 +18,15 @@
   "license": "MIT",
   "devDependencies": {
     "bignumber.js": "8.0.1",
-    "jest-diff": "^24.9.0",
-    "jest-junit": "^6.4.0",
-    "solium": "^1.2.5",
-    "solparse": "^2.2.8"
+    "jest-diff": "24.9.0",
+    "jest-junit": "6.4.0",
+    "solium": "1.2.5",
+    "solparse": "2.2.8"
   },
   "dependencies": {
-    "eth-saddle": "^0.1.17"
+    "eth-saddle": "0.1.17"
+  },
+  "engines": {
+    "node": "12.20.0"
   }
 }

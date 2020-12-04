@@ -108,6 +108,15 @@ contract PEther is ImplementationStorage, PToken {
     }
 
     /**
+     * @notice The sender adds to reserves.
+     * @notice msg.value The amount of Ether to add as reserves
+     */
+    function _addReserves() external payable {
+        uint err = _addReservesInternal(msg.value);
+        requireNoError(err, "_addReserves failed");
+    }
+
+    /**
      * @notice Send Ether to PEther to mint
      */
     fallback() external payable {
