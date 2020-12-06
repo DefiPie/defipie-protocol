@@ -89,7 +89,7 @@ describe('Unitroller', () => {
       let result;
       beforeEach(async () => {
         await setPending(brains, root);
-        result = await send(brains, '_become', [unitroller._address, '1000000000000000000', []]);
+        result = await send(brains, '_become', [unitroller._address]);
         expect(result).toSucceed();
       });
 

@@ -244,25 +244,25 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
         _delegate(msg.sender, delegatee);
     }
 
-    /**
-     * @notice Delegates votes from signatory to `delegatee`
-     * @param delegatee The address to delegate votes to
-     * @param nonce The contract state required to match the signature
-     * @param expiry The time at which to expire the signature
-     * @param v The recovery byte of the signature
-     * @param r Half of the ECDSA signature pair
-     * @param s Half of the ECDSA signature pair
-     */
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external override {
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
-        address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "PPie::delegateBySig: invalid signature");
-        require(nonce == nonces[signatory]++, "PPie::delegateBySig: invalid nonce");
-        require(block.timestamp <= expiry, "PPie::delegateBySig: signature expired");
-        _delegate(signatory, delegatee);
-    }
+   /**
+    * @notice Delegates votes from signatory to `delegatee`
+    * @param delegatee The address to delegate votes to
+    * @param nonce The contract state required to match the signature
+    * @param expiry The time at which to expire the signature
+    * @param v The recovery byte of the signature
+    * @param r Half of the ECDSA signature pair
+    * @param s Half of the ECDSA signature pair
+    */
+   function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external override {
+       bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
+       bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
+       bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+       address signatory = ecrecover(digest, v, r, s);
+       require(signatory != address(0), "PPie::delegateBySig: invalid signature");
+       require(nonce == nonces[signatory]++, "PPie::delegateBySig: invalid nonce");
+       require(block.timestamp <= expiry, "PPie::delegateBySig: signature expired");
+       _delegate(signatory, delegatee);
+   }
 
     /**
      * @notice Gets the current votes balance for `account`
@@ -356,11 +356,6 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
-    function safe96(uint n, string memory errorMessage) internal pure returns (uint96) {
-        require(n < 2**96, errorMessage);
-        return uint96(n);
-    }
-
     function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
         uint96 c = a + b;
         require(c >= a, errorMessage);
@@ -372,9 +367,9 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
         return a - b;
     }
 
-    function getChainId() internal pure returns (uint) {
-        uint256 chainId;
-        assembly { chainId := chainid() }
-        return chainId;
-    }
+   function getChainId() internal pure returns (uint) {
+       uint256 chainId;
+       assembly { chainId := chainid() }
+       return chainId;
+   }
 }

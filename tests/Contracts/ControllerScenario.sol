@@ -16,11 +16,11 @@ contract ControllerScenario is Controller {
         blockNumber = number;
     }
 
-    function membershipLength(PToken pToken) public view returns (uint) {
-        return accountAssets[address(pToken)].length;
+    function membershipLength(address pToken) public view returns (uint) {
+        return accountAssets[pToken].length;
     }
 
-    function unlist(PToken pToken) public {
-        markets[address(pToken)].isListed = false;
+    function unlist(address pToken) public {
+        markets[pToken].isListed = false;
     }
 }

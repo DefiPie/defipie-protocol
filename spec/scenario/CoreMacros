@@ -12,13 +12,15 @@ Macro PricedController closeFactor=0.1 maxAssets=20
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
-    ControllerImpl ScenControllerG1 Become 1e18 []
+    ControllerImpl ScenControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor closeFactor
     Controller SetMaxAssets maxAssets
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
-    ControllerImpl ScenController Become 1e18 []
+    ControllerImpl ScenController Become
+    Controller SetPieRate 1e18
 
 Macro NewController price=1.0 closeFactor=0.1 maxAssets=20
     --g1
@@ -27,22 +29,23 @@ Macro NewController price=1.0 closeFactor=0.1 maxAssets=20
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
-    ControllerImpl ScenControllerG1 Become 1e18 []
+    ControllerImpl ScenControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor closeFactor
     Controller SetMaxAssets maxAssets
     --g2
     ControllerImpl Deploy StandardG3 ControllerG2
     Unitroller SetPendingImpl ControllerG2
-    ControllerImpl ControllerG2 Become 1e18 []
+    ControllerImpl ControllerG2 Become
     --g3
     ControllerImpl Deploy StandardG3 ControllerG3
     Unitroller SetPendingImpl ControllerG3
-    ControllerImpl ControllerG3 Become 1e18 []
+    ControllerImpl ControllerG3 Become
     --g4
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
-    ControllerImpl ScenController Become 1e18 []
+    ControllerImpl ScenController Become
 
 Macro NewRegistryProxy borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 delegatorType=PErc20DelegatorScenario pTokenType=PErc20DelegateScenario
     InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global

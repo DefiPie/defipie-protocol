@@ -100,22 +100,22 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
         return factory.getPair(WETHUniswap, asset);
     }
 
-    function getUnderlyingPrice(PToken pToken) public view override returns (uint) {
-        if (address(pToken) == registry.pETH()) {
+    function getUnderlyingPrice(address pToken) public view override returns (uint) {
+        if (pToken == registry.pETH()) {
             return getPriceInUSD(registry.pETH());
         }
 
-        address asset = address(PErc20Interface(address(pToken)).underlying());
+        address asset = address(PErc20Interface(pToken).underlying());
 
         return getPriceInUSD(asset);
     }
 
-    function updateUnderlyingPrice(PToken pToken) public override returns (uint) {
-        if (address(pToken) == registry.pETH()) {
+    function updateUnderlyingPrice(address pToken) public override returns (uint) {
+        if (pToken == registry.pETH()) {
             return uint(Error.NO_ERROR);
         }
 
-        address asset = address(PErc20Interface(address(pToken)).underlying());
+        address asset = address(PErc20Interface(pToken).underlying());
 
         return update(asset);
     }

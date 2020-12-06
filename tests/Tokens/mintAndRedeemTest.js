@@ -26,7 +26,6 @@ const redeemAmount = redeemTokens.mul(exchangeRate);
 async function preMint(pToken, minter, mintAmount, mintTokens, exchangeRate) {
   await preApprove(pToken, minter, mintAmount);
   await send(pToken.controller, 'setMintAllowed', [true]);
-  await send(pToken.controller, 'setMintVerify', [true]);
   await send(pToken.interestRateModel, 'setFailBorrowRate', [false]);
   await send(pToken.underlying, 'harnessSetFailTransferFromAddress', [minter, false]);
   await send(pToken, 'harnessSetBalance', [minter, 0]);

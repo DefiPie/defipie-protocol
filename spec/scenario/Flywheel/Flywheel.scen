@@ -6,7 +6,8 @@ Macro FlywheelController price=1.0 borrowRate=0.000005 compInitAmount=5000000e18
     ----g3
     ControllerImpl Deploy ScenarioG3 ControllerScen
     Unitroller SetPendingImpl ControllerScen
-    ControllerImpl ControllerScen Become 1e18 []
+    ControllerImpl ControllerScen Become
+    Controller SetPieRate 1e18
     Assert Equal (Controller PieRate) 1e18
     --list some tokens
     NewPToken ZRX pZRX borrowRate 2e9 0 8

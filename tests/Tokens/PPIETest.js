@@ -4,6 +4,7 @@ const {
 } = require('../Utils/Ethereum');
 
 const {
+  makeRegistryProxy,
   makePToken,
   setBorrowRate,
   pretendBorrow
@@ -220,6 +221,28 @@ describe('PPIE', function () {
       const pToken = await makePToken({kind: 'ppie'});
       const result = await call(pToken, 'getCash');
       expect(result).toEqualNumber(0);
+    });
+  });
+
+  describe("implementation address", () => {
+    it("set implementation address", async () => {
+        let registryProxy = await makeRegistryProxy();
+        let pToken = await makePToken({kind: 'ppie'});
+
+        pToken = await saddle.getContractAt('PPIEDelegator', pToken._address);
+        let admin = await call(registryProxy, "admin");
+
+        await send(pToken, 'setImplementation', [accounts[1]], {from: admin});
+        expect(await call(pToken, 'implementation')).toEqual(accounts[1]);
+    });
+
+    it("set implementation address, not UNAUTHORIZED", async () => {
+        let pToken = await makePToken({kind: 'ppie'});
+
+        pToken = await saddle.getContractAt('PPIEDelegator', pToken._address);
+
+        let result = await send(pToken, 'setImplementation', [accounts[2]], {from: accounts[2]});
+        expect(result).toHaveTokenFailure('UNAUTHORIZED', 'SET_NEW_IMPLEMENTATION');
     });
   });
 });

@@ -5,22 +5,23 @@ Macro SetupPriceOracleProxy
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
-    ControllerImpl ScenControllerG1 Become 1e18 []
+    ControllerImpl ScenControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.1
     Controller SetMaxAssets 20
     -- Update to G2
     ControllerImpl Deploy StandardG3 ControllerG2
     Unitroller SetPendingImpl ControllerG2
-    ControllerImpl ControllerG2 Become 1e18 []
+    ControllerImpl ControllerG2 Become
     -- Update to G3
     ControllerImpl Deploy StandardG3 ControllerG3
     Unitroller SetPendingImpl ControllerG3
-    ControllerImpl ControllerG3 Become 1e18 []
+    ControllerImpl ControllerG3 Become
     -- Update to G*
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
-    ControllerImpl ScenController Become 1e18 []
+    ControllerImpl ScenController Become
     NewEtherToken pETH
     NewPToken USDC pUSDC
     NewPToken SAI pSAI

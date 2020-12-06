@@ -11,10 +11,11 @@ out
 junit.xml
 coverage
 tests/Scenarios
-networks/development*.json
+networks/*.json
 package-lock.json
 .idea/
 #yarn.lock
 #scenario/yarn.lock
 scenario/package-lock.json
 *.log
+networks

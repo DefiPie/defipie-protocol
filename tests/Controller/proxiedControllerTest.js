@@ -16,13 +16,13 @@ describe('Controller', function() {
 
   let initializeBrains = async () => {
     await send(unitroller, '_setPendingImplementation', [brains._address]);
-    await send(brains, '_become', [unitroller._address, 0, []]);
+    await send(brains, '_become', [unitroller._address]);
     return await saddle.getContractAt('Controller', unitroller._address);
   };
 
   let reinitializeBrains = async () => {
     await send(unitroller, '_setPendingImplementation', [brains._address]);
-    await send(brains, '_become', [unitroller._address, 0, []]);
+    await send(brains, '_become', [unitroller._address]);
     return await saddle.getContractAt('Controller', unitroller._address);
   };
 
@@ -40,7 +40,7 @@ describe('Controller', function() {
     describe('becoming brains sets initial state', () => {
       it('reverts if this is not the pending implementation', async () => {
         await expect(
-          send(brains, '_become', [unitroller._address, 0, []])
+          send(brains, '_become', [unitroller._address])
         ).rejects.toRevert('revert change not authorized');
       });
 

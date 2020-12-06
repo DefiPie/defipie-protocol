@@ -221,8 +221,6 @@ describe('Controller', () => {
     it("cannot list a market a second time", async () => {
       const pToken = await makePToken();
       const result1 = await send(pToken.controller, '_supportMarket', [pToken._address]);
-      // const result2 = await send(pToken.controller, '_supportMarket', [pToken._address]);
-      // expect(result1).toHaveLog('MarketListed', {pToken: pToken._address});
       expect(result1).toHaveTrollFailure('MARKET_ALREADY_LISTED', 'SUPPORT_MARKET_EXISTS');
     });
 

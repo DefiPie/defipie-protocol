@@ -44,7 +44,10 @@ Mint Seventh 6e18 pBAT
 EnterMarkets Seventh pBAT
 Borrow Seventh 1e18 pZRX
 
-ControllerImpl ControllerScen Become 1e18 [pZRX pBAT]
+ControllerImpl ControllerScen Become
+Controller SetPieRate 1e18
+Controller AddPieMarkets pZRX
+Controller AddPieMarkets pBAT
 Erc20 Deploy Standard PIE "PIE Token" 18
 Give (Address Controller) 5000000e18 PIE
 Controller Send "setPIEAddress(address)" (Address PIE)

@@ -104,12 +104,9 @@ contract ControllerHarness is Controller {
 }
 
 contract ControllerBorked {
-    function _become(Unitroller unitroller, uint pieRate_, address[] memory pieMarketsToAdd) public {
-        pieRate_;
-        pieMarketsToAdd;
-
-        require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
-        unitroller._acceptImplementation();
+    function _become(address unitroller) public {
+        require(msg.sender == IUnitroller(unitroller).admin(), "only unitroller admin can change brains");
+        IUnitroller(unitroller)._acceptImplementation();
     }
 }
 
@@ -169,14 +166,6 @@ contract BoolController is ControllerInterface {
         return allowMint ? noError : opaqueError;
     }
 
-    function mintVerify(address _pToken, address _minter, uint _mintAmount, uint _mintTokens) external override {
-        _pToken;
-        _minter;
-        _mintAmount;
-        _mintTokens;
-        require(verifyMint, "mintVerify rejected mint");
-    }
-
     function redeemAllowed(address _pToken, address _redeemer, uint _redeemTokens) public override returns (uint) {
         _pToken;
         _redeemer;
@@ -199,13 +188,6 @@ contract BoolController is ControllerInterface {
         return allowBorrow ? noError : opaqueError;
     }
 
-    function borrowVerify(address _pToken, address _borrower, uint _borrowAmount) external override {
-        _pToken;
-        _borrower;
-        _borrowAmount;
-        require(verifyBorrow, "borrowVerify rejected borrow");
-    }
-
     function repayBorrowAllowed(
         address _pToken,
         address _payer,
@@ -216,20 +198,6 @@ contract BoolController is ControllerInterface {
         _borrower;
         _repayAmount;
         return allowRepayBorrow ? noError : opaqueError;
-    }
-
-    function repayBorrowVerify(
-        address _pToken,
-        address _payer,
-        address _borrower,
-        uint _repayAmount,
-        uint _borrowerIndex) external override {
-        _pToken;
-        _payer;
-        _borrower;
-        _repayAmount;
-        _borrowerIndex;
-        require(verifyRepayBorrow, "repayBorrowVerify rejected repayBorrow");
     }
 
     function liquidateBorrowAllowed(
@@ -246,22 +214,6 @@ contract BoolController is ControllerInterface {
         return allowLiquidateBorrow ? noError : opaqueError;
     }
 
-    function liquidateBorrowVerify(
-        address _pTokenBorrowed,
-        address _pTokenCollateral,
-        address _liquidator,
-        address _borrower,
-        uint _repayAmount,
-        uint _seizeTokens) external override {
-        _pTokenBorrowed;
-        _pTokenCollateral;
-        _liquidator;
-        _borrower;
-        _repayAmount;
-        _seizeTokens;
-        require(verifyLiquidateBorrow, "liquidateBorrowVerify rejected liquidateBorrow");
-    }
-
     function seizeAllowed(
         address _pTokenCollateral,
         address _pTokenBorrowed,
@@ -276,20 +228,6 @@ contract BoolController is ControllerInterface {
         return allowSeize ? noError : opaqueError;
     }
 
-    function seizeVerify(
-        address _pTokenCollateral,
-        address _pTokenBorrowed,
-        address _liquidator,
-        address _borrower,
-        uint _seizeTokens) external override {
-        _pTokenCollateral;
-        _pTokenBorrowed;
-        _liquidator;
-        _borrower;
-        _seizeTokens;
-        require(verifySeize, "seizeVerify rejected seize");
-    }
-
     function transferAllowed(
         address _pToken,
         address _src,
@@ -302,24 +240,13 @@ contract BoolController is ControllerInterface {
         return allowTransfer ? noError : opaqueError;
     }
 
-    function transferVerify(
-        address _pToken,
-        address _src,
-        address _dst,
-        uint _transferTokens) external override {
-        _pToken;
-        _src;
-        _dst;
-        _transferTokens;
-        require(verifyTransfer, "transferVerify rejected transfer");
-    }
-
     /*** Special Liquidation Calculation ***/
 
     function liquidateCalculateSeizeTokens(
         address _pTokenBorrowed,
         address _pTokenCollateral,
-        uint _repayAmount) public view override returns (uint, uint) {
+        uint _repayAmount
+    ) public view override returns (uint, uint) {
         _pTokenBorrowed;
         _pTokenCollateral;
         _repayAmount;
@@ -334,10 +261,6 @@ contract BoolController is ControllerInterface {
         allowMint = allowMint_;
     }
 
-    function setMintVerify(bool verifyMint_) public {
-        verifyMint = verifyMint_;
-    }
-
     function setRedeemAllowed(bool allowRedeem_) public {
         allowRedeem = allowRedeem_;
     }
@@ -350,40 +273,20 @@ contract BoolController is ControllerInterface {
         allowBorrow = allowBorrow_;
     }
 
-    function setBorrowVerify(bool verifyBorrow_) public {
-        verifyBorrow = verifyBorrow_;
-    }
-
     function setRepayBorrowAllowed(bool allowRepayBorrow_) public {
         allowRepayBorrow = allowRepayBorrow_;
-    }
-
-    function setRepayBorrowVerify(bool verifyRepayBorrow_) public {
-        verifyRepayBorrow = verifyRepayBorrow_;
     }
 
     function setLiquidateBorrowAllowed(bool allowLiquidateBorrow_) public {
         allowLiquidateBorrow = allowLiquidateBorrow_;
     }
 
-    function setLiquidateBorrowVerify(bool verifyLiquidateBorrow_) public {
-        verifyLiquidateBorrow = verifyLiquidateBorrow_;
-    }
-
     function setSeizeAllowed(bool allowSeize_) public {
         allowSeize = allowSeize_;
     }
 
-    function setSeizeVerify(bool verifySeize_) public {
-        verifySeize = verifySeize_;
-    }
-
     function setTransferAllowed(bool allowTransfer_) public {
         allowTransfer = allowTransfer_;
-    }
-
-    function setTransferVerify(bool verifyTransfer_) public {
-        verifyTransfer = verifyTransfer_;
     }
 
     /*** Liquidity/Liquidation Calculations ***/
@@ -439,6 +342,6 @@ contract EchoTypesController is UnitrollerAdminStorage {
     }
 
     function becomeBrains(address payable unitroller) public {
-        Unitroller(unitroller)._acceptImplementation();
+        IUnitroller(unitroller)._acceptImplementation();
     }
 }

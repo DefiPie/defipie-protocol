@@ -54,9 +54,7 @@ async function recome(
   let invokation = await invoke(
     world,
     controllerImpl.methods._become(
-      unitroller._address,
-      0,
-      []
+      unitroller._address
     ),
     from,
     ControllerErrorReporter
@@ -73,13 +71,11 @@ async function become(
   world: World,
   from: string,
   controllerImpl: ControllerImpl,
-  unitroller: Unitroller,
-  pieRate: encodedNumber,
-  pieMarkets: string[]
+  unitroller: Unitroller
 ): Promise<World> {
   let invokation = await invoke(
     world,
-    controllerImpl.methods._become(unitroller._address, pieRate, pieMarkets),
+    controllerImpl.methods._become(unitroller._address),
     from,
     ControllerErrorReporter
   );
@@ -143,24 +139,20 @@ export function controllerImplCommands() {
     new Command<{
       unitroller: Unitroller;
       controllerImpl: ControllerImpl;
-      pieRate: NumberV;
-      pieMarkets: ArrayV<AddressV>;
     }>(
       `
         #### Become
 
-        * "ControllerImpl <Impl> Become <Rate> <PieMarkets>" - Become the controller, if possible.
-          * E.g. "ControllerImpl MyImpl Become 0.1e18 [pDAI, pETH, pUSDC]
+        * "ControllerImpl <Impl> Become" - Become the controller, if possible.
+          * E.g. "ControllerImpl MyImpl Become
       `,
       'Become',
       [
         new Arg('unitroller', getUnitroller, { implicit: true }),
-        new Arg('controllerImpl', getControllerImpl),
-        new Arg('pieRate', getNumberV, { default: new NumberV(1e18) }),
-        new Arg('pieMarkets', getArrayV(getAddressV),  {default: new ArrayV([]) })
+        new Arg('controllerImpl', getControllerImpl)
       ],
-      (world, from, { unitroller, controllerImpl, pieRate, pieMarkets }) => {
-        return become(world, from, controllerImpl, unitroller, pieRate.encode(), pieMarkets.val.map(a => a.val))
+      (world, from, { unitroller, controllerImpl}) => {
+        return become(world, from, controllerImpl, unitroller)
       },
       { namePos: 1 }
     ),
