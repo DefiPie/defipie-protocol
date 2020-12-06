@@ -163,6 +163,3 @@ Pending "Test resigning implementation"
     Assert Approx (Erc20 DAI TokenBalance pDAI) 137889496810499277888
     Assert Approx (MCD PotAt PotAddress "pie" (PToken pDAI Address)) 0
 
-Pending "DAI interest rate model"
-    ForkMCD101
-    InterestRateModel Deploy DAIInterestRateModel DSR_Kink_9000bps_Jump_12000bps_AssumedRF_500bps 120e16 90e16 PotAddress JugAddress
