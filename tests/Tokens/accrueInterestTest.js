@@ -117,7 +117,7 @@ describe('PToken', () => {
         interestAccumulated: etherUnsigned(expectedTotalBorrows).sub(etherUnsigned(startingTotalBorrows)),
         borrowIndex: etherUnsigned(expectedBorrowIndex),
         totalBorrows: etherUnsigned(expectedTotalBorrows),
-        exchangeRate: exchangeRateDefault
+        totalReserves: etherUnsigned(expectedTotalReserves)
       });
       expect(await call(pToken, 'accrualBlockNumber')).toEqualNumber(expectedAccrualBlockNumber);
       expect(await call(pToken, 'borrowIndex')).toEqualNumber(expectedBorrowIndex);

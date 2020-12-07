@@ -469,7 +469,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         totalReserves = totalReservesNew;
 
         /* We emit an AccrueInterest event */
-        emit AccrueInterest(cashPrior, interestAccumulated, borrowIndexNew, totalBorrowsNew, exchangeRateStored());
+        emit AccrueInterest(cashPrior, interestAccumulated, borrowIndexNew, totalBorrowsNew, totalReservesNew);
 
         return uint(Error.NO_ERROR);
     }

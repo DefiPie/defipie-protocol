@@ -7,11 +7,7 @@ import "./ControllerInterface.sol";
 import "./ControllerStorage.sol";
 import "./PTokenInterfaces.sol";
 import "./EIP20Interface.sol";
-
-interface IUnitroller {
-    function _acceptImplementation() external returns (uint);
-    function admin() external returns (address);
-}
+import "./Unitroller.sol";
 
 /**
  * @title DeFiPie's Controller Contract
@@ -984,9 +980,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return uint(Error.NO_ERROR);
     }
 
-    function _become(address unitroller) public {
-        require(msg.sender == IUnitroller(unitroller).admin(), "only unitroller admin can change brains");
-        require(IUnitroller(unitroller)._acceptImplementation() == 0, "change not authorized");
+    function _become(address payable unitroller) public {
+        require(msg.sender == Unitroller(unitroller).admin(), "only unitroller admin can change brains");
+        require(Unitroller(unitroller)._acceptImplementation() == 0, "change not authorized");
     }
 
     /*** Pie Distribution ***/

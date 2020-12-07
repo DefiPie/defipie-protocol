@@ -104,9 +104,9 @@ contract ControllerHarness is Controller {
 }
 
 contract ControllerBorked {
-    function _become(address unitroller) public {
-        require(msg.sender == IUnitroller(unitroller).admin(), "only unitroller admin can change brains");
-        IUnitroller(unitroller)._acceptImplementation();
+    function _become(address payable unitroller) public {
+        require(msg.sender == Unitroller(unitroller).admin(), "only unitroller admin can change brains");
+        Unitroller(unitroller)._acceptImplementation();
     }
 }
 
@@ -342,6 +342,6 @@ contract EchoTypesController is UnitrollerAdminStorage {
     }
 
     function becomeBrains(address payable unitroller) public {
-        IUnitroller(unitroller)._acceptImplementation();
+        Unitroller(unitroller)._acceptImplementation();
     }
 }

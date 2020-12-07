@@ -119,7 +119,7 @@ abstract contract PTokenInterface is PTokenStorage {
     /**
      * @notice Event emitted when interest is accrued
      */
-    event AccrueInterest(uint cashPrior, uint interestAccumulated, uint borrowIndex, uint totalBorrows, uint exchangeRate);
+    event AccrueInterest(uint cashPrior, uint interestAccumulated, uint borrowIndex, uint totalBorrows, uint totalReserves);
 
     /**
      * @notice Event emitted when tokens are minted
