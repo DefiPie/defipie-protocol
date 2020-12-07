@@ -29,8 +29,8 @@ contract DeFiPieLens {
     }
 
     function pTokenMetadata(address pToken) public returns (PTokenMetadata memory) {
-        uint exchangeRateCurrent = PToken(pToken).exchangeRateCurrent();
-        address controller = address(PToken(pToken).controller());
+        uint exchangeRateCurrent = PTokenInterface(pToken).exchangeRateCurrent();
+        address controller = address(PTokenInterface(pToken).controller());
         (bool isListed, uint collateralFactorMantissa,) = Controller(controller).markets(pToken);
         address underlyingAssetAddress;
         uint underlyingDecimals;
@@ -47,13 +47,13 @@ contract DeFiPieLens {
         return PTokenMetadata({
             pToken: pToken,
             exchangeRateCurrent: exchangeRateCurrent,
-            supplyRatePerBlock: PToken(pToken).supplyRatePerBlock(),
-            borrowRatePerBlock: PToken(pToken).borrowRatePerBlock(),
-            reserveFactorMantissa: PToken(pToken).reserveFactorMantissa(),
-            totalBorrows: PToken(pToken).totalBorrows(),
-            totalReserves: PToken(pToken).totalReserves(),
+            supplyRatePerBlock: PTokenInterface(pToken).supplyRatePerBlock(),
+            borrowRatePerBlock: PTokenInterface(pToken).borrowRatePerBlock(),
+            reserveFactorMantissa: PTokenInterface(pToken).reserveFactorMantissa(),
+            totalBorrows: PTokenInterface(pToken).totalBorrows(),
+            totalReserves: PTokenInterface(pToken).totalReserves(),
             totalSupply: EIP20Interface(pToken).totalSupply(),
-            totalCash: PToken(pToken).getCash(),
+            totalCash: PTokenInterface(pToken).getCash(),
             isListed: isListed,
             collateralFactorMantissa: collateralFactorMantissa,
             underlyingAssetAddress: underlyingAssetAddress,
@@ -82,8 +82,8 @@ contract DeFiPieLens {
 
     function pTokenBalances(address pToken, address payable account) public returns (PTokenBalances memory) {
         uint balanceOf = EIP20Interface(pToken).balanceOf(account);
-        uint borrowBalanceCurrent = PToken(pToken).borrowBalanceCurrent(account);
-        uint balanceOfUnderlying = PToken(pToken).balanceOfUnderlying(account);
+        uint borrowBalanceCurrent = PTokenInterface(pToken).borrowBalanceCurrent(account);
+        uint balanceOfUnderlying = PTokenInterface(pToken).balanceOfUnderlying(account);
         uint tokenBalance;
         uint tokenAllowance;
 
@@ -137,7 +137,7 @@ contract DeFiPieLens {
     }
 
     function pTokenUnderlyingPrice(address pToken) public view returns (PTokenUnderlyingPrice memory) {
-        address controller = address(PToken(pToken).controller());
+        address controller = address(PTokenInterface(pToken).controller());
         PriceOracle priceOracle = Controller(controller).oracle();
 
         return PTokenUnderlyingPrice({
