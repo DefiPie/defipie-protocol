@@ -162,9 +162,9 @@ describe('PToken', function () {
       expect(await quickMint(pToken, minter, mintAmount)).toHaveLog('AccrueInterest', {
         borrowIndex: "1000000000000000000",
         cashPrior: "0",
-        exchangeRate: "50000000000000000000000",
         interestAccumulated: "0",
         totalBorrows: "0",
+        totalReserves: "0",
       });
     });
   });
@@ -284,9 +284,9 @@ describe('PToken', function () {
       expect(await quickMint(pToken, minter, mintAmount)).toHaveLog('AccrueInterest', {
         borrowIndex: "1000000000000000000",
         cashPrior: "500000000",
-        exchangeRate: "50000000000000000000000",
         interestAccumulated: "0",
         totalBorrows: "0",
+        totalReserves: "0",
       });
     });
   });

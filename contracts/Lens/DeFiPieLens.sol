@@ -6,7 +6,7 @@ import "../PriceOracle.sol";
 import "../EIP20Interface.sol";
 import "../Governance/Governor.sol";
 import "../PPIE.sol";
-import "../PToken.sol";
+import "../PTokenInterfaces.sol";
 import "../ControllerInterface.sol";
 import "../Controller.sol";
 
