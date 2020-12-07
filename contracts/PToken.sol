@@ -134,8 +134,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We emit a Transfer event */
         emit Transfer(src, dst, tokens);
 
-        controller.transferVerify(address(this), src, dst, tokens);
-
         return uint(Error.NO_ERROR);
     }
 
@@ -395,7 +393,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      *   up to the current block and writes new checkpoint to storage.
      */
     function accrueInterest() public override returns (uint) {
-        controller.getOracle().updateUnderlyingPrice(PToken(this));
+        controller.getOracle().updateUnderlyingPrice(address(this));
 
         /* Remember the initial block number */
         uint currentBlockNumber = getBlockNumber();
@@ -471,7 +469,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         totalReserves = totalReservesNew;
 
         /* We emit an AccrueInterest event */
-        emit AccrueInterest(cashPrior, interestAccumulated, borrowIndexNew, totalBorrowsNew, exchangeRateStored());
+        emit AccrueInterest(cashPrior, interestAccumulated, borrowIndexNew, totalBorrowsNew, totalReservesNew);
 
         return uint(Error.NO_ERROR);
     }
@@ -546,7 +544,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
          * We get the current exchange rate and calculate the number of pTokens to be minted:
          *  mintTokens = actualMintAmount / exchangeRate
          */
-
         (vars.mathErr, vars.mintTokens) = divScalarByExpTruncate(vars.actualMintAmount, Exp({mantissa: vars.exchangeRateMantissa}));
         require(vars.mathErr == MathError.NO_ERROR, "MINT_EXCHANGE_CALCULATION_FAILED");
 
@@ -568,9 +565,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We emit a Mint event, and a Transfer event */
         emit Mint(minter, vars.actualMintAmount, vars.mintTokens);
         emit Transfer(address(this), minter, vars.mintTokens);
-
-        /* We call the defense hook */
-        controller.mintVerify(address(this), minter, vars.actualMintAmount, vars.mintTokens);
 
         return (uint(Error.NO_ERROR), vars.actualMintAmount);
     }
@@ -807,9 +801,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We emit a Borrow event */
         emit Borrow(borrower, borrowAmount, vars.accountBorrowsNew, vars.totalBorrowsNew);
 
-        /* We call the defense hook */
-        controller.borrowVerify(address(this), borrower, borrowAmount);
-
         return uint(Error.NO_ERROR);
     }
 
@@ -924,9 +915,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We emit a RepayBorrow event */
         emit RepayBorrow(payer, borrower, vars.actualRepayAmount, vars.accountBorrowsNew, vars.totalBorrowsNew);
 
-        /* We call the defense hook */
-        controller.repayBorrowVerify(address(this), payer, borrower, vars.actualRepayAmount, vars.borrowerIndex);
-
         return (uint(Error.NO_ERROR), vars.actualRepayAmount);
     }
 
@@ -996,7 +984,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
             return (fail(Error.INVALID_CLOSE_AMOUNT_REQUESTED, FailureInfo.LIQUIDATE_CLOSE_AMOUNT_IS_UINT_MAX), 0);
         }
 
-
         /* Fail if repayBorrow fails */
         (uint repayBorrowError, uint actualRepayAmount) = repayBorrowFresh(liquidator, borrower, repayAmount);
         if (repayBorrowError != uint(Error.NO_ERROR)) {
@@ -1027,9 +1014,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
         /* We emit a LiquidateBorrow event */
         emit LiquidateBorrow(liquidator, borrower, actualRepayAmount, address(pTokenCollateral), seizeTokens);
-
-        /* We call the defense hook */
-        controller.liquidateBorrowVerify(address(this), address(pTokenCollateral), liquidator, borrower, actualRepayAmount, seizeTokens);
 
         return (uint(Error.NO_ERROR), actualRepayAmount);
     }
@@ -1098,9 +1082,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);
-
-        /* We call the defense hook */
-        controller.seizeVerify(address(this), seizerToken, liquidator, borrower, seizeTokens);
 
         return uint(Error.NO_ERROR);
     }
@@ -1366,6 +1347,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
     function getMyAdmin() public view returns (address payable) {
         return RegistryInterface(registry).admin();
     }
+
     /*** Safe Token ***/
 
     /**
@@ -1387,7 +1369,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      *  If caller has checked protocol's balance, and verified it is >= amount, this should not revert in normal conditions.
      */
     function doTransferOut(address payable to, uint amount) internal virtual;
-
 
     /*** Reentrancy Guard ***/
 

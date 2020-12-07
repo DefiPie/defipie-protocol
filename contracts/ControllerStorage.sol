@@ -1,6 +1,5 @@
 pragma solidity ^0.7.4;
 
-import "./PToken.sol";
 import "./PriceOracle.sol";
 
 contract UnitrollerAdminStorage {
@@ -49,7 +48,7 @@ contract ControllerStorage is UnitrollerAdminStorage {
     /**
      * @notice Per-account mapping of "assets you are in", capped by maxAssets
      */
-    mapping(address => PToken[]) public accountAssets;
+    mapping(address => address[]) public accountAssets;
 
     /// @notice isListed Whether or not this market is listed
     /**
@@ -93,7 +92,7 @@ contract ControllerStorage is UnitrollerAdminStorage {
     }
 
     /// @notice A list of all markets
-    PToken[] public allMarkets;
+    address[] public allMarkets;
 
     /// @notice The rate at which the flywheel distributes PIE, per block
     uint public pieRate;

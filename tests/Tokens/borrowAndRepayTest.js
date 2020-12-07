@@ -19,7 +19,6 @@ const repayAmount = etherUnsigned(10e2);
 
 async function preBorrow(pToken, borrower, borrowAmount) {
   await send(pToken.controller, 'setBorrowAllowed', [true]);
-  await send(pToken.controller, 'setBorrowVerify', [true]);
   await send(pToken.interestRateModel, 'setFailBorrowRate', [false]);
   await send(pToken.underlying, 'harnessSetBalance', [pToken._address, borrowAmount]);
   await send(pToken, 'harnessSetFailTransferToAddress', [borrower, false]);
@@ -40,7 +39,6 @@ async function borrow(pToken, borrower, borrowAmount, opts = {}) {
 async function preRepay(pToken, benefactor, borrower, repayAmount) {
   // setup either benefactor OR borrower for success in repaying
   await send(pToken.controller, 'setRepayBorrowAllowed', [true]);
-  await send(pToken.controller, 'setRepayBorrowVerify', [true]);
   await send(pToken.interestRateModel, 'setFailBorrowRate', [false]);
   await send(pToken.underlying, 'harnessSetFailTransferFromAddress', [benefactor, false]);
   await send(pToken.underlying, 'harnessSetFailTransferFromAddress', [borrower, false]);
@@ -116,11 +114,6 @@ describe('PToken', function () {
     it("reverts if transfer out fails", async () => {
       await send(pToken, 'harnessSetFailTransferToAddress', [borrower, true]);
       await expect(borrowFresh(pToken, borrower, borrowAmount)).rejects.toRevert("revert TOKEN_TRANSFER_OUT_FAILED");
-    });
-
-    it("reverts if borrowVerify fails", async() => {
-      await send(pToken.controller, 'setBorrowVerify', [false]);
-      await expect(borrowFresh(pToken, borrower, borrowAmount)).rejects.toRevert("revert borrowVerify rejected borrow");
     });
 
     it("transfers the underlying cash, tokens, and emits Transfer, Borrow events", async () => {
@@ -221,11 +214,6 @@ describe('PToken', function () {
         it("reverts if doTransferIn fails", async () => {
           await send(pToken.underlying, 'harnessSetFailTransferFromAddress', [payer, true]);
           await expect(repayBorrowFresh(pToken, payer, borrower, repayAmount)).rejects.toRevert("revert TOKEN_TRANSFER_IN_FAILED");
-        });
-
-        it("reverts if repayBorrowVerify fails", async() => {
-          await send(pToken.controller, 'setRepayBorrowVerify', [false]);
-          await expect(repayBorrowFresh(pToken, payer, borrower, repayAmount)).rejects.toRevert("revert repayBorrowVerify rejected repayBorrow");
         });
 
         it("transfers the underlying cash, and emits Transfer, RepayBorrow events", async () => {

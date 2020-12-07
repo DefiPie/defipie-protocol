@@ -1,13 +1,13 @@
 pragma solidity ^0.7.4;
 
-import "./PToken.sol";
 import "./ErrorReporter.sol";
 import "./Exponential.sol";
 import "./PriceOracle.sol";
 import "./ControllerInterface.sol";
 import "./ControllerStorage.sol";
+import "./PTokenInterfaces.sol";
+import "./EIP20Interface.sol";
 import "./Unitroller.sol";
-import "./Governance/Pie.sol";
 
 /**
  * @title DeFiPie's Controller Contract
@@ -15,19 +15,19 @@ import "./Governance/Pie.sol";
  */
 contract Controller is ControllerStorage, ControllerInterface, ControllerErrorReporter, Exponential {
     /// @notice Emitted when an admin supports a market
-    event MarketListed(PToken pToken);
+    event MarketListed(address pToken);
 
     /// @notice Emitted when an account enters a market
-    event MarketEntered(PToken pToken, address account);
+    event MarketEntered(address pToken, address account);
 
     /// @notice Emitted when an account exits a market
-    event MarketExited(PToken pToken, address account);
+    event MarketExited(address pToken, address account);
 
     /// @notice Emitted when close factor is changed by admin
     event NewCloseFactor(uint oldCloseFactorMantissa, uint newCloseFactorMantissa);
 
     /// @notice Emitted when a collateral factor is changed by admin
-    event NewCollateralFactor(PToken pToken, uint oldCollateralFactorMantissa, uint newCollateralFactorMantissa);
+    event NewCollateralFactor(address pToken, uint oldCollateralFactorMantissa, uint newCollateralFactorMantissa);
 
     /// @notice Emitted when liquidation incentive is changed by admin
     event NewLiquidationIncentive(uint oldLiquidationIncentiveMantissa, uint newLiquidationIncentiveMantissa);
@@ -45,22 +45,22 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     event ActionPaused(string action, bool pauseState);
 
     /// @notice Emitted when an action is paused on a market
-    event ActionPaused(PToken pToken, string action, bool pauseState);
+    event ActionPaused(address pToken, string action, bool pauseState);
 
     /// @notice Emitted when market pieed status is changed
-    event MarketPied(PToken pToken, bool isPied);
+    event MarketPied(address pToken, bool isPied);
 
     /// @notice Emitted when PIE rate is changed
     event NewPieRate(uint oldPieRate, uint newPieRate);
 
     /// @notice Emitted when a new PIE speed is calculated for a market
-    event PieSpeedUpdated(PToken indexed pToken, uint newSpeed);
+    event PieSpeedUpdated(address indexed pToken, uint newSpeed);
 
     /// @notice Emitted when PIE is distributed to a supplier
-    event DistributedSupplierPie(PToken indexed pToken, address indexed supplier, uint pieDelta, uint pieSupplyIndex);
+    event DistributedSupplierPie(address indexed pToken, address indexed supplier, uint pieDelta, uint pieSupplyIndex);
 
     /// @notice Emitted when PIE is distributed to a borrower
-    event DistributedBorrowerPie(PToken indexed pToken, address indexed borrower, uint pieDelta, uint pieBorrowIndex);
+    event DistributedBorrowerPie(address indexed pToken, address indexed borrower, uint pieDelta, uint pieBorrowIndex);
 
     /// @notice The threshold above which the flywheel transfers PIE, in wei
     uint public constant pieClaimThreshold = 0.001e18;
@@ -94,8 +94,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param account The address of the account to pull assets for
      * @return A dynamic list with the assets the account has entered
      */
-    function getAssetsIn(address account) external view returns (PToken[] memory) {
-        PToken[] memory assetsIn = accountAssets[account];
+    function getAssetsIn(address account) external view returns (address[] memory) {
+        address[] memory assetsIn = accountAssets[account];
 
         return assetsIn;
     }
@@ -106,8 +106,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param pToken The pToken to check
      * @return True if the account is in the asset, otherwise false.
      */
-    function checkMembership(address account, PToken pToken) external view returns (bool) {
-        return markets[address(pToken)].accountMembership[account];
+    function checkMembership(address account, address pToken) external view returns (bool) {
+        return markets[pToken].accountMembership[account];
     }
 
     /**
@@ -120,7 +120,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
         uint[] memory results = new uint[](len);
         for (uint i = 0; i < len; i++) {
-            PToken pToken = PToken(pTokens[i]);
+            address pToken = pTokens[i];
 
             results[i] = uint(addToMarketInternal(pToken, msg.sender));
         }
@@ -134,8 +134,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param borrower The address of the account to modify
      * @return Success indicator for whether the market was entered
      */
-    function addToMarketInternal(PToken pToken, address borrower) internal returns (Error) {
-        Market storage marketToJoin = markets[address(pToken)];
+    function addToMarketInternal(address pToken, address borrower) internal returns (Error) {
+        Market storage marketToJoin = markets[pToken];
 
         if (!marketToJoin.isListed) {
             // market is not listed, cannot join
@@ -173,9 +173,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @return Whether or not the account successfully exited the market
      */
     function exitMarket(address pTokenAddress) external override returns (uint) {
-        PToken pToken = PToken(pTokenAddress);
+        address pToken = pTokenAddress;
         /* Get sender tokensHeld and amountOwed underlying from the pToken */
-        (uint oErr, uint tokensHeld, uint amountOwed, ) = pToken.getAccountSnapshot(msg.sender);
+        (uint oErr, uint tokensHeld, uint amountOwed, ) = PTokenInterface(pToken).getAccountSnapshot(msg.sender);
         require(oErr == 0, "exitMarket: getAccountSnapshot failed"); // semi-opaque error code
 
         /* Fail if the sender has a borrow balance */
@@ -189,7 +189,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             return failOpaque(Error.REJECTION, FailureInfo.EXIT_MARKET_REJECTION, allowed);
         }
 
-        Market storage marketToExit = markets[address(pToken)];
+        Market storage marketToExit = markets[pToken];
 
         /* Return true if the sender is not already ‘in’ the market */
         if (!marketToExit.accountMembership[msg.sender]) {
@@ -201,7 +201,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
         /* Delete pToken from the account’s list of assets */
         // load into memory for faster iteration
-        PToken[] memory userAssetList = accountAssets[msg.sender];
+        address[] memory userAssetList = accountAssets[msg.sender];
         uint len = userAssetList.length;
         uint assetIndex = len;
         for (uint i = 0; i < len; i++) {
@@ -215,7 +215,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         assert(assetIndex < len);
 
         // copy last item in list to location of item to be removed, reduce length by 1
-        PToken[] storage storedList = accountAssets[msg.sender];
+        address[] storage storedList = accountAssets[msg.sender];
         storedList[assetIndex] = storedList[storedList.length - 1];
         storedList.pop(); //storedList.length--;
 
@@ -253,26 +253,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     /**
-     * @notice Validates mint and reverts on rejection. May emit logs.
-     * @param pToken Asset being minted
-     * @param minter The address minting the tokens
-     * @param actualMintAmount The amount of the underlying asset being minted
-     * @param mintTokens The number of tokens being minted
-     */
-    function mintVerify(address pToken, address minter, uint actualMintAmount, uint mintTokens) external override {
-        // Shh - currently unused
-        pToken;
-        minter;
-        actualMintAmount;
-        mintTokens;
-
-        // Shh - we don't ever want this hook to be marked pure
-        if (false) {
-            maxAssets = maxAssets;
-        }
-    }
-
-    /**
      * @notice Checks if the account should be allowed to redeem tokens in the given market
      * @param pToken The market to verify the redeem against
      * @param redeemer The account which would redeem the tokens
@@ -303,7 +283,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
 
         /* Otherwise, perform a hypothetical liquidity check to guard against shortfall */
-        (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(redeemer, PToken(pToken), redeemTokens, 0);
+        (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(redeemer, pToken, redeemTokens, 0);
         if (err != Error.NO_ERROR) {
             return uint(err);
         }
@@ -323,8 +303,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      */
     function redeemVerify(address pToken, address redeemer, uint redeemAmount, uint redeemTokens) external override {
         // Shh - currently unused
-        pToken;
-        redeemer;
+        // pToken;
+        // redeemer;
 
         // Require tokens is zero or amount is also zero
         if (redeemTokens == 0 && redeemAmount > 0) {
@@ -354,7 +334,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             require(msg.sender == pToken, "sender must be pToken");
 
             // attempt to add borrower to the market
-            err = addToMarketInternal(PToken(msg.sender), borrower);
+            err = addToMarketInternal(msg.sender, borrower);
             if (err != Error.NO_ERROR) {
                 return uint(err);
             }
@@ -363,13 +343,13 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             assert(markets[pToken].accountMembership[borrower]);
         }
 
-        if (oracle.getUnderlyingPrice(PToken(pToken)) == 0) {
+        if (oracle.getUnderlyingPrice(pToken) == 0) {
             return uint(Error.PRICE_ERROR);
         }
 
         uint shortfall;
 
-        (err, , shortfall) = getHypotheticalAccountLiquidityInternal(borrower, PToken(pToken), 0, borrowAmount);
+        (err, , shortfall) = getHypotheticalAccountLiquidityInternal(borrower, pToken, 0, borrowAmount);
         if (err != Error.NO_ERROR) {
             return uint(err);
         }
@@ -378,29 +358,11 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
 
         // Keep the flywheel moving
-        Exp memory borrowIndex = Exp({mantissa: PToken(pToken).borrowIndex()});
+        Exp memory borrowIndex = Exp({mantissa: PTokenInterface(pToken).borrowIndex()});
         updatePieBorrowIndex(pToken, borrowIndex);
         distributeBorrowerPie(pToken, borrower, borrowIndex, false);
 
         return uint(Error.NO_ERROR);
-    }
-
-    /**
-     * @notice Validates borrow and reverts on rejection. May emit logs.
-     * @param pToken Asset whose underlying is being borrowed
-     * @param borrower The address borrowing the underlying
-     * @param borrowAmount The amount of the underlying asset requested to borrow
-     */
-    function borrowVerify(address pToken, address borrower, uint borrowAmount) external override {
-        // Shh - currently unused
-        pToken;
-        borrower;
-        borrowAmount;
-
-        // Shh - we don't ever want this hook to be marked pure
-        if (false) {
-            maxAssets = maxAssets;
-        }
     }
 
     /**
@@ -416,50 +378,22 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address payer,
         address borrower,
         uint repayAmount
-    ) external override returns (uint)
-    {
+    ) external override returns (uint) {
         // Shh - currently unused
-        payer;
-        borrower;
-        repayAmount;
+        // payer;
+        // borrower;
+        // repayAmount;
 
         if (!markets[pToken].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
         // Keep the flywheel moving
-        Exp memory borrowIndex = Exp({mantissa: PToken(pToken).borrowIndex()});
+        Exp memory borrowIndex = Exp({mantissa: PTokenInterface(pToken).borrowIndex()});
         updatePieBorrowIndex(pToken, borrowIndex);
         distributeBorrowerPie(pToken, borrower, borrowIndex, false);
 
         return uint(Error.NO_ERROR);
-    }
-
-    /**
-     * @notice Validates repayBorrow and reverts on rejection. May emit logs.
-     * @param pToken Asset being repaid
-     * @param payer The address repaying the borrow
-     * @param borrower The address of the borrower
-     * @param actualRepayAmount The amount of underlying being repaid
-     */
-    function repayBorrowVerify(
-        address pToken,
-        address payer,
-        address borrower,
-        uint actualRepayAmount,
-        uint borrowerIndex
-    ) external override {
-        // Shh - currently unused
-        pToken;
-        payer;
-        borrower;
-        actualRepayAmount;
-        borrowerIndex;
-
-        // Shh - we don't ever want this hook to be marked pure
-        if (false) {
-            maxAssets = maxAssets;
-        }
     }
 
     /**
@@ -476,8 +410,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address liquidator,
         address borrower,
         uint repayAmount
-    ) external override returns (uint)
-    {
+    ) external override returns (uint) {
         // Shh - currently unused
         liquidator;
 
@@ -495,7 +428,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
 
         /* The liquidator may not repay more than what is allowed by the closeFactor */
-        uint borrowBalance = PToken(pTokenBorrowed).borrowBalanceStored(borrower);
+        uint borrowBalance = PTokenInterface(pTokenBorrowed).borrowBalanceStored(borrower);
         (MathError mathErr, uint maxClose) = mulScalarTruncate(Exp({mantissa: closeFactorMantissa}), borrowBalance);
         if (mathErr != MathError.NO_ERROR) {
             return uint(Error.MATH_ERROR);
@@ -505,36 +438,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
 
         return uint(Error.NO_ERROR);
-    }
-
-    /**
-     * @notice Validates liquidateBorrow and reverts on rejection. May emit logs.
-     * @param pTokenBorrowed Asset which was borrowed by the borrower
-     * @param pTokenCollateral Asset which was used as collateral and will be seized
-     * @param liquidator The address repaying the borrow and seizing the collateral
-     * @param borrower The address of the borrower
-     * @param actualRepayAmount The amount of underlying being repaid
-     */
-    function liquidateBorrowVerify(
-        address pTokenBorrowed,
-        address pTokenCollateral,
-        address liquidator,
-        address borrower,
-        uint actualRepayAmount,
-        uint seizeTokens
-    ) external override {
-        // Shh - currently unused
-        pTokenBorrowed;
-        pTokenCollateral;
-        liquidator;
-        borrower;
-        actualRepayAmount;
-        seizeTokens;
-
-        // Shh - we don't ever want this hook to be marked pure
-        if (false) {
-            maxAssets = maxAssets;
-        }
     }
 
     /**
@@ -551,19 +454,18 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address liquidator,
         address borrower,
         uint seizeTokens
-    ) external override returns (uint)
-    {
+    ) external override returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!seizeGuardianPaused, "seize is paused");
 
         // Shh - currently unused
-        seizeTokens;
+        // seizeTokens;
 
         if (!markets[pTokenCollateral].isListed || !markets[pTokenBorrowed].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
-        if (PToken(pTokenCollateral).controller() != PToken(pTokenBorrowed).controller()) {
+        if (PTokenInterface(pTokenCollateral).controller() != PTokenInterface(pTokenBorrowed).controller()) {
             return uint(Error.CONTROLLER_MISMATCH);
         }
 
@@ -573,34 +475,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         distributeSupplierPie(pTokenCollateral, liquidator, false);
 
         return uint(Error.NO_ERROR);
-    }
-
-    /**
-     * @notice Validates seize and reverts on rejection. May emit logs.
-     * @param pTokenCollateral Asset which was used as collateral and will be seized
-     * @param pTokenBorrowed Asset which was borrowed by the borrower
-     * @param liquidator The address repaying the borrow and seizing the collateral
-     * @param borrower The address of the borrower
-     * @param seizeTokens The number of collateral tokens to seize
-     */
-    function seizeVerify(
-        address pTokenCollateral,
-        address pTokenBorrowed,
-        address liquidator,
-        address borrower,
-        uint seizeTokens
-    ) external override {
-        // Shh - currently unused
-        pTokenCollateral;
-        pTokenBorrowed;
-        liquidator;
-        borrower;
-        seizeTokens;
-
-        // Shh - we don't ever want this hook to be marked pure
-        if (false) {
-            maxAssets = maxAssets;
-        }
     }
 
     /**
@@ -635,26 +509,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return uint(Error.NO_ERROR);
     }
 
-    /**
-     * @notice Validates transfer and reverts on rejection. May emit logs.
-     * @param pToken Asset being transferred
-     * @param src The account which sources the tokens
-     * @param dst The account which receives the tokens
-     * @param transferTokens The number of pTokens to transfer
-     */
-    function transferVerify(address pToken, address src, address dst, uint transferTokens) external override {
-        // Shh - currently unused
-        pToken;
-        src;
-        dst;
-        transferTokens;
-
-        // Shh - we don't ever want this hook to be marked pure
-        if (false) {
-            maxAssets = maxAssets;
-        }
-    }
-
     /*** Liquidity/Liquidation Calculations ***/
 
     /**
@@ -682,7 +536,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      *          account shortfall below collateral requirements)
      */
     function getAccountLiquidity(address account) public view returns (uint, uint, uint) {
-        (Error err, uint liquidity, uint shortfall) = getHypotheticalAccountLiquidityInternal(account, PToken(0), 0, 0);
+        (Error err, uint liquidity, uint shortfall) = getHypotheticalAccountLiquidityInternal(account, address(0), 0, 0);
 
         return (uint(err), liquidity, shortfall);
     }
@@ -694,7 +548,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      *          account shortfall below collateral requirements)
      */
     function getAccountLiquidityInternal(address account) internal view returns (Error, uint, uint) {
-        return getHypotheticalAccountLiquidityInternal(account, PToken(0), 0, 0);
+        return getHypotheticalAccountLiquidityInternal(account, address(0), 0, 0);
     }
 
     /**
@@ -713,7 +567,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint redeemTokens,
         uint borrowAmount
     ) public view virtual returns (uint, uint, uint) {
-        (Error err, uint liquidity, uint shortfall) = getHypotheticalAccountLiquidityInternal(account, PToken(pTokenModify), redeemTokens, borrowAmount);
+        (Error err, uint liquidity, uint shortfall) = getHypotheticalAccountLiquidityInternal(account, pTokenModify, redeemTokens, borrowAmount);
         return (uint(err), liquidity, shortfall);
     }
 
@@ -731,7 +585,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      */
     function getHypotheticalAccountLiquidityInternal(
         address account,
-        PToken pTokenModify,
+        address pTokenModify,
         uint redeemTokens,
         uint borrowAmount
     ) internal view returns (Error, uint, uint) {
@@ -741,12 +595,12 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         MathError mErr;
 
         // For each asset the account is in
-        PToken[] memory assets = accountAssets[account];
+        address[] memory assets = accountAssets[account];
         for (uint i = 0; i < assets.length; i++) {
-            PToken asset = assets[i];
+            address asset = assets[i];
 
             // Read the balances and exchange rate from the pToken
-            (oErr, vars.pTokenBalance, vars.borrowBalance, vars.exchangeRateMantissa) = asset.getAccountSnapshot(account);
+            (oErr, vars.pTokenBalance, vars.borrowBalance, vars.exchangeRateMantissa) = PTokenInterface(asset).getAccountSnapshot(account);
             if (oErr != 0) { // semi-opaque error code, we assume NO_ERROR == 0 is invariant between upgrades
                 return (Error.SNAPSHOT_ERROR, 0, 0);
             }
@@ -818,8 +672,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint actualRepayAmount
     ) external view override returns (uint, uint) {
         /* Read oracle prices for borrowed and collateral markets */
-        uint priceBorrowedMantissa = oracle.getUnderlyingPrice(PToken(pTokenBorrowed));
-        uint priceCollateralMantissa = oracle.getUnderlyingPrice(PToken(pTokenCollateral));
+        uint priceBorrowedMantissa = oracle.getUnderlyingPrice(pTokenBorrowed);
+        uint priceCollateralMantissa = oracle.getUnderlyingPrice(pTokenCollateral);
         if (priceBorrowedMantissa == 0 || priceCollateralMantissa == 0) {
             return (uint(Error.PRICE_ERROR), 0);
         }
@@ -830,7 +684,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
          *  seizeTokens = seizeAmount / exchangeRate
          *   = actualRepayAmount * (liquidationIncentive * priceBorrowed) / (priceCollateral * exchangeRate)
          */
-        uint exchangeRateMantissa = PToken(pTokenCollateral).exchangeRateStored(); // Note: reverts on error
+        uint exchangeRateMantissa = PTokenInterface(pTokenCollateral).exchangeRateStored(); // Note: reverts on error
         uint seizeTokens;
         Exp memory numerator;
         Exp memory denominator;
@@ -890,7 +744,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       * @return uint 0=success
       */
     function _setPieAddress(address pieAddress_) public returns (uint) {
-        require(pieAddress == address(0),"pie address may only be initialized once");
+        require(msg.sender == admin && pieAddress == address(0),"pie address may only be initialized once");
 
         pieAddress = pieAddress_;
 
@@ -934,14 +788,14 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       * @param newCollateralFactorMantissa The new collateral factor, scaled by 1e18
       * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
       */
-    function _setCollateralFactor(PToken pToken, uint newCollateralFactorMantissa) external returns (uint) {
+    function _setCollateralFactor(address pToken, uint newCollateralFactorMantissa) external returns (uint) {
         // Check caller is admin
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_COLLATERAL_FACTOR_OWNER_CHECK);
         }
 
         // Verify market is listed
-        Market storage market = markets[address(pToken)];
+        Market storage market = markets[pToken];
         if (!market.isListed) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SET_COLLATERAL_FACTOR_NO_EXISTS);
         }
@@ -1047,14 +901,14 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         Market storage newMarket = markets[pToken];
         newMarket.isListed = true;
 
-        emit MarketListed(PToken(pToken));
+        emit MarketListed(pToken);
 
         return uint(Error.NO_ERROR);
     }
 
     function _addMarketInternal(address pToken) internal {
         require(markets[pToken].isListed == false, "market already added");
-        allMarkets.push(PToken(pToken));
+        allMarkets.push(pToken);
     }
 
     /**
@@ -1079,22 +933,22 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return uint(Error.NO_ERROR);
     }
 
-    function _setMintPaused(PToken pToken, bool state) public returns (bool) {
-        require(markets[address(pToken)].isListed, "cannot pause a market that is not listed");
+    function _setMintPaused(address pToken, bool state) public returns (bool) {
+        require(markets[pToken].isListed, "cannot pause a market that is not listed");
         require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
         require(msg.sender == admin || state == true, "only admin can unpause");
 
-        mintGuardianPaused[address(pToken)] = state;
+        mintGuardianPaused[pToken] = state;
         emit ActionPaused(pToken, "Mint", state);
         return state;
     }
 
-    function _setBorrowPaused(PToken pToken, bool state) public returns (bool) {
-        require(markets[address(pToken)].isListed, "cannot pause a market that is not listed");
+    function _setBorrowPaused(address pToken, bool state) public returns (bool) {
+        require(markets[pToken].isListed, "cannot pause a market that is not listed");
         require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
         require(msg.sender == admin || state == true, "only admin can unpause");
 
-        borrowGuardianPaused[address(pToken)] = state;
+        borrowGuardianPaused[pToken] = state;
         emit ActionPaused(pToken, "Borrow", state);
         return state;
     }
@@ -1126,24 +980,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return uint(Error.NO_ERROR);
     }
 
-    function _become(Unitroller unitroller, uint pieRate_, address[] memory pieMarketsToAdd) public {
-        require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
-        require(unitroller._acceptImplementation() == 0, "change not authorized");
-
-        Controller(address(unitroller))._setPieRate(pieRate_);
-        Controller(address(unitroller))._addPieMarkets(pieMarketsToAdd);
-    }
-
-    function _become(Unitroller unitroller) public {
-        require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
-        require(unitroller._acceptImplementation() == 0, "change not authorized");
-    }
-
-    /**
-     * @notice Checks caller is admin, or this contract is becoming the new implementation
-     */
-    function adminOrInitializing() internal view returns (bool) {
-        return msg.sender == admin || msg.sender == controllerImplementation;
+    function _become(address payable unitroller) public {
+        require(msg.sender == Unitroller(unitroller).admin(), "only unitroller admin can change brains");
+        require(Unitroller(unitroller)._acceptImplementation() == 0, "change not authorized");
     }
 
     /*** Pie Distribution ***/
@@ -1157,23 +996,23 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @notice Recalculate and update PIE speeds for all PIE markets
      */
     function refreshPieSpeedsInternal() internal {
-        PToken[] memory allMarkets_ = allMarkets;
+        address[] memory allMarkets_ = allMarkets;
 
         for (uint i = 0; i < allMarkets_.length; i++) {
-            PToken pToken = allMarkets_[i];
-            Exp memory borrowIndex = Exp({mantissa: pToken.borrowIndex()});
-            updatePieSupplyIndex(address(pToken));
-            updatePieBorrowIndex(address(pToken), borrowIndex);
+            address pToken = allMarkets_[i];
+            Exp memory borrowIndex = Exp({mantissa: PTokenInterface(pToken).borrowIndex()});
+            updatePieSupplyIndex(pToken);
+            updatePieBorrowIndex(pToken, borrowIndex);
         }
 
         Exp memory totalUtility = Exp({mantissa: 0});
         Exp[] memory utilities = new Exp[](allMarkets_.length);
         for (uint i = 0; i < allMarkets_.length; i++) {
-            PToken pToken = allMarkets_[i];
-            if (markets[address(pToken)].isPied) {
+            address pToken = allMarkets_[i];
+            if (markets[pToken].isPied) {
                 oracle.updateUnderlyingPrice(pToken);
                 Exp memory assetPrice = Exp({mantissa: oracle.getUnderlyingPrice(pToken)});
-                Exp memory interestPerBlock = mul_(Exp({mantissa: pToken.borrowRatePerBlock()}), pToken.totalBorrows());
+                Exp memory interestPerBlock = mul_(Exp({mantissa: PTokenInterface(pToken).borrowRatePerBlock()}), PTokenInterface(pToken).totalBorrows());
                 Exp memory utility = mul_(interestPerBlock, assetPrice);
                 utilities[i] = utility;
                 totalUtility = add_(totalUtility, utility);
@@ -1181,9 +1020,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
 
         for (uint i = 0; i < allMarkets_.length; i++) {
-            PToken pToken = allMarkets[i];
+            address pToken = allMarkets[i];
             uint newSpeed = totalUtility.mantissa > 0 ? mul_(pieRate, div_(utilities[i], totalUtility)) : 0;
-            pieSpeeds[address(pToken)] = newSpeed;
+            pieSpeeds[pToken] = newSpeed;
             emit PieSpeedUpdated(pToken, newSpeed);
         }
     }
@@ -1198,7 +1037,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint blockNumber = getBlockNumber();
         uint deltaBlocks = sub_(blockNumber, uint(supplyState.block));
         if (deltaBlocks > 0 && supplySpeed > 0) {
-            uint supplyTokens = PToken(pToken).totalSupply();
+            uint supplyTokens = PTokenInterface(pToken).totalSupply();
             uint pieAccrued = mul_(deltaBlocks, supplySpeed);
             Double memory ratio = supplyTokens > 0 ? fraction(pieAccrued, supplyTokens) : Double({mantissa: 0});
             Double memory index = add_(Double({mantissa: supplyState.index}), ratio);
@@ -1221,7 +1060,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint blockNumber = getBlockNumber();
         uint deltaBlocks = sub_(blockNumber, uint(borrowState.block));
         if (deltaBlocks > 0 && borrowSpeed > 0) {
-            uint borrowAmount = div_(PToken(pToken).totalBorrows(), marketBorrowIndex);
+            uint borrowAmount = div_(PTokenInterface(pToken).totalBorrows(), marketBorrowIndex);
             uint pieAccrued = mul_(deltaBlocks, borrowSpeed);
             Double memory ratio = borrowAmount > 0 ? fraction(pieAccrued, borrowAmount) : Double({mantissa: 0});
             Double memory index = add_(Double({mantissa: borrowState.index}), ratio);
@@ -1250,11 +1089,11 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
 
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
-        uint supplierTokens = PToken(pToken).balanceOf(supplier);
+        uint supplierTokens = PTokenInterface(pToken).balanceOf(supplier);
         uint supplierDelta = mul_(supplierTokens, deltaIndex);
         uint supplierAccrued = add_(pieAccrued[supplier], supplierDelta);
         pieAccrued[supplier] = transferPie(supplier, supplierAccrued, distributeAll ? 0 : pieClaimThreshold);
-        emit DistributedSupplierPie(PToken(pToken), supplier, supplierDelta, supplyIndex.mantissa);
+        emit DistributedSupplierPie(pToken, supplier, supplierDelta, supplyIndex.mantissa);
     }
 
     /**
@@ -1276,11 +1115,11 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
         if (borrowerIndex.mantissa > 0) {
             Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
-            uint borrowerAmount = div_(PToken(pToken).borrowBalanceStored(borrower), marketBorrowIndex);
+            uint borrowerAmount = div_(PTokenInterface(pToken).borrowBalanceStored(borrower), marketBorrowIndex);
             uint borrowerDelta = mul_(borrowerAmount, deltaIndex);
             uint borrowerAccrued = add_(pieAccrued[borrower], borrowerDelta);
             pieAccrued[borrower] = transferPie(borrower, borrowerAccrued, distributeAll ? 0 : pieClaimThreshold);
-            emit DistributedBorrowerPie(PToken(pToken), borrower, borrowerDelta, borrowIndex.mantissa);
+            emit DistributedBorrowerPie(pToken, borrower, borrowerDelta, borrowIndex.mantissa);
         }
     }
 
@@ -1293,10 +1132,10 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      */
     function transferPie(address user, uint userAccrued, uint threshold) internal returns (uint) {
         if (userAccrued >= threshold && userAccrued > 0) {
-            Pie pie = Pie(getPieAddress());
-            uint pieRemaining = pie.balanceOf(address(this));
+            address pie = getPieAddress();
+            uint pieRemaining = EIP20Interface(pie).balanceOf(address(this));
             if (userAccrued <= pieRemaining) {
-                pie.transfer(user, userAccrued);
+                EIP20Interface(pie).transfer(user, userAccrued);
                 return 0;
             }
         }
@@ -1316,7 +1155,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param holder The address to claim PIE for
      * @param pTokens The list of markets to claim PIE in
      */
-    function claimPie(address holder, PToken[] memory pTokens) public {
+    function claimPie(address holder, address[] memory pTokens) public {
         address[] memory holders = new address[](1);
         holders[0] = holder;
         claimPie(holders, pTokens, true, true);
@@ -1329,21 +1168,21 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param borrowers Whether or not to claim PIE earned by borrowing
      * @param suppliers Whether or not to claim PIE earned by supplying
      */
-    function claimPie(address[] memory holders, PToken[] memory pTokens, bool borrowers, bool suppliers) public {
+    function claimPie(address[] memory holders, address[] memory pTokens, bool borrowers, bool suppliers) public {
         for (uint i = 0; i < pTokens.length; i++) {
-            PToken pToken = pTokens[i];
-            require(markets[address(pToken)].isListed, "market must be listed");
+            address pToken = pTokens[i];
+            require(markets[pToken].isListed, "market must be listed");
             if (borrowers == true) {
-                Exp memory borrowIndex = Exp({mantissa: pToken.borrowIndex()});
-                updatePieBorrowIndex(address(pToken), borrowIndex);
+                Exp memory borrowIndex = Exp({mantissa: PTokenInterface(pToken).borrowIndex()});
+                updatePieBorrowIndex(pToken, borrowIndex);
                 for (uint j = 0; j < holders.length; j++) {
-                    distributeBorrowerPie(address(pToken), holders[j], borrowIndex, true);
+                    distributeBorrowerPie(pToken, holders[j], borrowIndex, true);
                 }
             }
             if (suppliers == true) {
-                updatePieSupplyIndex(address(pToken));
+                updatePieSupplyIndex(pToken);
                 for (uint j = 0; j < holders.length; j++) {
-                    distributeSupplierPie(address(pToken), holders[j], true);
+                    distributeSupplierPie(pToken, holders[j], true);
                 }
             }
         }
@@ -1356,7 +1195,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @param pieRate_ The amount of PIE wei per block to distribute
      */
     function _setPieRate(uint pieRate_) public {
-        require(adminOrInitializing(), "only admin can change pie rate");
+        require(msg.sender == admin, "only admin can change pie rate");
 
         uint oldRate = pieRate;
         pieRate = pieRate_;
@@ -1365,12 +1204,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         refreshPieSpeedsInternal();
     }
 
-    /**
-     * @notice Add markets to pieMarkets, allowing them to earn PIE in the flywheel
-     * @param pTokens The addresses of the markets to add
-     */
     function _addPieMarkets(address[] memory pTokens) public {
-        require(adminOrInitializing(), "only admin can add pie market");
+        require(msg.sender == admin, "only admin can add pie market");
 
         for (uint i = 0; i < pTokens.length; i++) {
             _addPieMarketInternal(pTokens[i]);
@@ -1385,7 +1220,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         require(market.isPied == false, "pie market already added");
 
         market.isPied = true;
-        emit MarketPied(PToken(pToken), true);
+        emit MarketPied(pToken, true);
 
         if (pieSupplyState[pToken].index == 0 && pieSupplyState[pToken].block == 0) {
             pieSupplyState[pToken] = PieMarketState({
@@ -1413,7 +1248,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         require(market.isPied == true, "market is not a pie market");
 
         market.isPied = false;
-        emit MarketPied(PToken(pToken), false);
+        emit MarketPied(pToken, false);
 
         refreshPieSpeedsInternal();
     }
@@ -1423,7 +1258,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @dev The automatic getter may be used to access an individual market.
      * @return The list of market addresses
      */
-    function getAllMarkets() public view returns (PToken[] memory) {
+    function getAllMarkets() public view returns (address[] memory) {
         return allMarkets;
     }
 

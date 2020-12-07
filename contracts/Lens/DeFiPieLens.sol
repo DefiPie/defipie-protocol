@@ -2,22 +2,13 @@ pragma solidity ^0.7.4;
 pragma experimental ABIEncoderV2;
 
 import "../PErc20.sol";
-import "../PToken.sol";
 import "../PriceOracle.sol";
 import "../EIP20Interface.sol";
 import "../Governance/Governor.sol";
-import "../Governance/Pie.sol";
 import "../PPIE.sol";
-
-interface ControllerLensInterface {
-    function markets(address) external view returns (bool, uint);
-    function oracle() external view returns (PriceOracle);
-    function getAccountLiquidity(address) external view returns (uint, uint, uint);
-    function getAssetsIn(address) external view returns (PToken[] memory);
-    function claimPie(address) external;
-    function pieAccrued(address) external view returns (uint);
-    function getAllMarkets() external view returns (PToken[] memory);
-}
+import "../PTokenInterfaces.sol";
+import "../ControllerInterface.sol";
+import "../Controller.sol";
 
 contract DeFiPieLens {
     struct PTokenMetadata {
@@ -37,41 +28,41 @@ contract DeFiPieLens {
         uint underlyingDecimals;
     }
 
-    function pTokenMetadata(PToken pToken) public returns (PTokenMetadata memory) {
-        uint exchangeRateCurrent = pToken.exchangeRateCurrent();
-        ControllerLensInterface controller = ControllerLensInterface(address(pToken.controller()));
-        (bool isListed, uint collateralFactorMantissa) = controller.markets(address(pToken));
+    function pTokenMetadata(address pToken) public returns (PTokenMetadata memory) {
+        uint exchangeRateCurrent = PTokenInterface(pToken).exchangeRateCurrent();
+        address controller = address(PTokenInterface(pToken).controller());
+        (bool isListed, uint collateralFactorMantissa,) = Controller(controller).markets(pToken);
         address underlyingAssetAddress;
         uint underlyingDecimals;
 
-        if (compareStrings(pToken.symbol(), "pETH")) {
+        if (compareStrings(EIP20Interface(pToken).symbol(), "pETH")) {
             underlyingAssetAddress = address(0);
             underlyingDecimals = 18;
         } else {
-            PErc20 pErc20 = PErc20(address(pToken));
+            PErc20 pErc20 = PErc20(pToken);
             underlyingAssetAddress = pErc20.underlying();
             underlyingDecimals = EIP20Interface(pErc20.underlying()).decimals();
         }
 
         return PTokenMetadata({
-            pToken: address(pToken),
+            pToken: pToken,
             exchangeRateCurrent: exchangeRateCurrent,
-            supplyRatePerBlock: pToken.supplyRatePerBlock(),
-            borrowRatePerBlock: pToken.borrowRatePerBlock(),
-            reserveFactorMantissa: pToken.reserveFactorMantissa(),
-            totalBorrows: pToken.totalBorrows(),
-            totalReserves: pToken.totalReserves(),
-            totalSupply: pToken.totalSupply(),
-            totalCash: pToken.getCash(),
+            supplyRatePerBlock: PTokenInterface(pToken).supplyRatePerBlock(),
+            borrowRatePerBlock: PTokenInterface(pToken).borrowRatePerBlock(),
+            reserveFactorMantissa: PTokenInterface(pToken).reserveFactorMantissa(),
+            totalBorrows: PTokenInterface(pToken).totalBorrows(),
+            totalReserves: PTokenInterface(pToken).totalReserves(),
+            totalSupply: EIP20Interface(pToken).totalSupply(),
+            totalCash: PTokenInterface(pToken).getCash(),
             isListed: isListed,
             collateralFactorMantissa: collateralFactorMantissa,
             underlyingAssetAddress: underlyingAssetAddress,
-            pTokenDecimals: pToken.decimals(),
+            pTokenDecimals: EIP20Interface(pToken).decimals(),
             underlyingDecimals: underlyingDecimals
         });
     }
 
-    function pTokenMetadataAll(PToken[] calldata pTokens) external returns (PTokenMetadata[] memory) {
+    function pTokenMetadataAll(address[] calldata pTokens) external returns (PTokenMetadata[] memory) {
         uint pTokenCount = pTokens.length;
         PTokenMetadata[] memory res = new PTokenMetadata[](pTokenCount);
         for (uint i = 0; i < pTokenCount; i++) {
@@ -89,25 +80,25 @@ contract DeFiPieLens {
         uint tokenAllowance;
     }
 
-    function pTokenBalances(PToken pToken, address payable account) public returns (PTokenBalances memory) {
-        uint balanceOf = pToken.balanceOf(account);
-        uint borrowBalanceCurrent = pToken.borrowBalanceCurrent(account);
-        uint balanceOfUnderlying = pToken.balanceOfUnderlying(account);
+    function pTokenBalances(address pToken, address payable account) public returns (PTokenBalances memory) {
+        uint balanceOf = EIP20Interface(pToken).balanceOf(account);
+        uint borrowBalanceCurrent = PTokenInterface(pToken).borrowBalanceCurrent(account);
+        uint balanceOfUnderlying = PTokenInterface(pToken).balanceOfUnderlying(account);
         uint tokenBalance;
         uint tokenAllowance;
 
-        if (compareStrings(pToken.symbol(), "pETH")) {
+        if (compareStrings(EIP20Interface(pToken).symbol(), "pETH")) {
             tokenBalance = account.balance;
             tokenAllowance = account.balance;
         } else {
-            PErc20 pErc20 = PErc20(address(pToken));
+            PErc20 pErc20 = PErc20(pToken);
             EIP20Interface underlying = EIP20Interface(pErc20.underlying());
             tokenBalance = underlying.balanceOf(account);
-            tokenAllowance = underlying.allowance(account, address(pToken));
+            tokenAllowance = underlying.allowance(account, pToken);
         }
 
         return PTokenBalances({
-            pToken: address(pToken),
+            pToken: pToken,
             balanceOf: balanceOf,
             borrowBalanceCurrent: borrowBalanceCurrent,
             balanceOfUnderlying: balanceOfUnderlying,
@@ -117,7 +108,7 @@ contract DeFiPieLens {
     }
 
     function pTokenBalancesAll(
-        PToken[] calldata pTokens,
+        address[] calldata pTokens,
         address payable account
     ) external returns (PTokenBalances[] memory) {
         uint pTokenCount = pTokens.length;
@@ -132,7 +123,7 @@ contract DeFiPieLens {
         address controller,
         address payable account
     ) external returns (PTokenBalances[] memory) {
-        PToken[] memory pTokens = ControllerLensInterface(controller).getAllMarkets();
+        address[] memory pTokens = Controller(controller).getAllMarkets();
         PTokenBalances[] memory res = new PTokenBalances[](pTokens.length);
         for (uint i = 0; i < pTokens.length; i++) {
             res[i] = pTokenBalances(pTokens[i], account);
@@ -145,9 +136,9 @@ contract DeFiPieLens {
         uint underlyingPrice;
     }
 
-    function pTokenUnderlyingPrice(PToken pToken) public view returns (PTokenUnderlyingPrice memory) {
-        ControllerLensInterface controller = ControllerLensInterface(address(pToken.controller()));
-        PriceOracle priceOracle = controller.oracle();
+    function pTokenUnderlyingPrice(address pToken) public view returns (PTokenUnderlyingPrice memory) {
+        address controller = address(PTokenInterface(pToken).controller());
+        PriceOracle priceOracle = Controller(controller).oracle();
 
         return PTokenUnderlyingPrice({
             pToken: address(pToken),
@@ -155,7 +146,7 @@ contract DeFiPieLens {
         });
     }
 
-    function pTokenUnderlyingPriceAll(PToken[] calldata pTokens) external view returns (PTokenUnderlyingPrice[] memory) {
+    function pTokenUnderlyingPriceAll(address[] calldata pTokens) external view returns (PTokenUnderlyingPrice[] memory) {
         uint pTokenCount = pTokens.length;
         PTokenUnderlyingPrice[] memory res = new PTokenUnderlyingPrice[](pTokenCount);
         for (uint i = 0; i < pTokenCount; i++) {
@@ -165,13 +156,13 @@ contract DeFiPieLens {
     }
 
     struct AccountLimits {
-        PToken[] markets;
+        address[] markets;
         uint liquidity;
         uint shortfall;
     }
 
     function getAccountLimits(
-        ControllerLensInterface controller,
+        Controller controller,
         address account
     ) public view returns (AccountLimits memory) {
         (uint errorCode, uint liquidity, uint shortfall) = controller.getAccountLiquidity(account);
@@ -304,7 +295,7 @@ contract DeFiPieLens {
 
     function getPPieBalanceMetadataExt(
         PPIE pPIE,
-        ControllerLensInterface controller,
+        Controller controller,
         address account
     ) external returns (PPieBalanceMetadataExt memory) {
         uint balance = pPIE.balanceOf(account);

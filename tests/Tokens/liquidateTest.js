@@ -20,11 +20,8 @@ const seizeTokens = seizeAmount.mul(4); // forced
 async function preLiquidate(pToken, liquidator, borrower, repayAmount, pTokenCollateral) {
   // setup for success in liquidating
   await send(pToken.controller, 'setLiquidateBorrowAllowed', [true]);
-  await send(pToken.controller, 'setLiquidateBorrowVerify', [true]);
   await send(pToken.controller, 'setRepayBorrowAllowed', [true]);
-  await send(pToken.controller, 'setRepayBorrowVerify', [true]);
   await send(pToken.controller, 'setSeizeAllowed', [true]);
-  await send(pToken.controller, 'setSeizeVerify', [true]);
   await send(pToken.controller, 'setFailCalculateSeizeTokens', [false]);
   await send(pToken.underlying, 'harnessSetFailTransferFromAddress', [liquidator, false]);
   await send(pToken.interestRateModel, 'setFailBorrowRate', [false]);
@@ -128,13 +125,6 @@ describe('PToken', function () {
       await expect(
         liquidateFresh(pToken, liquidator, borrower, repayAmount, pTokenCollateral)
       ).rejects.toRevert("revert token seizure failed");
-    });
-
-    it("reverts if liquidateBorrowVerify fails", async() => {
-      await send(pToken.controller, 'setLiquidateBorrowVerify', [false]);
-      await expect(
-        liquidateFresh(pToken, liquidator, borrower, repayAmount, pTokenCollateral)
-      ).rejects.toRevert("revert liquidateBorrowVerify rejected liquidateBorrow");
     });
 
     it("transfers the cash, borrows, tokens, and emits Transfer, LiquidateBorrow events", async () => {

@@ -45,11 +45,9 @@ async function makeController(opts = {}) {
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
-    const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
-    const pieMarkets = opts.pieMarkets || [];
 
     await send(unitroller, '_setPendingImplementation', [controller._address]);
-    await send(controller, '_become', [unitroller._address, pieRate, pieMarkets]);
+    await send(controller, '_become', [unitroller._address]);
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
@@ -66,11 +64,9 @@ async function makeController(opts = {}) {
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
-    const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
-    const pieMarkets = opts.pieMarkets || [];
 
     await send(unitroller, '_setPendingImplementation', [controller._address]);
-    await send(controller, '_become', [unitroller._address, pieRate, pieMarkets]);
+    await send(controller, '_become', [unitroller._address]);
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
@@ -89,10 +85,9 @@ async function makeController(opts = {}) {
     const liquidationIncentive = etherMantissa(1);
     const pie = opts.pie || await deploy('Pie', [opts.pieOwner || root]);
     const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
-    const pieMarkets = opts.pieMarkets || [];
 
     await send(unitroller, '_setPendingImplementation', [controller._address]);
-    await send(controller, '_become', [unitroller._address, pieRate, pieMarkets]);
+    await send(controller, '_become', [unitroller._address]);
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);

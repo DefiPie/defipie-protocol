@@ -11,8 +11,8 @@ contract ControllerScenarioG3 is Controller {
         pieAddress = pieAddress_;
     }
 
-    function membershipLength(PToken pToken) public view returns (uint) {
-        return accountAssets[address(pToken)].length;
+    function membershipLength(address pToken) public view returns (uint) {
+        return accountAssets[pToken].length;
     }
 
     function fastForward(uint blocks) public returns (uint) {
@@ -48,7 +48,7 @@ contract ControllerScenarioG3 is Controller {
         return pieMarkets;
     }
 
-    function unlist(PToken pToken) public {
-        markets[address(pToken)].isListed = false;
+    function unlist(address pToken) public {
+        markets[pToken].isListed = false;
     }
 }

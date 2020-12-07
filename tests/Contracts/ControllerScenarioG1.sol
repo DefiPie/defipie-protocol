@@ -11,8 +11,8 @@ contract ControllerScenarioG1 is Controller {
 
     constructor() Controller() {}
 
-    function membershipLength(PToken pToken) public view returns (uint) {
-        return accountAssets[address(pToken)].length;
+    function membershipLength(address pToken) public view returns (uint) {
+        return accountAssets[pToken].length;
     }
 
     function fastForward(uint blocks) public returns (uint) {
@@ -31,11 +31,11 @@ contract ControllerScenarioG1 is Controller {
         uint redeemTokens,
         uint borrowAmount) public view override returns (uint, uint, uint) {
         (Error err, uint liquidity, uint shortfall) =
-            super.getHypotheticalAccountLiquidityInternal(account, PToken(pTokenModify), redeemTokens, borrowAmount);
+            super.getHypotheticalAccountLiquidityInternal(account, pTokenModify, redeemTokens, borrowAmount);
         return (uint(err), liquidity, shortfall);
     }
 
-    function unlist(PToken pToken) public {
-        markets[address(pToken)].isListed = false;
+    function unlist(address pToken) public {
+        markets[pToken].isListed = false;
     }
 }

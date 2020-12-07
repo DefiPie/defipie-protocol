@@ -7,16 +7,16 @@ contract SimplePriceOracle is PriceOracle {
     mapping(address => uint) prices;
     event PricePosted(address asset, uint previousPriceMantissa, uint requestedPriceMantissa, uint newPriceMantissa);
 
-    function getUnderlyingPrice(PToken pToken) public view override returns (uint) {
-        if (compareStrings(pToken.symbol(), "pETH")) {
+    function getUnderlyingPrice(address pToken) public view override returns (uint) {
+        if (compareStrings(PErc20(pToken).symbol(), "pETH")) {
             return 1e18;
         } else {
-            return prices[address(PErc20(address(pToken)).underlying())];
+            return prices[address(PErc20(pToken).underlying())];
         }
     }
 
-    function setUnderlyingPrice(PToken pToken, uint underlyingPriceMantissa) public {
-        address asset = address(PErc20(address(pToken)).underlying());
+    function setUnderlyingPrice(address pToken, uint underlyingPriceMantissa) public {
+        address asset = address(PErc20(pToken).underlying());
         emit PricePosted(asset, prices[asset], underlyingPriceMantissa, underlyingPriceMantissa);
         prices[asset] = underlyingPriceMantissa;
     }
@@ -35,7 +35,7 @@ contract SimplePriceOracle is PriceOracle {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
-    function updateUnderlyingPrice(PToken pToken) external override returns (uint) {
+    function updateUnderlyingPrice(address pToken) external override returns (uint) {
         pToken; //shh
         return 0;
     }

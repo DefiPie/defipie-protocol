@@ -7,16 +7,13 @@ import "./PTokenInterfaces.sol";
 import "./SafeMath.sol";
 import "./IPriceFeeds.sol";
 import "./UniswapPriceOracleStorage.sol";
-
-interface IRegistry {
-    function pETH() external view returns (address);
-}
+import './Registry.sol';
 
 contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErrorReporter {
     using FixedPoint for *;
     using SafeMath for uint;
 
-    IRegistry public registry;
+    Registry public registry;
     address public uniswapFactory;
     address public WETHUniswap;
     address public ETHUSDPriceFeed;
@@ -42,14 +39,14 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
         public
     {
         require(
-            registry == IRegistry(address(0)) &&
+            registry == Registry(address(0)) &&
             uniswapFactory == address(0) &&
             WETHUniswap == address(0) &&
             ETHUSDPriceFeed == address(0)
             , "UniswapPriceOracle may only be initialized once"
         );
 
-        registry = IRegistry(registry_);
+        registry = Registry(registry_);
         uniswapFactory = uniswapFactory_;
         WETHUniswap = WETHUniswap_;
         ETHUSDPriceFeed = ETHUSDPriceFeed_;
@@ -100,22 +97,22 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
         return factory.getPair(WETHUniswap, asset);
     }
 
-    function getUnderlyingPrice(PToken pToken) public view override returns (uint) {
-        if (address(pToken) == registry.pETH()) {
+    function getUnderlyingPrice(address pToken) public view override returns (uint) {
+        if (pToken == registry.pETH()) {
             return getPriceInUSD(registry.pETH());
         }
 
-        address asset = address(PErc20Interface(address(pToken)).underlying());
+        address asset = address(PErc20Interface(pToken).underlying());
 
         return getPriceInUSD(asset);
     }
 
-    function updateUnderlyingPrice(PToken pToken) public override returns (uint) {
-        if (address(pToken) == registry.pETH()) {
+    function updateUnderlyingPrice(address pToken) public override returns (uint) {
+        if (pToken == registry.pETH()) {
             return uint(Error.NO_ERROR);
         }
 
-        address asset = address(PErc20Interface(address(pToken)).underlying());
+        address asset = address(PErc20Interface(pToken).underlying());
 
         return update(asset);
     }
@@ -192,7 +189,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_ADDRESSES);
         }
 
-        registry = IRegistry(registry_);
+        registry = Registry(registry_);
         uniswapFactory = uniswapFactory_;
         WETHUniswap = WETHUniswap_;
         ETHUSDPriceFeed = ETHUSDPriceFeed_;

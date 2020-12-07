@@ -9,7 +9,7 @@ contract FixedPriceOracle is PriceOracle {
         price = _price;
     }
 
-    function getUnderlyingPrice(PToken pToken) public view override returns (uint) {
+    function getUnderlyingPrice(address pToken) public view override returns (uint) {
         pToken;
         return price;
     }
@@ -19,7 +19,7 @@ contract FixedPriceOracle is PriceOracle {
         return price;
     }
 
-    function updateUnderlyingPrice(PToken pToken) external override returns (uint) {
+    function updateUnderlyingPrice(address pToken) external override returns (uint) {
         pToken; //shh
         return 0;
     }

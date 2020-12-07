@@ -9,21 +9,14 @@ import "./ErrorReporter.sol";
 import "./SafeMath.sol";
 import "./PEtherDelegator.sol";
 import "./PPIEDelegator.sol";
-
-interface Icontroller {
-    function _supportMarket(address pToken) external returns (uint);
-}
-
-interface IUniswapPriceOracle {
-    function update(address asset) external returns (uint);
-    function getUniswapPair(address asset) external view returns (address);
-}
+import "./Controller.sol";
+import "./UniswapPriceOracle.sol";
 
 contract PTokenFactory is FactoryErrorReporter {
     using strings for *;
     using SafeMath for uint;
 
-    IUniswapPriceOracle public oracle;
+    UniswapPriceOracle public oracle;
     uint public minUniswapLiquidity;
 
     // decimals for pToken
@@ -54,7 +47,7 @@ contract PTokenFactory is FactoryErrorReporter {
     ) {
         registry = registry_;
         minUniswapLiquidity = minUniswapLiquidity_;
-        oracle = IUniswapPriceOracle(oracle_);
+        oracle = UniswapPriceOracle(oracle_);
         controller = _controller;
         interestRateModel = _interestRateModel;
         initialExchangeRateMantissa = _initialExchangeRateMantissa;
@@ -92,7 +85,7 @@ contract PTokenFactory is FactoryErrorReporter {
 
         PErc20Delegator newPToken = new PErc20Delegator(underlying_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
 
-        uint256 result = Icontroller(controller)._supportMarket(address(newPToken));
+        uint256 result = Controller(controller)._supportMarket(address(newPToken));
         if (result != 0) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
@@ -116,7 +109,7 @@ contract PTokenFactory is FactoryErrorReporter {
 
         PETHDelegator newPETH = new PETHDelegator(pETHImplementation_, controller, interestRateModel, initialExchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
 
-        uint256 result = Icontroller(controller)._supportMarket(address(newPETH));
+        uint256 result = Controller(controller)._supportMarket(address(newPETH));
         if (result != 0) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
@@ -138,7 +131,7 @@ contract PTokenFactory is FactoryErrorReporter {
 
         PPIEDelegator newPPIE = new PPIEDelegator(underlying_, pPIEImplementation_, controller, interestRateModel, initialExchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
 
-        uint256 result = Icontroller(controller)._supportMarket(address(newPPIE));
+        uint256 result = Controller(controller)._supportMarket(address(newPPIE));
         if (result != 0) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
@@ -180,7 +173,7 @@ contract PTokenFactory is FactoryErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_ORACLE);
         }
 
-        oracle = IUniswapPriceOracle(oracle_);
+        oracle = UniswapPriceOracle(oracle_);
 
         return uint(Error.NO_ERROR);
     }

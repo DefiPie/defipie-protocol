@@ -34,12 +34,8 @@ describe('PToken', function () {
       await send(pToken, 'harnessSetBalance', [root, 100]);
       expect(await call(pToken, 'balanceOf', [root])).toEqualNumber(100);
 
-      await send(pToken.controller, 'setTransferAllowed', [false])
+      await send(pToken.controller, 'setTransferAllowed', [false]);
       expect(await send(pToken, 'transfer', [root, 50])).toHaveTrollReject('TRANSFER_CONTROLLER_REJECTION');
-
-      await send(pToken.controller, 'setTransferAllowed', [true])
-      await send(pToken.controller, 'setTransferVerify', [false])
-      await expect(send(pToken, 'transfer', [accounts[0], 50])).rejects.toRevert("revert transferVerify rejected transfer");
     });
   });
 });

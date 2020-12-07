@@ -2,13 +2,19 @@ pragma solidity ^0.7.4;
 
 import "./ProxyWithRegistry.sol";
 import "./RegistryInterface.sol";
+import "./ErrorReporter.sol";
 
 /**
  * @title DeFiPie's PPIEDelegator Contract
  * @notice PPIE which wrap an EIP-20 underlying and delegate to an implementation
  * @author DeFiPie
  */
-contract PPIEDelegator is ImplementationStorage, ProxyWithRegistry {
+contract PPIEDelegator is ImplementationStorage, ProxyWithRegistry, TokenErrorReporter {
+
+    /**
+      * @notice Emitted when implementation is changed
+      */
+    event NewImplementation(address oldImplementation, address newImplementation);
 
     /**
      * @notice Construct a new money market
@@ -95,5 +101,18 @@ contract PPIEDelegator is ImplementationStorage, ProxyWithRegistry {
 
     receive() external payable {
         require(msg.value == 0,"PPIEDelegator:receive: cannot send value to receive");
+    }
+
+    function setImplementation(address newImplementation) external returns(uint) {
+        if (msg.sender != RegistryInterface(registry).admin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
+        }
+
+        address oldImplementation = implementation;
+        _setImplementation(newImplementation);
+
+        emit NewImplementation(oldImplementation, implementation);
+
+        return(uint(Error.NO_ERROR));
     }
 }

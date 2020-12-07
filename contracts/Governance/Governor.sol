@@ -1,9 +1,7 @@
 pragma solidity ^0.7.4;
 pragma experimental ABIEncoderV2;
 
-interface IRegistry {
-    function pPIE() external view returns (address);
-}
+import '../Registry.sol';
 
 contract Governor {
     /// @notice The name of this contract
@@ -28,7 +26,7 @@ contract Governor {
     TimelockInterface public timelock;
 
     /// @notice The address of the Registry
-    IRegistry public registry;
+    Registry public registry;
 
     /// @notice The address of the Governor Guardian
     address public guardian;
@@ -130,7 +128,7 @@ contract Governor {
 
     constructor(address timelock_, address registry_, address guardian_) {
         timelock = TimelockInterface(timelock_);
-        registry = IRegistry(registry_);
+        registry = Registry(registry_);
         guardian = guardian_;
     }
 

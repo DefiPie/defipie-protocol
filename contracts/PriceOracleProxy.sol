@@ -1,7 +1,6 @@
 pragma solidity ^0.7.4;
 
 import "./PErc20.sol";
-import "./PToken.sol";
 import "./PriceOracle.sol";
 
 interface V1PriceOracleInterface {
@@ -71,8 +70,8 @@ contract PriceOracleProxy is PriceOracle {
      * @param pToken The pToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(PToken pToken) public view override returns (uint) {
-        address pTokenAddress = address(pToken);
+    function getUnderlyingPrice(address pToken) public view override returns (uint) {
+        address pTokenAddress = pToken;
 
         if (pTokenAddress == pETHAddress) {
             // ether always worth 1
@@ -108,7 +107,7 @@ contract PriceOracleProxy is PriceOracle {
         saiPrice = price;
     }
 
-    function updateUnderlyingPrice(PToken pToken) external override returns (uint) {
+    function updateUnderlyingPrice(address pToken) external override returns (uint) {
         pToken; //shh
         return 0;
     }

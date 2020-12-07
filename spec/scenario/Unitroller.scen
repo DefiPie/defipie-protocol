@@ -5,7 +5,8 @@ Test "Standard Upgrade"
     -- Upgrade to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
-    ControllerImpl ScenControllerG1 Become 1e18 []
+    ControllerImpl ScenControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracle Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -17,14 +18,14 @@ Test "Standard Upgrade"
     -- Upgrade to G2
     ControllerImpl Deploy StandardG3 StandardControllerG2
     Unitroller SetPendingImpl StandardControllerG2
-    ControllerImpl StandardControllerG2 Become 1e18 []
+    ControllerImpl StandardControllerG2 Become
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (Controller MaxAssets) 20
     Assert Equal (Controller Implementation) (Address StandardControllerG2)
     -- Upgrade to G3
     ControllerImpl Deploy StandardG3 ScenControllerG3
     Unitroller SetPendingImpl ScenControllerG3
-    ControllerImpl ScenControllerG3 Become 1e18 []
+    ControllerImpl ScenControllerG3 Become
     Controller AddPieMarkets pZRX
     Controller AddPieMarkets pDAI
     -- Not checks allMarkets array
@@ -38,7 +39,8 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     -- Upgrade to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
-    ControllerImpl ScenControllerG1 Become 1e18 []
+    ControllerImpl ScenControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracle Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -48,7 +50,7 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     -- Upgrade to G2
     ControllerImpl Deploy StandardG3 ControllerG2
     Unitroller SetPendingImpl ControllerG2
-    ControllerImpl ControllerG2 Become 1e18 []
+    ControllerImpl ControllerG2 Become
     Controller SetPauseGuardian Coburn
     Assert Equal (Controller PauseGuardian) (Address Coburn)
     Assert Equal (Controller CloseFactor) 0.2
@@ -57,20 +59,20 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     -- Upgrade to G3
     ControllerImpl Deploy ScenarioG3 ScenControllerG3
     Unitroller SetPendingImpl ScenControllerG3
-    ControllerImpl ScenControllerG3 Become 1e18 []
+    ControllerImpl ScenControllerG3 Become
     Assert Equal (Controller PauseGuardian) (Address Coburn)
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (Controller MaxAssets) 20
     Assert Equal (Controller Implementation) (Address ScenControllerG3)
     -- Downgrade to G2
     Unitroller SetPendingImpl ControllerG2
-    ControllerImpl ControllerG2 Become 1e18 []
+    ControllerImpl ControllerG2 Become
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (Controller MaxAssets) 20
     Assert Equal (Controller Implementation) (Address ControllerG2)
     -- Upgrade to G3 again
     Unitroller SetPendingImpl ScenControllerG3
-    ControllerImpl ScenControllerG3 Become 1e18 []
+    ControllerImpl ScenControllerG3 Become
     ListedPToken ZRX pZRX
     ListedPToken DAI pDAI
     Controller AddPieMarkets pZRX
@@ -87,7 +89,8 @@ Test "Once become, can become again"
     PriceOracle Deploy Fixed 1.0
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
-    ControllerImpl ScenControllerG1 Become 1e18 []
+    ControllerImpl ScenControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracle Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -96,7 +99,7 @@ Test "Once become, can become again"
     Assert Equal (Controller Implementation) (Address ScenControllerG1)
     ControllerImpl Deploy ScenarioG1 ScenControllerG1_2
     Unitroller SetPendingImpl ScenControllerG1_2
-    ControllerImpl ScenControllerG1_2 Become 1e18 []
+    ControllerImpl ScenControllerG1_2 Become
     Controller SetPriceOracle (PriceOracle Address)
     Controller SetCloseFactor 0.4
     Controller SetMaxAssets 40
@@ -122,7 +125,8 @@ Test "Bork and unbork"
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     -- Set a normal impl
     Unitroller SetPendingImpl ScenControllerG1
-    ControllerImpl ScenControllerG1 Become 1e18 []
+    ControllerImpl ScenControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracle Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -132,7 +136,7 @@ Test "Bork and unbork"
     -- Now move to a borked one that's bad
     ControllerImpl Deploy Borked MyBork
     Unitroller SetPendingImpl MyBork
-    ControllerImpl MyBork Become 1e18 []
+    ControllerImpl MyBork Become
     Assert ReadRevert (Controller CloseFactor) "revert"
     Assert Equal (Controller Implementation) (Address MyBork)
     -- Now change back to the first good one
@@ -247,7 +251,8 @@ Pending "Keeps all storage"
     PriceOracle Deploy Fixed 1.0
     ControllerImpl Deploy StandardG3 ControllerG1
     Unitroller SetPendingImpl ControllerG1
-    ControllerImpl ControllerG1 Become 1e18 []
+    ControllerImpl ControllerG1 Become
+    Controller SetPieRate 1e18
     Controller SetPriceOracle (PriceOracle Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -270,7 +275,8 @@ Pending "Keeps all storage"
     Unitroller SetPendingImpl ControllerG2
     Assert Equal (Unitroller PendingImplementation) (Address ControllerG2)
     Assert Equal (StorageAt Controller 3 0 "address") (Address ControllerG2)
-    ControllerImpl ControllerG2 Become 1e18 []
+    ControllerImpl ControllerG2 Become
+    Controller SetPieRate 1e18
     Controller SetPauseGuardian Coburn
     --
     CheckUnitrollerStorage (Address ControllerG2)
@@ -278,14 +284,17 @@ Pending "Keeps all storage"
     --
     ControllerImpl Deploy StandardG3 ControllerG3
     Unitroller SetPendingImpl ControllerG3
-    ControllerImpl ControllerG3 Become 1e18 [pZRX pBAT]
+    ControllerImpl ControllerG3 Become
+    Controller SetPieRate 1e18
+    Controller AddPieMarkets pZRX
+    Controller AddPieMarkets pBAT
     --
     CheckUnitrollerStorage (Address ControllerG3)
     CheckStorage
     --
     ControllerImpl Deploy StandardG3 ControllerG4
     Unitroller SetPendingImpl ControllerG4
-    ControllerImpl ControllerG4 Become 1e18 []
+    ControllerImpl ControllerG4 Become
     --
     CheckUnitrollerStorage (Address ControllerG4)
     CheckStorage

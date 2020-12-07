@@ -2,13 +2,19 @@ pragma solidity ^0.7.4;
 
 import "./ProxyWithRegistry.sol";
 import "./RegistryInterface.sol";
+import "./ErrorReporter.sol";
 
 /**
  * @title DeFiPie's PETHDelegator Contract
  * @notice PETH which wrap a delegate to an implementation
  * @author DeFiPie
  */
-contract PETHDelegator is ImplementationStorage, ProxyWithRegistry {
+contract PETHDelegator is ImplementationStorage, ProxyWithRegistry, TokenErrorReporter {
+
+    /**
+      * @notice Emitted when implementation is changed
+      */
+    event NewImplementation(address oldImplementation, address newImplementation);
 
     /**
      * @notice Construct a new money market
@@ -91,5 +97,18 @@ contract PETHDelegator is ImplementationStorage, ProxyWithRegistry {
     receive() external payable {
         // delegate all other functions to current implementation
         delegateAndReturn();
+    }
+
+    function setImplementation(address newImplementation) external returns(uint) {
+        if (msg.sender != RegistryInterface(registry).admin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
+        }
+
+        address oldImplementation = implementation;
+        _setImplementation(newImplementation);
+
+        emit NewImplementation(oldImplementation, implementation);
+
+        return(uint(Error.NO_ERROR));
     }
 }
