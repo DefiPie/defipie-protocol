@@ -3,6 +3,8 @@ pragma solidity ^0.7.4;
 import "./PTokenInterfaces.sol";
 import './RegistryStorage.sol';
 import "./ErrorReporter.sol";
+import "./Controller.sol";
+import "./PTokenFactory.sol";
 
 contract Registry is RegistryStorage, RegistryErrorReporter {
 
@@ -29,6 +31,16 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
       * @notice Emitted when PTokenImplementation is changed
       */
     event NewPTokenImplementation(address oldImplementation, address newImplementation);
+
+    /**
+      * @notice Emitted when Factory address is changed
+      */
+    event NewFactory(address oldFactory, address newFactory);
+
+    /**
+      * @notice Emitted when admin remove pToken
+      */
+    event RemovePToken(address pToken);
 
     constructor() {}
 
@@ -60,7 +72,11 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_FACTORY);
         }
 
+        address oldFactory = factory;
         factory = _factory;
+
+        emit NewFactory(oldFactory, factory);
+
         return uint(Error.NO_ERROR);
     }
 
@@ -93,6 +109,23 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
 
         require(pPIE == address(0), "PIE already added");
         pPIE = pPIE_;
+
+        address underlying = PErc20Storage(pPIE).underlying();
+        pTokens[underlying] = pPIE;
+
+        return uint(Error.NO_ERROR);
+    }
+
+    function removePToken(address pToken) public returns (uint) {
+        require(msg.sender == admin, "Only admin can remove PTokens");
+
+        PTokenInterface(pToken).isPToken(); // Sanity check to make sure its really a PToken
+
+        address underlying = PErc20Storage(pToken).underlying();
+        require(pTokens[underlying] != address(0), "Token not added");
+        delete pTokens[underlying];
+
+        emit RemovePToken(pToken);
 
         return uint(Error.NO_ERROR);
     }

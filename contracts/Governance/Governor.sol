@@ -8,10 +8,10 @@ contract Governor {
     string public constant name = "DeFiPie Governor";
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Pie
+    function quorumVotes() public pure returns (uint) { return 8800000e18; } // 8,800,000 = 4% of Pie
 
     /// @notice The number of votes required in order for a voter to become a proposer
-    function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Pie
+    function proposalThreshold() public pure returns (uint) { return 2200000e18; } // 2,200,000 = 1% of Pie
 
     /// @notice The maximum number of actions that can be included in a proposal
     function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions

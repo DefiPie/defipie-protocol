@@ -20,7 +20,7 @@ contract PTokenFactory is FactoryErrorReporter {
     uint public minUniswapLiquidity;
 
     // decimals for pToken
-    uint8 decimals = 18;
+    uint8 public decimals = 8;
 
     // default parameters for pToken
     address public controller;
@@ -225,6 +225,16 @@ contract PTokenFactory is FactoryErrorReporter {
         }
 
         initialReserveFactorMantissa = _initialReserveFactorMantissa;
+
+        return(uint(Error.NO_ERROR));
+    }
+
+    function setPTokenDecimals(uint _decimals) external returns (uint) {
+        if (msg.sender != getAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_DECIMALS);
+        }
+
+        decimals = uint8(_decimals);
 
         return(uint(Error.NO_ERROR));
     }

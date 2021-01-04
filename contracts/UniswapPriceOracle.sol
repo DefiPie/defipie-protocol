@@ -8,6 +8,7 @@ import "./SafeMath.sol";
 import "./IPriceFeeds.sol";
 import "./UniswapPriceOracleStorage.sol";
 import './Registry.sol';
+import './EIP20Interface.sol';
 
 contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErrorReporter {
     using FixedPoint for *;
@@ -87,7 +88,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
         cumulativePrices[asset].price1CumulativePrevious = pair.price1CumulativeLast();
         cumulativePrices[asset].blockTimestampPrevious = blockTimestamp;
 
-        emit PriceUpdated(asset, getPriceInUSD(asset));
+        emit PriceUpdated(asset, getCourseInETH(asset));
 
         return uint(Error.NO_ERROR);
     }
@@ -103,8 +104,10 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
         }
 
         address asset = address(PErc20Interface(pToken).underlying());
+        uint price = getPriceInUSD(asset);
+        uint decimals = EIP20Interface(asset).decimals();
 
-        return getPriceInUSD(asset);
+        return price.mul(10 ** (36 - decimals)).div(1e18);
     }
 
     function updateUnderlyingPrice(address pToken) public override returns (uint) {

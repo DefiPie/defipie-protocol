@@ -231,6 +231,11 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         return (uint(Error.NO_ERROR), pTokenBalance, borrowBalance, exchangeRateMantissa);
     }
 
+    function getBorrowSnapshot(address account) external view returns(uint, uint) {
+        return (accountBorrows[account].principal, accountBorrows[account].interestIndex);
+    }
+    
+
     /**
      * @dev Function to simply retrieve block number
      *  This exists mainly for inheriting test contracts to stub this result.
@@ -1099,6 +1104,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         if (msg.sender != getMyAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_CONTROLLER_OWNER_CHECK);
         }
+
         return _setControllerInternal(newController);
     }
 
