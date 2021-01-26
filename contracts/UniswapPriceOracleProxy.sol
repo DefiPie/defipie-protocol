@@ -137,15 +137,8 @@ contract UniswapPriceOracleProxy is UniswapPriceOracleStorage, OracleErrorReport
      * @notice Delegates execution to an implementation contract
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
-    fallback() external payable {
-        require(msg.value == 0,"UniswapPriceOracleProxy:fallback: cannot send value to fallback");
-
+    fallback() external {
         // delegate all other functions to current implementation
         delegateAndReturn();
     }
-
-    receive() external payable {
-        require(msg.value == 0,"UniswapPriceOracleProxy:receive: cannot send value to receive");
-    }
-
 }

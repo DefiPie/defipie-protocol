@@ -92,15 +92,9 @@ contract PPIEDelegator is ImplementationStorage, ProxyWithRegistry, TokenErrorRe
      * @notice Delegates execution to an implementation contract
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
-    fallback() external payable {
-        require(msg.value == 0,"PPIEDelegator:fallback: cannot send value to fallback");
-
+    fallback() external {
         // delegate all other functions to current implementation
         delegateAndReturn();
-    }
-
-    receive() external payable {
-        require(msg.value == 0,"PPIEDelegator:receive: cannot send value to receive");
     }
 
     function setImplementation(address newImplementation) external returns(uint) {
