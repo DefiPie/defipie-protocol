@@ -82,8 +82,8 @@ contract UniswapPriceOracleProxy is UniswapPriceOracleStorage, OracleErrorReport
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
     function _acceptAdmin() external returns (uint) {
-        // Check caller is pendingAdmin and pendingAdmin ≠ address(0)
-        if (msg.sender != pendingAdmin || msg.sender == address(0)) {
+        // Check caller is pendingAdmin
+        if (msg.sender != pendingAdmin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_ADMIN_PENDING_ADMIN_CHECK);
         }
 
@@ -137,15 +137,8 @@ contract UniswapPriceOracleProxy is UniswapPriceOracleStorage, OracleErrorReport
      * @notice Delegates execution to an implementation contract
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
-    fallback() external payable {
-        require(msg.value == 0,"UniswapPriceOracleProxy:fallback: cannot send value to fallback");
-
+    fallback() external {
         // delegate all other functions to current implementation
         delegateAndReturn();
     }
-
-    receive() external payable {
-        require(msg.value == 0,"UniswapPriceOracleProxy:receive: cannot send value to receive");
-    }
-
 }

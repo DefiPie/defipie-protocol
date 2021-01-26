@@ -106,8 +106,8 @@ contract Unitroller is UnitrollerAdminStorage, ControllerErrorReporter {
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
     function _acceptAdmin() public returns (uint) {
-        // Check caller is pendingAdmin and pendingAdmin ≠ address(0)
-        if (msg.sender != pendingAdmin || msg.sender == address(0)) {
+        // Check caller is pendingAdmin
+        if (msg.sender != pendingAdmin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_ADMIN_PENDING_ADMIN_CHECK);
         }
 
@@ -144,9 +144,5 @@ contract Unitroller is UnitrollerAdminStorage, ControllerErrorReporter {
             case 0 { revert(free_mem_ptr, returndatasize()) }
             default { return(free_mem_ptr, returndatasize()) }
         }
-    }
-
-    receive() payable external {
-        require(msg.value == 0, "unitroller should not get ether");
     }
 }

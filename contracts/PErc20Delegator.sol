@@ -83,14 +83,8 @@ contract PErc20Delegator is ProxyWithRegistry {
      * @notice Delegates execution to an implementation contract
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
-    fallback() external payable {
-        require(msg.value == 0,"PErc20Delegator:fallback: cannot send value to fallback");
-
+    fallback() external {
         // delegate all other functions to current implementation
         delegateAndReturn();
-    }
-
-    receive() external payable {
-        require(msg.value == 0,"PErc20Delegator:receive: cannot send value to receive");
     }
 }
