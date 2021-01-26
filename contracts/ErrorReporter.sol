@@ -248,7 +248,6 @@ contract FactoryErrorReporter {
         UNAUTHORIZED
     }
 
-    //TODO: Add more cases
     enum FailureInfo {
         ACCEPT_ADMIN_PENDING_ADMIN_CHECK,
         CREATE_PETH_POOL,
@@ -289,7 +288,6 @@ contract RegistryErrorReporter {
         UNAUTHORIZED
     }
 
-    //TODO: Add more cases
     enum FailureInfo {
         ACCEPT_ADMIN_PENDING_ADMIN_CHECK,
         SET_NEW_IMPLEMENTATION,
