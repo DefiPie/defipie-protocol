@@ -14,8 +14,7 @@ import {
     EventV,
 } from '../Value';
 import {Arg, Command, processCommandEvent} from '../Command';
-import {getRegistry, getRegistryProxy} from "../ContractLookup";
-import {Registry} from "../Contract/Registry";
+import {getRegistryProxy} from "../ContractLookup";
 
 async function genToken(world: World, from: string, params: Event): Promise<World> {
     let {world: newWorld, registryProxy, registryProxyData} = await buildRegistryProxy(world, from, params);
@@ -78,18 +77,53 @@ async function setImplementation(world: World, from: string, registryProxy: Regi
     return world;
 }
 
-async function setAddPPIE(world: World, from: string, registryProxy: RegistryProxy, newPPIE: string): Promise<World> {
-    let invokation = await invoke(world, registryProxy.methods.addPPIE(newPPIE), from, RegistryErrorReporter);
+async function setAddPToken(world: World, from: string, registryProxy: RegistryProxy, newUnderlying: string, newPToken: string): Promise<World> {
+    let invokation = await invoke(world, registryProxy.methods.addPToken(newUnderlying, newPToken), from, RegistryErrorReporter);
 
     world = addAction(
         world,
-        `Called set PToken Implementation ${newPPIE} as ${describeUser(world, from)}`,
+        `Called add newPToken address ${newPToken} as ${describeUser(world, from)}`,
         invokation
     );
 
     return world;
 }
 
+async function setAddPPIE(world: World, from: string, registryProxy: RegistryProxy, newPPIE: string): Promise<World> {
+    let invokation = await invoke(world, registryProxy.methods.addPPIE(newPPIE), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Called add PPIE address ${newPPIE} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
+
+async function setAddPETH(world: World, from: string, registryProxy: RegistryProxy, newPETH: string): Promise<World> {
+    let invokation = await invoke(world, registryProxy.methods.addPETH(newPETH), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Called add PETH address ${newPETH} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
+
+async function removePTokenFromRegistry(world: World, from: string, registryProxy: RegistryProxy, pToken: string): Promise<World> {
+    let invokation = await invoke(world, registryProxy.methods.removePToken(pToken), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Called remove PToken ${pToken} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
 
 export function registryProxyCommands() {
     return [
@@ -165,6 +199,46 @@ export function registryProxyCommands() {
                 new Arg("newPPIE", getAddressV)
             ],
             (world, from, {registryProxy, newPPIE}) => setAddPPIE(world, from, registryProxy, newPPIE.val)
+        ),
+        new Command<{registryProxy: RegistryProxy, newPETH: AddressV}>(`
+        #### AddPETH
+
+        * "RegistryProxy AddPETH newPETH:<Address>" - Sets the PETH address for the Registry
+          * E.g. "RegistryProxy AddPETH 0x.."
+      `,
+            "AddPETH",
+            [
+                new Arg("registryProxy", getRegistryProxy, {implicit: true}),
+                new Arg("newPETH", getAddressV)
+            ],
+            (world, from, {registryProxy, newPETH}) => setAddPETH(world, from, registryProxy, newPETH.val)
+        ),
+        new Command<{registryProxy: RegistryProxy, pToken: AddressV}>(`
+        #### RemovePToken
+
+        * "RegistryProxy RemovePToken pToken:<Address>" - Remove the pToken from the Registry
+          * E.g. "RegistryProxy RemovePToken 0x.."
+      `,
+            "RemovePToken",
+            [
+                new Arg("registryProxy", getRegistryProxy, {implicit: true}),
+                new Arg("pToken", getAddressV)
+            ],
+            (world, from, {registryProxy, pToken}) => removePTokenFromRegistry(world, from, registryProxy, pToken.val)
+        ),
+        new Command<{registryProxy: RegistryProxy, newUnderlying: AddressV, newPToken: AddressV}>(`
+        #### AddPToken
+
+        * "RegistryProxy AddPToken newUnderlying:<Address> newPToken:<Address>" - Sets the PToken address for the Registry
+          * E.g. "RegistryProxy AddPToken 0x.. 0x.."
+      `,
+            "AddPToken",
+            [
+                new Arg("registryProxy", getRegistryProxy, {implicit: true}),
+                new Arg("newUnderlying", getAddressV),
+                new Arg("newPToken", getAddressV)
+            ],
+            (world, from, {registryProxy, newUnderlying, newPToken}) => setAddPToken(world, from, registryProxy, newUnderlying.val, newPToken.val)
         )
     ];
 }

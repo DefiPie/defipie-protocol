@@ -108,7 +108,7 @@ describe('Controller', () => {
 
     it("returns collateral factor times dollar amount of tokens minted in a single market", async () => {
       const collateralFactor = 0.5, exchangeRate = 1, underlyingPrice = 1;
-      const pToken = await makePToken({supportMarket: true, collateralFactor, exchangeRate, underlyingPrice});
+      const pToken = await makePToken({supportMarket: true, collateralFactor, underlyingPrice});
       const from = accounts[0], balance = 1e7, amount = 1e6;
       await enterMarkets([pToken], from);
       await send(pToken.underlying, 'harnessSetBalance', [from, balance], {from});

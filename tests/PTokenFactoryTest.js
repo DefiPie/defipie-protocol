@@ -47,11 +47,18 @@ describe('PToken Factory tests', () => {
             let initialReserveFactorMantissaValue = await call(pTokenFactory, "initialReserveFactorMantissa");
             expect(+initialReserveFactorMantissaValue).toEqual(1e17);
         });
+
+        it("gets value of decimals", async () => {
+            let decimalsValue = await call(pTokenFactory, "decimals");
+            expect(+decimalsValue).toEqual(8);
+        });
     });
 
     describe("Create token", () => {
         it("create token with default data", async () => {
             let underlying = await makeToken();
+            let tx = await send(factoryUniswap, 'setToken0Address', [underlying._address]);
+            expect(tx).toSucceed();
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
@@ -85,11 +92,7 @@ describe('PToken Factory tests', () => {
 
             let underlying = await makeToken();
 
-            let result = await send(pTokenFactory, 'createPToken',
-                [
-                    underlying._address
-                ]
-            );
+            let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
             expect(result).toHaveFactoryFailure('INVALID_POOL', 'DEFICIENCY_ETH_LIQUIDITY_IN_POOL');
         });
@@ -99,11 +102,7 @@ describe('PToken Factory tests', () => {
 
             let underlying = await makeToken();
 
-            let result = await send(pTokenFactory, 'createPToken',
-                [
-                    underlying._address
-                ]
-            );
+            let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
             expect(result).toHaveFactoryFailure('INVALID_POOL', 'PAIR_IS_NOT_EXIST');
         });
@@ -166,6 +165,18 @@ describe('PToken Factory tests', () => {
         it("set reserveFactorMantissa value, not UNAUTHORIZED", async () => {
             let result = await send(pTokenFactory, 'setInitialReserveFactorMantissa', ['12'], {from: accounts[2]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_RESERVE_FACTOR');
+        });
+    });
+
+    describe("set decimals value", () => {
+        it("set decimals value", async () => {
+            await send(pTokenFactory, 'setPTokenDecimals', ['11']);
+            expect(await call(pTokenFactory, 'decimals')).toEqual('11');
+        });
+
+        it("set decimals value, not UNAUTHORIZED", async () => {
+            let result = await send(pTokenFactory, 'setPTokenDecimals', ['12'], {from: accounts[2]});
+            expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_DECIMALS');
         });
     });
 });

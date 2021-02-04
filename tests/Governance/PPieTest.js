@@ -27,7 +27,7 @@ describe('Pie', () => {
 
     chainId = 1; // await web3.eth.net.getId(); See: https://github.com/trufflesuite/ganache-core/issues/515
     pie = await deploy('Pie', [root]);
-    ppie = await makePToken({ kind: 'ppie', underlying: pie});
+    ppie = await makePToken({ kind: 'ppie', underlying: pie, exchangeRate: 1});
 
     await send(pie, 'approve', [ppie._address, etherMantissa(10000000)]);
     await send(ppie, 'mint', [etherMantissa(10000000)]);

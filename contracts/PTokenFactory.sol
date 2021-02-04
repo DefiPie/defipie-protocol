@@ -99,7 +99,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function createPETH(address pETHImplementation_) external returns (uint) {
+    function createPETH(address pETHImplementation_) external virtual returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PETH_POOL);
         }
@@ -121,7 +121,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function createPPIE(address underlying_, address pPIEImplementation_) external returns (uint) {
+    function createPPIE(address underlying_, address pPIEImplementation_) external virtual returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PPIE_POOL);
         }

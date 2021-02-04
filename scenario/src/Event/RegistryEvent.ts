@@ -41,12 +41,48 @@ async function setPTokenImplementation(world: World, from: string, registry: Reg
     return world;
 }
 
+async function setAddPToken(world: World, from: string, registry: Registry, newUnderlying: string, newPToken: string): Promise<World> {
+    let invokation = await invoke(world, registry.methods.addPToken(newUnderlying, newPToken), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Called add newPToken address ${newPToken} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
+
 async function setAddPPIE(world: World, from: string, registry: Registry, newPPIE: string): Promise<World> {
     let invokation = await invoke(world, registry.methods.addPPIE(newPPIE), from, RegistryErrorReporter);
 
     world = addAction(
         world,
-        `Called set PToken Implementation ${newPPIE} as ${describeUser(world, from)}`,
+        `Called add PPIE address ${newPPIE} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
+
+async function setAddPETH(world: World, from: string, registry: Registry, newPETH: string): Promise<World> {
+    let invokation = await invoke(world, registry.methods.addPETH(newPETH), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Called add PETH address ${newPETH} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
+
+async function removePTokenFromRegistry(world: World, from: string, registry: Registry, pToken: string): Promise<World> {
+    let invokation = await invoke(world, registry.methods.removePToken(pToken), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Called remove PToken ${pToken} as ${describeUser(world, from)}`,
         invokation
     );
 
@@ -102,6 +138,20 @@ export function registryCommands() {
             ],
             (world, from, {registry, pTokenImplementation}) => initialize(world, from, registry, pTokenImplementation.val)
         ),
+        new Command<{registry: Registry, newUnderlying: AddressV, newPToken: AddressV}>(`
+        #### AddPToken
+
+        * "Registry AddPToken newUnderlying:<Address> newPToken:<Address>" - Sets the PToken address for the Registry
+          * E.g. "Registry AddPToken 0x.. 0x.."
+      `,
+            "AddPToken",
+            [
+                new Arg("registry", getRegistry, {implicit: true}),
+                new Arg("newUnderlying", getAddressV),
+                new Arg("newPToken", getAddressV)
+            ],
+            (world, from, {registry, newUnderlying, newPToken}) => setAddPToken(world, from, registry, newUnderlying.val, newPToken.val)
+        ),
         new Command<{registry: Registry, newPPIE: AddressV}>(`
         #### AddPPIE
 
@@ -114,6 +164,32 @@ export function registryCommands() {
                 new Arg("newPPIE", getAddressV)
             ],
             (world, from, {registry, newPPIE}) => setAddPPIE(world, from, registry, newPPIE.val)
+        ),
+        new Command<{registry: Registry, newPETH: AddressV}>(`
+        #### AddPETH
+
+        * "Registry AddPETH newPETH:<Address>" - Sets the PETH address for the Registry
+          * E.g. "Registry AddPETH 0x.."
+      `,
+            "AddPETH",
+            [
+                new Arg("registry", getRegistry, {implicit: true}),
+                new Arg("newPETH", getAddressV)
+            ],
+            (world, from, {registry, newPETH}) => setAddPETH(world, from, registry, newPETH.val)
+        ),
+        new Command<{registry: Registry, pToken: AddressV}>(`
+        #### RemovePToken
+
+        * "Registry RemovePToken pToken:<Address>" - Remove the pToken from the Registry
+          * E.g. "Registry RemovePToken 0x.."
+      `,
+            "RemovePToken",
+            [
+                new Arg("registry", getRegistry, {implicit: true}),
+                new Arg("pToken", getAddressV)
+            ],
+            (world, from, {registry, pToken}) => removePTokenFromRegistry(world, from, registry, pToken.val)
         )
     ];
 }

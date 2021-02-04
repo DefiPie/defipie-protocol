@@ -55,7 +55,7 @@ describe('PToken', function () {
     });
 
     it('should return correct decimals', async () => {
-      expect(await call(pToken, 'decimals')).toEqualNumber(18);
+      expect(await call(pToken, 'decimals')).toEqualNumber(8);
     });
   });
 
@@ -63,7 +63,7 @@ describe('PToken', function () {
     it("has an underlying balance", async () => {
       const pToken = await makePToken({ supportMarket: true, exchangeRate: 2 });
       await send(pToken, 'harnessSetBalance', [root, 100]);
-      expect(await call(pToken, 'balanceOfUnderlying', [root])).toEqualNumber(200);
+      expect(await call(pToken, 'balanceOfUnderlying', [root])).toEqualNumber(2000000000000);
     });
   });
 
@@ -175,6 +175,7 @@ describe('PToken', function () {
 
   describe('exchangeRateStored', () => {
     let pToken, exchangeRate = 2;
+    let factor = 10; // difference between underlying decimals(18) and pToken decimals(8)
 
     beforeEach(async () => {
       pToken = await makePToken({ exchangeRate });
@@ -182,7 +183,8 @@ describe('PToken', function () {
 
     it("returns initial exchange rate with zero pTokenSupply", async () => {
       const result = await call(pToken, 'exchangeRateStored');
-      expect(result).toEqualNumber(etherMantissa(exchangeRate));
+      const expected = await etherMantissa(exchangeRate)*Math.pow(10,factor);
+      expect(result).toEqualNumber(expected);
     });
 
     it("calculates with single pTokenSupply and single total borrow", async () => {

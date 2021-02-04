@@ -198,6 +198,7 @@ const FactoryErrorReporter = {
         'PAIR_IS_NOT_EXIST',
         'SET_MIN_LIQUIDITY_OWNER_CHECK',
         'SET_NEW_CONTROLLER',
+        'SET_NEW_DECIMALS',
         'SET_NEW_EXCHANGE_RATE',
         'SET_NEW_IMPLEMENTATION',
         'SET_NEW_INTEREST_RATE_MODEL',

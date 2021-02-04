@@ -9,8 +9,8 @@ Macro DeployGov
     From Bank (PToken pPIE Mint 10000000e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
-    Enfranchise Root 200001e18
-    Enfranchise Jared 200000e18
+    Enfranchise Root 500001e18
+    Enfranchise Jared 500000e18
     Assert Equal (RegistryProxy pPIE) (Address pPIE)
 
 Macro Enfranchise user amount

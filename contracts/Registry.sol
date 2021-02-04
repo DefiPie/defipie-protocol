@@ -83,7 +83,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
     function addPToken(address underlying, address pToken) public returns (uint) {
         require(msg.sender == admin || msg.sender == factory, "Only admin or factory can add PTokens");
 
-        PTokenInterface(pToken).isPToken(); // Sanity check to make sure its really a PToken
+        require(PTokenInterface(pToken).isPToken(), "pToken address is not pToken"); // Sanity check to make sure its really a PToken
 
         require(pTokens[underlying] == address(0), "Token already added");
         pTokens[underlying] = pToken;

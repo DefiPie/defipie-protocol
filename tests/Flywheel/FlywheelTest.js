@@ -89,7 +89,7 @@ describe('Flywheel', () => {
       expect(block).toEqualNumber(100);
     });
 
-    it('should not revert or update pieBorrowState index if pToken not in PIE markets', async () => {
+    it('should not revert or update pieBorrowState index and block if pToken not in PIE markets', async () => {
       const mkt = await makePToken({
         controller: controller,
         supportMarket: true,
@@ -103,7 +103,7 @@ describe('Flywheel', () => {
 
       const {index, block} = await call(controller, 'pieBorrowState', [mkt._address]);
       expect(index).toEqualNumber(0);
-      expect(block).toEqualNumber(100);
+      expect(block).toEqualNumber(0);
       const speed = await call(controller, 'pieSpeeds', [mkt._address]);
       expect(speed).toEqualNumber(0);
     });
@@ -121,7 +121,7 @@ describe('Flywheel', () => {
       expect(block).toEqualNumber(0);
     });
 
-    it('should not update index if pie speed is 0', async () => {
+    it('should not update index and block if pie speed is 0', async () => {
       const mkt = pREP;
       await send(controller, 'setPieSpeed', [mkt._address, etherExp(0)]);
       await send(controller, 'setBlockNumber', [100]);
@@ -132,7 +132,7 @@ describe('Flywheel', () => {
 
       const {index, block} = await call(controller, 'pieBorrowState', [mkt._address]);
       expect(index).toEqualNumber(1e36);
-      expect(block).toEqualNumber(100);
+      expect(block).toEqualNumber(0);
     });
   });
 
@@ -155,7 +155,7 @@ describe('Flywheel', () => {
       expect(block).toEqualNumber(100);
     });
 
-    it('should not update index on non-PIE markets', async () => {
+    it('should not update index and block on non-PIE markets', async () => {
       const mkt = await makePToken({
         controller: controller,
         supportMarket: true,
@@ -168,7 +168,7 @@ describe('Flywheel', () => {
 
       const {index, block} = await call(controller, 'pieSupplyState', [mkt._address]);
       expect(index).toEqualNumber(0);
-      expect(block).toEqualNumber(100);
+      expect(block).toEqualNumber(0);
       const speed = await call(controller, 'pieSpeeds', [mkt._address]);
       expect(speed).toEqualNumber(0);
       // pToken could have no pie speed or pie supplier state if not in pie markets
