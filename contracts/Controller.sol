@@ -1045,8 +1045,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
                 index: safe224(index.mantissa, "new index exceeds 224 bits"),
                 block: safe32(blockNumber, "block number exceeds 32 bits")
             });
-        } else if (deltaBlocks > 0) {
-            supplyState.block = safe32(blockNumber, "block number exceeds 32 bits");
         }
     }
 
@@ -1068,8 +1066,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
                 index: safe224(index.mantissa, "new index exceeds 224 bits"),
                 block: safe32(blockNumber, "block number exceeds 32 bits")
             });
-        } else if (deltaBlocks > 0) {
-            borrowState.block = safe32(blockNumber, "block number exceeds 32 bits");
         }
     }
 
@@ -1222,18 +1218,22 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         market.isPied = true;
         emit MarketPied(pToken, true);
 
-        if (pieSupplyState[pToken].index == 0 && pieSupplyState[pToken].block == 0) {
+        if (pieSupplyState[pToken].index == 0) {
             pieSupplyState[pToken] = PieMarketState({
                 index: pieInitialIndex,
                 block: safe32(getBlockNumber(), "block number exceeds 32 bits")
             });
+        } else {
+            pieSupplyState[pToken].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
         }
 
-        if (pieBorrowState[pToken].index == 0 && pieBorrowState[pToken].block == 0) {
+        if (pieBorrowState[pToken].index == 0) {
             pieBorrowState[pToken] = PieMarketState({
                 index: pieInitialIndex,
                 block: safe32(getBlockNumber(), "block number exceeds 32 bits")
             });
+        } else {
+            pieBorrowState[pToken].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
         }
     }
 

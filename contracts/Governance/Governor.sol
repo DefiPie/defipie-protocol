@@ -7,11 +7,14 @@ contract Governor {
     /// @notice The name of this contract
     string public constant name = "DeFiPie Governor";
 
+    uint public threshold = 100000e18; // 100,000 pPIE
+    uint public quorum = 1000000e18; // 1,000,000 pPIE
+
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    function quorumVotes() public pure returns (uint) { return 8800000e18; } // 8,800,000 = 4% of Pie
+    function quorumVotes() public view returns (uint) { return quorum; }
 
     /// @notice The number of votes required in order for a voter to become a proposer
-    function proposalThreshold() public pure returns (uint) { return 2200000e18; } // 2,200,000 = 1% of Pie
+    function proposalThreshold() public view returns (uint) { return threshold; }
 
     /// @notice The maximum number of actions that can be included in a proposal
     function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
@@ -228,6 +231,10 @@ contract Governor {
         return proposals[proposalId].receipts[voter];
     }
 
+    function getForVotes(uint proposalId) public view returns (uint) {
+        return proposals[proposalId].forVotes;
+    }
+
     function state(uint proposalId) public view returns (ProposalState) {
         require(proposalCount >= proposalId && proposalId > 0, "Governor::state: invalid proposal id");
         Proposal storage proposal = proposals[proposalId];
@@ -281,6 +288,16 @@ contract Governor {
         receipt.votes = votes;
 
         emit VoteCast(voter, proposalId, support, votes);
+    }
+
+    function setQuorum(uint newQuorum) external {
+        require(msg.sender == guardian, "Governor::__acceptAdmin: sender must be gov guardian");
+        quorum = newQuorum;
+    }
+
+    function setThreshold(uint newThreshold) external {
+        require(msg.sender == guardian, "Governor::__acceptAdmin: sender must be gov guardian");
+        threshold = newThreshold;
     }
 
     function __acceptAdmin() public {

@@ -108,7 +108,9 @@ async function makePToken(opts = {}) {
 
   const controller = opts.controller || await makeController(opts.controllerOpts);
   const interestRateModel = opts.interestRateModel || await makeInterestRateModel(opts.interestRateModelOpts);
-  const exchangeRate = etherMantissa(dfn(opts.exchangeRate, 1));
+  // for simple calculation by default in tests exchangeRate is 1e18, but in factory pToken decimals is 8 and underlying decimals is 18
+  // then we have additional factor 1e10, thus exchangeRate by default value is 1e8, and 1e18 in factory
+  const exchangeRate = etherMantissa(dfn(opts.exchangeRate, 0.0000000001));
   const reserveFactor = etherMantissa(dfn(opts.reserveFactor, 0.1));
   const symbol = opts.symbol || (kind === 'pether' ? 'pETH' : 'pOMG');
   const name = opts.name || `PToken ${symbol}`;

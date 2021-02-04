@@ -11,6 +11,13 @@ interface RegistryMethods {
 
     pPIE(): Callable<string>
     addPPIE(address: string): Sendable<number>
+    pETH(): Callable<string>
+    addPETH(address: string): Sendable<number>
+
+    pTokens(address: string): Callable<string>
+    addPToken(underlying: string, pToken: string): Sendable<number>
+
+    removePToken(address: string): Sendable<number>
 }
 
 export interface Registry extends Contract {

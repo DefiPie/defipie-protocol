@@ -252,5 +252,5 @@ Test "Check transfer reverts when block number exceeds 32 bits"
     From Jared (PToken pPIE Delegate Geoff)
     AllowFailures
     SetBlockNumber 5000000000
-    From Geoff (PToken pPIE Transfer Jared 10000000e18)
-    Assert Revert "revert block number exceeds 32 bits"
+    From Geoff (PToken pPIE Transfer Jared 10e18)
+    Assert Revert "revert PPie::_writeCheckpoint: block number exceeds 32 bits"

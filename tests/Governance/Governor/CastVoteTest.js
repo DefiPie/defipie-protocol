@@ -26,7 +26,7 @@ describe("governor#castVote/2", () => {
     beforeAll(async () => {
         [root, a1, ...accounts] = saddle.accounts;
         pie = await deploy('Pie', [root]);
-        ppie = await makePToken({ kind: 'ppie', underlying: pie});
+        ppie = await makePToken({ kind: 'ppie', underlying: pie, exchangeRate: 1});
         registryAddress = await call(ppie, 'registry');
         gov = await deploy('Governor', [address(0), registryAddress, root]);
 

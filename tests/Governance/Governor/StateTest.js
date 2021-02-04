@@ -27,19 +27,20 @@ describe('Governor#state/1', () => {
 
   beforeAll(async () => {
     await freezeTime(100);
+    let quorum = 1000001;
     [root, acct, ...accounts] = accounts;
     pie = await deploy('Pie', [root]);
     delay = etherUnsigned(2 * 24 * 60 * 60).mul(2);
     timelock = await deploy('TimelockHarness', [root, delay]);
-    ppie = await makePToken({ kind: 'ppie', underlying: pie});
+    ppie = await makePToken({ kind: 'ppie', underlying: pie, exchangeRate: 1});
     registryAddress = await call(ppie, 'registry');
     gov = await deploy('Governor', [timelock._address, registryAddress, root]);
     await send(timelock, "harnessSetAdmin", [gov._address]);
-    await send(pie, 'transfer', [acct, etherMantissa(400001)]);
-    await send(pie, 'approve', [ppie._address, etherMantissa(400001)]);
-    await send(ppie, 'mint', [etherMantissa(400001)]);
-    await send(pie, 'approve', [ppie._address, etherMantissa(400001)], {from: acct});
-    await send(ppie, 'mint', [etherMantissa(400001)], {from: acct});
+    await send(pie, 'transfer', [acct, etherMantissa(quorum)]);
+    await send(pie, 'approve', [ppie._address, etherMantissa(quorum)]);
+    await send(ppie, 'mint', [etherMantissa(quorum)]);
+    await send(pie, 'approve', [ppie._address, etherMantissa(quorum)], {from: acct});
+    await send(ppie, 'mint', [etherMantissa(quorum)], {from: acct});
     await send(ppie, 'delegate', [acct], { from: acct });
   });
 

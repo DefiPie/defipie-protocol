@@ -48,14 +48,14 @@ describe('DeFiPieLens', () => {
           isListed:true,
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(pErc20, 'underlying', []),
-          pTokenDecimals: "18",
+          pTokenDecimals: "8",
           underlyingDecimals: "18"
         }
       );
     });
 
     it('is correct for pEth', async () => {
-      let pEth = await makePToken({kind: 'pether'});
+      let pEth = await makePToken({kind: 'pether', exchangeRate: 1});
       expect(
         cullTuple(await call(defipieLens, 'pTokenMetadata', [pEth._address]))
       ).toEqual({
@@ -80,7 +80,7 @@ describe('DeFiPieLens', () => {
   describe('pTokenMetadataAll', () => {
     it('is correct for a pErc20 and pEther', async () => {
       let pErc20 = await makePToken();
-      let pEth = await makePToken({kind: 'pether'});
+      let pEth = await makePToken({kind: 'pether', exchangeRate: 1});
       expect(
         (await call(defipieLens, 'pTokenMetadataAll', [[pErc20._address, pEth._address]])).map(cullTuple)
       ).toEqual([
@@ -97,7 +97,7 @@ describe('DeFiPieLens', () => {
           isListed: true,
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(pErc20, 'underlying', []),
-          pTokenDecimals: "18",
+          pTokenDecimals: "8",
           underlyingDecimals: "18"
         },
         {
@@ -133,12 +133,13 @@ describe('DeFiPieLens', () => {
           pToken: pErc20._address,
           tokenAllowance: "0",
           tokenBalance: "10000000000000000000000000",
+          tokenBalance: "10000000000000000000000000",
         }
       );
     });
 
     it('is correct for pETH', async () => {
-      let pEth = await makePToken({kind: 'pether'});
+      let pEth = await makePToken({kind: 'pether', exchangeRate: 1});
       let ethBalance = await web3.eth.getBalance(acct);
 
       expect(
@@ -252,7 +253,7 @@ describe('DeFiPieLens', () => {
 
     beforeEach(async () => {
       pie = await deploy('Pie', [acct]);
-      ppie = await makePToken({ kind: 'ppie', underlying: pie});
+      ppie = await makePToken({ kind: 'ppie', underlying: pie, exchangeRate: 1});
       registryAddress = await call(ppie, 'registry');
       gov = await deploy('Governor', [address(0), registryAddress, address(0)]);
       targets = [acct];
@@ -312,7 +313,7 @@ describe('DeFiPieLens', () => {
 
     beforeEach(async () => {
       pie = await deploy('Pie', [acct]);
-      ppie = await makePToken({ kind: 'ppie', underlying: pie});
+      ppie = await makePToken({ kind: 'ppie', underlying: pie, exchangeRate: 1});
       await send(pie, 'approve', [ppie._address, etherMantissa(10000000)]);
       currentBlock = +(await web3.eth.getBlockNumber());
       await send(ppie, 'mint', [etherMantissa(10000000)]);

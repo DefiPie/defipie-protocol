@@ -1,0 +1,15 @@
+-- Registry Tests
+
+Test "Create PToken"
+    NewController
+    Erc20 Deploy Standard BAT BAT
+    Erc20 Deploy Standard PIE PIE
+    InterestRateModel Deploy Fixed StdInterest 0.000005
+    PTokenDelegate Deploy PErc20DelegateScenario pErc20Delegate
+    Registry Deploy
+    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
+    PToken Deploy PErc20DelegatorScenario pBAT pBAT (Erc20 BAT Address) (Controller Address) (InterestRateModel StdInterest Address) 2e9 1e17 8 (RegistryProxy Address)
+    PToken Deploy PPIEScenario (Erc20 PIE Address) pPIE pPIE (RegistryProxy Address) (Controller Address) (InterestRateModel StdInterest Address) 0.02 1e17 18
+    RegistryProxy AddPToken BAT pBAT
+    RegistryProxy AddPPIE pPIE
+    RegistryProxy RemovePToken pBAT

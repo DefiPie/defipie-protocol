@@ -72,8 +72,12 @@ describe('UniswapPriceOracle', () => {
             await send(uniswapPriceOracle, 'update', [otherAddress])
         ).toHaveLog("PriceUpdated", {
             asset: otherAddress,
-            price: "1114194259329652800", // 1,11$ with 18 decimals of precision
+            price: "2785485648324132", // Price in ETH with 18 decimals of precision
         });
+
+        let otherInUSD = new BigNumber('1114194259329652800'); // 1,11$ with 18 decimals of precision
+        let otherPriceInUSD = await call(uniswapPriceOracle, "getPriceInUSD", [otherAddress]);
+        expect(otherPriceInUSD).toEqual(otherInUSD.valueOf());
     });
 
     describe("check update function", () => {
@@ -100,12 +104,12 @@ describe('UniswapPriceOracle', () => {
                 await send(uniswapPriceOracle, 'update', [otherAddress])
             ).toHaveLog("PriceUpdated", {
                 asset: otherAddress,
-                price: "1088802937255133600", // 1,08$ with 18 decimals of precision
+                price: "2722007343137834", // Price in ETH with 18 decimals of precision
             });
 
-            let otherInEth = new BigNumber('2722007343137834'); // 1 eth = 367,3759 other
-            let otherPriceInEth = await call(uniswapPriceOracle, "getCourseInETH", [otherAddress]);
-            expect(otherPriceInEth).toEqual(otherInEth.valueOf());
+            let otherInUSD = new BigNumber('1088802937255133600'); // 1,08$ with 18 decimals of precision
+            let otherPriceInUSD = await call(uniswapPriceOracle, "getPriceInUSD", [otherAddress]);
+            expect(otherPriceInUSD).toEqual(otherInUSD.valueOf());
         });
 
         it("Call update function two times", async () => {
