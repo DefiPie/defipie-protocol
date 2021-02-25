@@ -95,8 +95,8 @@ contract PTokenFactory is FactoryErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PETH_POOL);
         }
 
-        string memory name = "DeFiPie ETH";
-        string memory symbol = "pETH";
+        string memory name = "DeFiPie BNB";
+        string memory symbol = "pBNB";
 
         uint power = 18;
         uint exchangeRateMantissa = calcExchangeRate(power);
