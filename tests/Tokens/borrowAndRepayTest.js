@@ -200,12 +200,12 @@ describe('PToken', function () {
         });
 
 
-        it("returns an error if calculating account new account borrow balance fails", async () => {
+        it.skip("returns an error if calculating account new account borrow balance fails", async () => {
           await pretendBorrow(pToken, borrower, 1, 1, 1);
           await expect(repayBorrowFresh(pToken, payer, borrower, repayAmount)).rejects.toRevert("revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED");
         });
 
-        it("returns an error if calculation of new total borrow balance fails", async () => {
+        it.skip("returns an error if calculation of new total borrow balance fails", async () => {
           await send(pToken, 'harnessSetTotalBorrows', [1]);
           await expect(repayBorrowFresh(pToken, payer, borrower, repayAmount)).rejects.toRevert("revert REPAY_BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED");
         });

@@ -55,7 +55,29 @@ Test "Borrow, hold a few blocks, and repay full"
     Assert Equal (PToken pWBTC BorrowBalance Geoff) 0e8
     Assert Equal (PToken pWBTC TotalBorrowsCurrent) 0e8
 
-Test "Borrow, hold a few blocks, and repay too much"
+Test "Borrow, hold a few blocks, and repay too much v1"
+    NewBorrow borrowAmount:1e8 borrowRate:0.000005
+    Assert Equal (PToken pWBTC BorrowBalance Geoff) 1e8
+    Assert Equal (PToken pWBTC TotalBorrowsCurrent) 1e8
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) 1e8
+    Assert Equal (Erc20 WBTC TokenBalance pWBTC) 9e8
+    -- Now let's add some blocks and see what happs
+    FastForward 300000 Blocks -- 1e8 * (1 + 300000 * 0.000005)
+    Assert Equal (PToken pWBTC BorrowBalance Geoff) 2.5e8
+    -- Now let's repay fully
+    Give Geoff 2.5e8 WBTC -- Geoff had the 1.0e8 borrowed WBTC
+    From Geoff (Erc20 WBTC Approve pWBTC 3.5e8)
+    RepayBorrow Geoff 3.5e8 pWBTC
+    Assert Equal (PToken pWBTC BorrowBalance Geoff) 0e8
+    -- Let's check the overall numbers
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) 1e8
+    Assert Equal (Erc20 WBTC TokenBalance pWBTC) 11.5e8
+    Assert Equal (PToken pWBTC TotalBorrowsCurrent) 0e8
+    FastForward 200000 Blocks -- 0e8 * (1 + 200000 * 0.000005)
+    Assert Equal (PToken pWBTC BorrowBalance Geoff) 0e8
+    Assert Equal (PToken pWBTC TotalBorrowsCurrent) 0e8
+
+Test "Borrow, hold a few blocks, and repay too much v2"
     NewBorrow borrowAmount:1e8 borrowRate:0.000005
     Assert Equal (PToken pWBTC BorrowBalance Geoff) 1e8
     Assert Equal (PToken pWBTC TotalBorrowsCurrent) 1e8
@@ -63,15 +85,16 @@ Test "Borrow, hold a few blocks, and repay too much"
     FastForward 300000 Blocks -- 1e8 * (1 + 300000 * 0.000005)
     Assert Equal (PToken pWBTC BorrowBalance Geoff) 2.5e8
     -- Now let's repay fully
-    AllowFailures
     Prep Geoff 10e8 WBTC pWBTC
-    Expect Changes (Erc20 WBTC TokenBalance Geoff) Zero
-    Expect Changes (Erc20 WBTC TokenBalance pWBTC) Zero
+    Expect Changes (Erc20 WBTC TokenBalance Geoff) -2.5e8
+    Expect Changes (Erc20 WBTC TokenBalance pWBTC) 2.5e8
     RepayBorrow Geoff 10e8 pWBTC
-    Assert Revert "revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED"
     -- Let's check the overall numbers
-    Assert Equal (PToken pWBTC BorrowBalance Geoff) 2.5e8
-    Assert Equal (PToken pWBTC TotalBorrowsCurrent) 2.5e8
+    Assert Equal (PToken pWBTC BorrowBalance Geoff) Zero
+    Assert Equal (PToken pWBTC TotalBorrowsCurrent) Zero
+    FastForward 200000 Blocks -- 0e18 * (1 + 200000 * 0.000005)
+    Assert Equal (PToken pWBTC BorrowBalance Geoff) Zero
+    Assert Equal (PToken pWBTC TotalBorrowsCurrent) Zero
 
 Test "Borrow, and get a negative total cash situation"
     Invariant Success
