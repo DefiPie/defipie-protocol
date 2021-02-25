@@ -37,6 +37,10 @@ contract Maximillion {
     function repayBehalfExplicit(address borrower, PEther pEther_) public payable {
         uint received = msg.value;
         uint borrows = pEther_.borrowBalanceCurrent(borrower);
+        uint totalBorrows = pEther_.totalBorrows();
+        if (borrows > totalBorrows) {
+            borrows = totalBorrows;
+        }
         if (received > borrows) {
             pEther_.repayBorrowBehalf{value: borrows}(borrower);
             msg.sender.transfer(received - borrows);

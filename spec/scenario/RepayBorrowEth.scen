@@ -120,7 +120,7 @@ Test "Borrow, hold a few blocks, and repay full via maximillion"
     Assert Equal (PToken pETH BorrowBalance Geoff) Zero
     Assert Equal (PToken pETH TotalBorrowsCurrent) Zero
 
-Test "Borrow, hold a few blocks, and repay too much"
+Test "Borrow, hold a few blocks, and repay too much without maximillion"
     NewBorrowEth borrowAmount:0.001e18 borrowRate:0.000005
     Assert Equal (PToken pETH BorrowBalance Geoff) 0.001e18
     Assert Equal (PToken pETH TotalBorrowsCurrent) 0.001e18
@@ -133,7 +133,7 @@ Test "Borrow, hold a few blocks, and repay too much"
     -- TODO: This currently drains the sent-eth
     AllowFailures
     RepayBorrowEth Geoff 1.0e18 pETH
-    Assert Revert "revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED"
+    Assert Revert "revert value mismatch"
     -- Let's check the overall numbers
     Assert Equal (PToken pETH BorrowBalance Geoff) 0.0025e18
     Assert Equal (PToken pETH TotalBorrowsCurrent) 0.0025e18

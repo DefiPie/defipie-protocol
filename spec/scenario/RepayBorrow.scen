@@ -55,7 +55,28 @@ Test "Borrow, hold a few blocks, and repay full"
     Assert Equal (PToken pBAT BorrowBalance Geoff) 0e18
     Assert Equal (PToken pBAT TotalBorrowsCurrent) 0e18
 
-Test "Borrow, hold a few blocks, and repay too much"
+Test "Borrow, hold a few blocks, and repay too much v1 checks"
+    NewBorrow borrowAmount:1e18 borrowRate:0.000005
+    Assert Equal (PToken pBAT BorrowBalance Geoff) 1e18
+    Assert Equal (PToken pBAT TotalBorrowsCurrent) 1e18
+    Assert Equal (Erc20 BAT TokenBalance Geoff) 1e18
+    Assert Equal (Erc20 BAT TokenBalance pBAT) 9e18
+    -- Now let's add some blocks and see what happs
+    FastForward 300000 Blocks -- 0.001e18 * (1 + 300000 * 0.000005)
+    Assert Equal (PToken pBAT BorrowBalance Geoff) 2.5e18
+    -- Now let's repay too much
+    Give Geoff 2.5e18 BAT -- Geoff had the 1.0e18 borrowed BAT
+    From Geoff (Erc20 BAT Approve pBAT 3.5e18)
+    RepayBorrow Geoff 3.5e18 pBAT
+    -- Let's check the overall numbers
+    Assert Equal (Erc20 BAT TokenBalance Geoff) 1e18
+    Assert Equal (Erc20 BAT TokenBalance pBAT) 11.5e18
+    Assert Equal (PToken pBAT TotalBorrowsCurrent) 0e18
+    FastForward 200000 Blocks -- 0e18 * (1 + 200000 * 0.000005)
+    Assert Equal (PToken pBAT BorrowBalance Geoff) 0e18
+    Assert Equal (PToken pBAT TotalBorrowsCurrent) 0e18
+
+Test "Borrow, hold a few blocks, and repay too much v2 checks"
     NewBorrow borrowAmount:1e18 borrowRate:0.000005
     Assert Equal (PToken pBAT BorrowBalance Geoff) 1e18
     Assert Equal (PToken pBAT TotalBorrowsCurrent) 1e18
@@ -63,15 +84,16 @@ Test "Borrow, hold a few blocks, and repay too much"
     FastForward 300000 Blocks -- 0.001e18 * (1 + 300000 * 0.000005)
     Assert Equal (PToken pBAT BorrowBalance Geoff) 2.5e18
     -- Now let's repay fully
-    AllowFailures
-    Prep Geoff 10e18 BAT pBAT
-    Expect Changes (Erc20 BAT TokenBalance Geoff) Zero
-    Expect Changes (Erc20 BAT TokenBalance pBAT) Zero
-    RepayBorrow Geoff 10e18 pBAT
-    Assert Revert "revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED"
+    Prep Geoff 5e18 BAT pBAT
+    Expect Changes (Erc20 BAT TokenBalance Geoff) -2.5e18
+    Expect Changes (Erc20 BAT TokenBalance pBAT) 2.5e18
+    RepayBorrow Geoff 5e18 pBAT
     -- Let's check the overall numbers
-    Assert Equal (PToken pBAT BorrowBalance Geoff) 2.5e18
-    Assert Equal (PToken pBAT TotalBorrowsCurrent) 2.5e18
+    Assert Equal (PToken pBAT BorrowBalance Geoff) 0e18
+    Assert Equal (PToken pBAT TotalBorrowsCurrent) 0e18
+    FastForward 200000 Blocks -- 0e18 * (1 + 200000 * 0.000005)
+    Assert Equal (PToken pBAT BorrowBalance Geoff) 0e18
+    Assert Equal (PToken pBAT TotalBorrowsCurrent) 0e18
 
 Test "Borrow, and get a negative total cash situation"
     Invariant Success

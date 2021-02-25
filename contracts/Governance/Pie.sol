@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 contract Pie {
     /// @notice EIP-20 token name for this token
-    string public constant name = "DeFiPie";
+    string public constant name = "DeFiPie Token";
 
     /// @notice EIP-20 token symbol for this token
     string public constant symbol = "PIE";
@@ -12,26 +12,26 @@ contract Pie {
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public constant totalSupply = 10000000e18; // 10 million Pie
+    uint public constant totalSupply = 220_000_000e18; // 220 million Pie
 
     /// @dev Allowance amounts on behalf of others
-    mapping (address => mapping (address => uint96)) internal allowances;
+    mapping (address => mapping (address => uint)) internal allowances;
 
     /// @dev Official record of token balances for each account
-    mapping (address => uint96) internal balances;
+    mapping (address => uint) internal balances;
 
     /// @notice The standard EIP-20 transfer event
-    event Transfer(address indexed from, address indexed to, uint256 amount);
+    event Transfer(address indexed from, address indexed to, uint amount);
 
     /// @notice The standard EIP-20 approval event
-    event Approval(address indexed owner, address indexed spender, uint256 amount);
+    event Approval(address indexed owner, address indexed spender, uint amount);
 
     /**
      * @notice Construct a new Pie token
      * @param account The initial account to grant all the tokens
      */
     constructor(address account) {
-        balances[account] = uint96(totalSupply);
+        balances[account] = totalSupply;
         emit Transfer(address(0), account, totalSupply);
     }
 
@@ -50,17 +50,10 @@ contract Pie {
      * @dev This will overwrite the approval amount for `spender`
      *  and is subject to issues noted [here](https://eips.ethereum.org/EIPS/eip-20#approve)
      * @param spender The address of the account which may transfer tokens
-     * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)
+     * @param amount The number of tokens that are approved (2^256-1 means infinite)
      * @return Whether or not the approval succeeded
      */
-    function approve(address spender, uint rawAmount) external returns (bool) {
-        uint96 amount;
-        if (rawAmount == uint(-1)) {
-            amount = uint96(-1);
-        } else {
-            amount = safe96(rawAmount, "Pie::approve: amount exceeds 96 bits");
-        }
-
+    function approve(address spender, uint amount) external returns (bool) {
         allowances[msg.sender][spender] = amount;
 
         emit Approval(msg.sender, spender, amount);
@@ -79,11 +72,10 @@ contract Pie {
     /**
      * @notice Transfer `amount` tokens from `msg.sender` to `dst`
      * @param dst The address of the destination account
-     * @param rawAmount The number of tokens to transfer
+     * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint rawAmount) external returns (bool) {
-        uint96 amount = safe96(rawAmount, "Pie::transfer: amount exceeds 96 bits");
+    function transfer(address dst, uint amount) external returns (bool) {
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -92,16 +84,15 @@ contract Pie {
      * @notice Transfer `amount` tokens from `src` to `dst`
      * @param src The address of the source account
      * @param dst The address of the destination account
-     * @param rawAmount The number of tokens to transfer
+     * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferFrom(address src, address dst, uint rawAmount) external returns (bool) {
+    function transferFrom(address src, address dst, uint amount) external returns (bool) {
         address spender = msg.sender;
-        uint96 spenderAllowance = allowances[src][spender];
-        uint96 amount = safe96(rawAmount, "Pie::approve: amount exceeds 96 bits");
+        uint spenderAllowance = allowances[src][spender];
 
-        if (spender != src && spenderAllowance != uint96(-1)) {
-            uint96 newAllowance = sub96(spenderAllowance, amount, "Pie::transferFrom: transfer amount exceeds spender allowance");
+        if (spender != src && spenderAllowance != uint(-1)) {
+            uint newAllowance = sub(spenderAllowance, amount, "Pie::transferFrom: transfer amount exceeds spender allowance");
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -111,34 +102,23 @@ contract Pie {
         return true;
     }
 
-    function _transferTokens(address src, address dst, uint96 amount) internal {
+    function _transferTokens(address src, address dst, uint amount) internal {
         require(src != address(0), "Pie::_transferTokens: cannot transfer from the zero address");
         require(dst != address(0), "Pie::_transferTokens: cannot transfer to the zero address");
 
-        balances[src] = sub96(balances[src], amount, "Pie::_transferTokens: transfer amount exceeds balance");
-        balances[dst] = add96(balances[dst], amount, "Pie::_transferTokens: transfer amount overflows");
+        balances[src] = sub(balances[src], amount, "Pie::_transferTokens: transfer amount exceeds balance");
+        balances[dst] = add(balances[dst], amount, "Pie::_transferTokens: transfer amount overflows");
         emit Transfer(src, dst, amount);
     }
 
-    function safe96(uint n, string memory errorMessage) internal pure returns (uint96) {
-        require(n < 2**96, errorMessage);
-        return uint96(n);
-    }
-
-    function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
-        uint96 c = a + b;
+    function add(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
+        uint c = a + b;
         require(c >= a, errorMessage);
         return c;
     }
 
-    function sub96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
+    function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
         require(b <= a, errorMessage);
         return a - b;
-    }
-
-    function getChainId() internal pure returns (uint) {
-        uint256 chainId;
-        assembly { chainId := chainid() }
-        return chainId;
     }
 }

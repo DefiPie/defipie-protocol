@@ -881,8 +881,15 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
             return (failOpaque(Error.MATH_ERROR, FailureInfo.REPAY_BORROW_ACCUMULATED_BALANCE_CALCULATION_FAILED, uint(vars.mathErr)), 0);
         }
 
-        /* If repayAmount == -1, repayAmount = accountBorrows */
-        if (repayAmount == uint(-1)) {
+        /*
+         *  If totalBorrows < accountBorrows (result of rounding 1e-18), use totalBorrows
+         */
+        if (vars.accountBorrows > totalBorrows) {
+            vars.accountBorrows = totalBorrows;
+        }
+
+        /* If repayAmount > accountBorrows, repayAmount = accountBorrows */
+        if (repayAmount > vars.accountBorrows) {
             vars.repayAmount = vars.accountBorrows;
         } else {
             vars.repayAmount = repayAmount;
