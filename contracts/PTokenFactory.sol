@@ -71,17 +71,8 @@ contract PTokenFactory is FactoryErrorReporter {
 
         (string memory name, string memory symbol) = _createPTokenNameAndSymbol(underlying_);
 
-        uint factor;
-        uint exchangeRateMantissa;
-
         uint power = EIP20Interface(underlying_).decimals();
-        if (decimals >= power) {
-            factor = 10**(decimals - power);
-            exchangeRateMantissa = initialExchangeRateMantissa.div(factor);
-        } else {
-            factor = 10**(power - decimals);
-            exchangeRateMantissa = initialExchangeRateMantissa.mul(factor);
-        }
+        uint exchangeRateMantissa = calcExchangeRate(power);
 
         PErc20Delegator newPToken = new PErc20Delegator(underlying_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
 
@@ -107,7 +98,10 @@ contract PTokenFactory is FactoryErrorReporter {
         string memory name = "DeFiPie ETH";
         string memory symbol = "pETH";
 
-        PETHDelegator newPETH = new PETHDelegator(pETHImplementation_, controller, interestRateModel, initialExchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
+        uint power = 18;
+        uint exchangeRateMantissa = calcExchangeRate(power);
+
+        PETHDelegator newPETH = new PETHDelegator(pETHImplementation_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
 
         uint256 result = Controller(controller)._supportMarket(address(newPETH));
         if (result != 0) {
@@ -129,7 +123,10 @@ contract PTokenFactory is FactoryErrorReporter {
         string memory name = "DeFiPie PIE";
         string memory symbol = "pPIE";
 
-        PPIEDelegator newPPIE = new PPIEDelegator(underlying_, pPIEImplementation_, controller, interestRateModel, initialExchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
+        uint power = EIP20Interface(underlying_).decimals();
+        uint exchangeRateMantissa = calcExchangeRate(power);
+
+        PPIEDelegator newPPIE = new PPIEDelegator(underlying_, pPIEImplementation_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
 
         uint256 result = Controller(controller)._supportMarket(address(newPPIE));
         if (result != 0) {
@@ -247,5 +244,17 @@ contract PTokenFactory is FactoryErrorReporter {
         string memory name = ("DeFiPie ".toSlice().concat(EIP20Interface(underlying).name().toSlice()));
         string memory symbol = ("p".toSlice().concat(EIP20Interface(underlying).symbol().toSlice()));
         return (name, symbol);
+    }
+
+    function calcExchangeRate(uint power) internal view returns (uint) {
+        uint factor;
+
+        if (decimals >= power) {
+            factor = 10**(decimals - power);
+            return initialExchangeRateMantissa.div(factor);
+        } else {
+            factor = 10**(power - decimals);
+            return initialExchangeRateMantissa.mul(factor);
+        }
     }
 }
