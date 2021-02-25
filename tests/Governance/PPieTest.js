@@ -16,7 +16,7 @@ const EIP712 = require('../Utils/EIP712');
 describe('Pie', () => {
   const name = 'DeFiPie PIE';
   const symbol = 'pPIE';
-  const namePIE = 'DeFiPie';
+  const namePIE = 'DeFiPie Token';
   const symbolPIE = 'PIE';
 
   let root, a1, a2, accounts, chainId;
