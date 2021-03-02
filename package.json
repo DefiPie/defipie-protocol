@@ -21,7 +21,13 @@
     "jest-diff": "24.9.0",
     "jest-junit": "6.4.0",
     "solium": "1.2.5",
-    "solparse": "2.2.8"
+    "solparse": "2.2.8",
+    "ganache-cli": "^6.5.1",
+    "mocha": "^6.2.0",
+    "truffle": "^5.0.31",
+    "truffle-hdwallet-provider": "^1.0.15",
+    "truffle-plugin-verify": "^0.5.4",
+    "truffle-security": "^1.5.3"
   },
   "dependencies": {
     "eth-saddle": "0.1.17"
