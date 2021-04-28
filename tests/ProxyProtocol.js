@@ -471,6 +471,9 @@ describe('Proxy Protocol tests', () => {
             let balanceProxyRootAfterRepay = new BigNumber(await call(feeToken, 'balanceOf', [root]));
             let balanceFeeRecipientAfterRepay = new BigNumber(await call(feeToken, 'balanceOf', [feeRecipient]));
 
+            let balanceProxy = new BigNumber(await etherBalance(proxyProtocol._address));
+            expect(balanceProxy.toFixed()).toEqual('0');
+
             expect(balanceProxyRootAfterRepay).toEqual(balanceStart.minus(fee));
             expect(balanceFeeRecipientAfterRepay).toEqual(balanceFeeRecipientStart.plus(fee));
 

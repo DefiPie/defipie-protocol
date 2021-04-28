@@ -162,8 +162,8 @@ contract ProxyProtocol {
      * @notice Sender repays their own borrow
      * @dev Reverts upon any failure
      */
-    function repayBorrow() external payable {
-        repayBorrowInternal(msg.sender);
+    function repayBorrow() public payable {
+        repayBorrowBehalf(msg.sender);
     }
 
     /**
@@ -171,11 +171,7 @@ contract ProxyProtocol {
      * @dev Reverts upon any failure
      * @param borrower the account with the debt being payed off
      */
-    function repayBorrowBehalf(address borrower) external payable {
-        repayBorrowInternal(borrower);
-    }
-
-    function repayBorrowInternal(address borrower) internal {
+    function repayBorrowBehalf(address borrower) public payable {
         uint fee;
         uint received = msg.value;
 
