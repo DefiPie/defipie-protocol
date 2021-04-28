@@ -20,6 +20,9 @@ contract UniswapPriceOracleHarness is UniswapPriceOracle {
 }
 
 contract UniswapPriceOracleMock is UniswapPriceOracle {
+    mapping(address => uint) public priceInUSD;
+    mapping(address => uint) public underlyingPriceInUSD;
+
     constructor(
         address registryProxy_,
         address uniswapFactory_,
@@ -34,7 +37,19 @@ contract UniswapPriceOracleMock is UniswapPriceOracle {
         );
     }
 
+    function setPriceInUSD(address asset, uint priceInUSD_) public {
+        priceInUSD[asset] = priceInUSD_;
+    }
+
     function getPriceInUSD(address asset) public view override returns (uint) {
-        return 0;
+        return priceInUSD[asset];
+    }
+
+    function setUnderlyingPrice(address pToken, uint priceInUSD_) public {
+        underlyingPriceInUSD[pToken] = priceInUSD_;
+    }
+
+    function getUnderlyingPrice(address pToken) public view override returns (uint) {
+        return underlyingPriceInUSD[pToken];
     }
 }

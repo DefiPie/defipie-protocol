@@ -76,6 +76,27 @@ async function makeController(opts = {}) {
     return Object.assign(unitroller, { priceOracle });
   }
 
+  if (kind == 'unitroller-g4') {
+    const unitroller = opts.unitroller || await deploy('Unitroller');
+    const controller = await deploy('ControllerScenarioG4');
+    const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
+    const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const liquidationIncentive = etherMantissa(1);
+    const pie = opts.pie || await deploy('Pie', [opts.pieOwner || root]);
+    const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
+
+    await send(unitroller, '_setPendingImplementation', [controller._address]);
+    await send(controller, '_become', [unitroller._address]);
+    mergeInterface(unitroller, controller);
+    await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
+    await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, '_setPriceOracle', [priceOracle._address]);
+    await send(unitroller, 'harnessSetPieRate', [pieRate]);
+    await send(unitroller, 'setPieAddress', [pie._address]); // harness only
+
+    return Object.assign(unitroller, { priceOracle, pie });
+  }
+
   if (kind == 'unitroller') {
     const unitroller = opts.unitroller || await deploy('Unitroller');
     const controller = await deploy('ControllerHarness');
@@ -129,7 +150,7 @@ async function makePToken(opts = {}) {
   let tokenAddress;
   let tx1, tx2, tx3;
 
-  pTokenFactory = await deploy('PTokenFactoryHarness', [
+  pTokenFactory = opts.pTokenFactory || await deploy('PTokenFactoryHarness', [
     registryProxy._address,
     0,
     uniswapOracle._address,
@@ -297,8 +318,7 @@ async function makePTokenFactory(opts = {}) {
 
 async function makeRegistryProxy(opts = {}) {
     const {
-        root = saddle.account,
-        kind = ''
+        root = saddle.account
     } = opts || {};
 
     const pDelegatee = opts.implementation || await deploy('PErc20DelegateHarness');
@@ -316,6 +336,40 @@ async function makeRegistryProxy(opts = {}) {
     registryProxy = await saddle.getContractAt('RegistryProxyHarness', registryProxy._address);
 
     return registryProxy;
+}
+
+async function makeProxyProtocol(opts = {}) {
+    const {
+        root = saddle.account
+    } = opts || {};
+
+    const pTokenFactory = opts.pTokenFactory || await makePTokenFactory();
+    const pETH = opts.pETH || await makePToken({kind: 'pether'});
+    const maximillion = opts.maximillion || await deploy('Maximillion', [pETH._address]);
+    const admin = opts.admin || root;
+    const feeToken = opts.feeToken || await deploy('PErc20DelegateHarness');
+    const feeRecipient = opts.feeRecipient || root;
+    const feeAmountCreatePool = opts.feeAmountCreatePool || '0';
+    const feePercentMint = opts.feePercentMint || '0';
+    const feePercentRepayBorrow = opts.feePercentRepayBorrow || '0';
+
+    let proxyProtocol;
+
+    proxyProtocol = await deploy('ProxyProtocolHarness', [
+        pTokenFactory._address,
+        pETH._address,
+        maximillion._address,
+        admin,
+        feeToken._address,
+        feeRecipient,
+        feeAmountCreatePool,
+        feePercentMint,
+        feePercentRepayBorrow
+    ]);
+
+    proxyProtocol = await saddle.getContractAt('ProxyProtocolHarness', proxyProtocol._address);
+
+    return proxyProtocol;
 }
 
 async function balanceOf(token, account) {
@@ -476,6 +530,7 @@ module.exports = {
   makeToken,
   makePTokenFactory,
   makeRegistryProxy,
+  makeProxyProtocol,
 
   balanceOf,
   totalSupply,
@@ -500,5 +555,7 @@ module.exports = {
   setBorrowRate,
   getBorrowRate,
   getSupplyRate,
-  pretendBorrow
+  pretendBorrow,
+
+  etherBalance
 };

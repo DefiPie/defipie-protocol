@@ -258,7 +258,7 @@ describe('UniswapPriceOracle', () => {
             let latestAnswer = new BigNumber(500e8); // 500$ x 10e8 chainlink USD with 8 decimals of precision
             await send(mockPriceFeed, 'setLatestAnswer', [latestAnswer]);
 
-            let otherInUsd = new BigNumber('1392742824162066000'); // 1,36$ with 18 decimals of precision
+            let otherInUsd = new BigNumber('1392742824162066000'); // 1,39$ with 18 decimals of precision
             let otherPrice = await call(uniswapPriceOracle, "getPriceInUSD", [otherAddress]);
 
             expect(otherPrice).toEqual(otherInUsd.valueOf());
