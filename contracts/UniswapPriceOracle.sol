@@ -98,7 +98,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorage, PriceOracle, OracleErr
         return factory.getPair(WETHUniswap, asset);
     }
 
-    function getUnderlyingPrice(address pToken) public view override returns (uint) {
+    function getUnderlyingPrice(address pToken) public view override virtual returns (uint) {
         if (pToken == registry.pETH()) {
             return getPriceInUSD(registry.pETH());
         }

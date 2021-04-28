@@ -66,7 +66,6 @@ describe('Registry coverage tests', () => {
                 await send(registryProxy, '_setPendingAdmin', [accounts[0]], {from: accounts[0]})
             ).toHaveRegistryFailure('UNAUTHORIZED', 'SET_PENDING_ADMIN_OWNER_CHECK');
 
-            // Check admin stays the same
             expect(await call(registryProxy, 'admin')).toEqual(root);
             expect(await call(registryProxy, 'pendingAdmin')).toBeAddressZero();
         });
@@ -74,7 +73,6 @@ describe('Registry coverage tests', () => {
         it('should properly set pending admin', async () => {
             expect(await send(registryProxy, '_setPendingAdmin', [accounts[0]])).toSucceed();
 
-            // Check admin stays the same
             expect(await call(registryProxy, 'admin')).toEqual(root);
             expect(await call(registryProxy, 'pendingAdmin')).toEqual(accounts[0]);
         });
@@ -83,7 +81,6 @@ describe('Registry coverage tests', () => {
             expect(await send(registryProxy, '_setPendingAdmin', [accounts[0]])).toSucceed();
             expect(await send(registryProxy, '_setPendingAdmin', [accounts[1]])).toSucceed();
 
-            // Check admin stays the same
             expect(await call(registryProxy, 'admin')).toEqual(root);
             expect(await call(registryProxy, 'pendingAdmin')).toEqual(accounts[1]);
         });
@@ -101,7 +98,6 @@ describe('Registry coverage tests', () => {
         it('should fail when pending admin is zero', async () => {
             expect(await send(registryProxy, '_acceptAdmin')).toHaveRegistryFailure('UNAUTHORIZED', 'ACCEPT_ADMIN_PENDING_ADMIN_CHECK');
 
-            // Check admin stays the same
             expect(await call(registryProxy, 'admin')).toEqual(root);
             expect(await call(registryProxy, 'pendingAdmin')).toBeAddressZero();
         });
@@ -110,7 +106,6 @@ describe('Registry coverage tests', () => {
             expect(await send(registryProxy, '_setPendingAdmin', [accounts[0]])).toSucceed();
             expect(await send(registryProxy, '_acceptAdmin')).toHaveRegistryFailure('UNAUTHORIZED', 'ACCEPT_ADMIN_PENDING_ADMIN_CHECK');
 
-            // Check admin stays the same
             expect(await call(registryProxy, 'admin')).toEqual(root);
             expect(await call(registryProxy, 'pendingAdmin')).toEqual(accounts[0]);
         });
@@ -119,7 +114,6 @@ describe('Registry coverage tests', () => {
             expect(await send(registryProxy, '_setPendingAdmin', [accounts[0]])).toSucceed();
             expect(await send(registryProxy, '_acceptAdmin', [], {from: accounts[0]})).toSucceed();
 
-            // Check admin stays the same
             expect(await call(registryProxy, 'admin')).toEqual(accounts[0]);
             expect(await call(registryProxy, 'pendingAdmin')).toBeAddressZero();
         });
