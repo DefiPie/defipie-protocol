@@ -106,7 +106,7 @@ contract PErc20 is PToken, PErc20Interface {
 
     /**
      * @notice The sender liquidates the borrowers collateral.
-     *  The collateral seized is transferred to the liquidator.
+     * The collateral seized is transferred to the liquidator.
      * @param borrower The borrower of this pToken to be liquidated
      * @param repayAmount The amount of the underlying borrowed asset to repay
      * @param pTokenCollateral The market in which to seize collateral from the borrower
