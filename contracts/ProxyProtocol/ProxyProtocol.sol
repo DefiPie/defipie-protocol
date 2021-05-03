@@ -76,22 +76,26 @@ contract ProxyProtocol {
     /**
      * @notice Sender supplies assets into the market and receives pTokens in exchange
      * @param pToken The address of pToken
-     * @param mintAmount The amount of the underlying asset to supply
+     * @param initMintAmount The amount of the underlying asset to supply
      */
-    function mint(address pToken, uint mintAmount) external returns (bool) {
+    function mint(address pToken, uint initMintAmount) external returns (bool) {
         oracle.update(feeToken);
-        uint fee = calcFee(feePercentMint, pToken, mintAmount);
+        uint fee = calcFee(feePercentMint, pToken, initMintAmount);
         doTransferIn(msg.sender, feeRecipient, feeToken, fee);
 
         address underlying = PErc20Interface(pToken).underlying();
-        doTransferIn(msg.sender, address(this), underlying, mintAmount);
+        doTransferIn(msg.sender, address(this), underlying, initMintAmount);
 
-        uint beforeBalance = EIP20Interface(pToken).balanceOf(address(this));
+        uint pTokenAmountBefore = EIP20Interface(pToken).balanceOf(address(this));
+
+        uint mintAmount = EIP20Interface(underlying).balanceOf(address(this));
+        mintAmount = mintAmount < initMintAmount ? mintAmount : initMintAmount;
+
         IERC20(underlying).approve(pToken, mintAmount);
         PErc20Interface(pToken).mint(mintAmount);
 
-        uint afterBalance = EIP20Interface(pToken).balanceOf(address(this));
-        uint amount = afterBalance.sub(beforeBalance);
+        uint pTokenAmountAfter = EIP20Interface(pToken).balanceOf(address(this));
+        uint amount = pTokenAmountAfter.sub(pTokenAmountBefore);
         doTransferOut(pToken, msg.sender, amount);
 
         return true;
@@ -110,23 +114,26 @@ contract ProxyProtocol {
      * @notice Sender repays a borrow belonging to borrower
      * @param pToken The address of pToken
      * @param borrower the account with the debt being payed off
-     * @param repayAmount The amount to repay
+     * @param initRepayAmount The amount to repay
      */
-    function repayBorrowBehalf(address pToken, address borrower, uint repayAmount) public returns (bool) {
-        uint feeAmount = repayAmount;
+    function repayBorrowBehalf(address pToken, address borrower, uint initRepayAmount) public returns (bool) {
+        uint feeAmount = initRepayAmount;
 
         address underlying = PErc20Interface(pToken).underlying();
-        uint amountBefore = IERC20(underlying).balanceOf(address(this));
+        uint underlyingAmountBefore = IERC20(underlying).balanceOf(address(this));
 
-        doTransferIn(msg.sender, address(this), underlying, repayAmount);
+        doTransferIn(msg.sender, address(this), underlying, initRepayAmount);
+
+        uint repayAmount = EIP20Interface(underlying).balanceOf(address(this));
+        repayAmount = repayAmount < initRepayAmount ? repayAmount : initRepayAmount;
 
         IERC20(underlying).approve(pToken, repayAmount);
         PErc20Interface(pToken).repayBorrowBehalf(borrower, repayAmount);
 
-        uint amountAfter = IERC20(underlying).balanceOf(address(this));
+        uint underlyingAmountAfter = IERC20(underlying).balanceOf(address(this));
 
-        if (amountAfter > amountBefore) {
-            uint delta = amountAfter.sub(amountBefore);
+        if (underlyingAmountAfter > underlyingAmountBefore) {
+            uint delta = underlyingAmountAfter.sub(underlyingAmountBefore);
             doTransferOut(underlying, msg.sender, delta);
             feeAmount = repayAmount.sub(delta);
         }

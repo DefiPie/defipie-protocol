@@ -685,4 +685,298 @@ describe('Proxy Protocol tests', () => {
             expect(balancePTokenTo.toFixed()).toEqual('1');
         });
     });
+
+    describe("Fee token is feeToken", () => {
+        it("Set fee token as feeToken, mint, borrow, and repay twice", async () => {
+            let basisPointFee = '250'; // 2,5%
+            let newFeeToken = await makeToken({kind: 'fee', owner: admin, basisPointFee: basisPointFee});
+            let priceInUSD = '600000000000000000'; // $0.60
+            await send(oracle, 'setPriceInUSD', [newFeeToken._address, priceInUSD]);
+            let tx_ = await send(factoryUniswap, 'setToken1Address', [newFeeToken._address]);
+            expect(tx_).toSucceed();
+
+            let tx = await send(proxyProtocol, '_setFeeToken', [newFeeToken._address], {from: admin});
+
+            let mintAmount = '1000000000000000000'; // 1 token = $12
+            let fee = new BigNumber(await call(proxyProtocol, 'calcFee', [feePercentMint, pTokenAddress, mintAmount]));
+            let calcFee = '200000000000000000';  // proxy token decimals is 18 // $12 * 1% = 12 cents / newFeeToken price (60 cents) = 0.2 newFeeToken
+            expect(fee.toFixed()).toEqual(calcFee);
+
+            let result = await send(newFeeToken, 'approve', [proxyProtocol._address, fee], {from: root});
+
+            let balanceStart = new BigNumber(await call(newFeeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientStart = new BigNumber(await call(newFeeToken, 'balanceOf', [feeRecipient]));
+            let balanceAdminStart = new BigNumber(await call(newFeeToken, 'balanceOf', [admin]));
+
+            let balanceRootStart = new BigNumber(await call(underlying, 'balanceOf', [root]));
+            expect(balanceRootStart.toFixed()).toEqual('10000000000000000000000000');
+
+            let balanceProxyStart = new BigNumber(await call(underlying, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyStart.toFixed()).toEqual('0');
+
+            let balancePTokenStart = new BigNumber(await call(underlying, 'balanceOf', [pTokenAddress]));
+            expect(balancePTokenStart.toFixed()).toEqual('0');
+
+            let pToken = await saddle.getContractAt('ERC20Harness', pTokenAddress);
+
+            let balanceProxyPTokenStart = new BigNumber(await call(pToken, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyPTokenStart.toFixed()).toEqual('0');
+
+            let balancePTokenRootStart = new BigNumber(await call(pToken, 'balanceOf', [root]));
+            expect(balancePTokenRootStart.toFixed()).toEqual('0');
+
+            let totalSupplyPTokenStart = new BigNumber(await call(pToken, 'totalSupply'));
+            expect(totalSupplyPTokenStart.toFixed()).toEqual('0');
+
+            let tx0 = await send(underlying, 'approve', [proxyProtocol._address, mintAmount], {from: root});
+            let tx1 = await send(proxyProtocol, 'mint', [pTokenAddress, mintAmount], {from: root});
+
+            let balanceRootEnd = new BigNumber(await call(underlying, 'balanceOf', [root]));
+            expect(balanceRootEnd.toFixed()).toEqual(balanceRootStart.minus(mintAmount).toFixed());
+
+            let balanceProxyEnd = new BigNumber(await call(underlying, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyEnd.toFixed()).toEqual('0');
+
+            let balancePTokenEnd = new BigNumber(await call(underlying, 'balanceOf', [pTokenAddress]));
+            expect(balancePTokenEnd.toFixed()).toEqual(mintAmount);
+
+            let balanceProxyPTokenEnd = new BigNumber(await call(pToken, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyPTokenEnd.toFixed()).toEqual('0');
+
+            let balancePTokenRootEnd = new BigNumber(await call(pToken, 'balanceOf', [root]));
+            let totalSupplyPTokenEnd = new BigNumber(await call(pToken, 'totalSupply'));
+
+            expect(balancePTokenRootEnd.toFixed()).toEqual(totalSupplyPTokenEnd.toFixed());
+
+            let balanceProxyRootEnd = new BigNumber(await call(newFeeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientEnd = new BigNumber(await call(newFeeToken, 'balanceOf', [feeRecipient]));
+            let balanceAdminEnd = new BigNumber(await call(newFeeToken, 'balanceOf', [admin]));
+
+            expect(balanceProxyRootEnd).toEqual(balanceStart.minus(fee));
+            expect(balanceFeeRecipientEnd).toEqual(balanceFeeRecipientStart.plus(fee).minus(balanceAdminEnd));
+            expect(balanceAdminEnd).toEqual(balanceAdminStart.plus(fee.multipliedBy(basisPointFee).div(10000)));
+
+            let borrowAmount = '500000000000000000';
+
+            let balanceStartAfterBorrow = new BigNumber(await call(newFeeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientStartAfterBorrow = new BigNumber(await call(newFeeToken, 'balanceOf', [feeRecipient]));
+
+            let balanceRootStartAfterBorrow  = new BigNumber(await call(underlying, 'balanceOf', [root]));
+            expect(balanceRootStartAfterBorrow.toFixed()).toEqual('9999999000000000000000000');
+
+            pToken = await saddle.getContractAt('PErc20', pTokenAddress);
+            let tx2 = await send(pToken, 'borrow', [borrowAmount], {from: root});
+
+            let balanceRootAfterBorrow = new BigNumber(await call(underlying, 'balanceOf', [root]));
+            expect(balanceRootAfterBorrow.toFixed()).toEqual('9999999500000000000000000');
+
+            let repayAmount = '250000000000000000'; // $3
+            fee = new BigNumber(await call(proxyProtocol, 'calcFee', [feePercentRepayBorrow, pTokenAddress, repayAmount]));
+            calcFee = '25000000000000000';  // proxy token decimals is 18 // $3 * 0,5% = 1,5 cents / newFeeToken price (60 cents) = 0.025 newFeeToken
+            expect(fee.toFixed()).toEqual(calcFee);
+
+            result = await send(newFeeToken, 'approve', [proxyProtocol._address, fee], {from: root});
+
+            let tx4 = await send(underlying, 'approve', [proxyProtocol._address, repayAmount], {from: root});
+            let tx5 = await send(proxyProtocol, 'repayBorrow', [pTokenAddress, repayAmount], {from: root});
+
+            let balanceRootAfterRepay = new BigNumber(await call(underlying, 'balanceOf', [root]));
+            expect(balanceRootAfterRepay.toFixed()).toEqual('9999999250000000000000000');
+
+            let balanceProxyRootAfterRepay = new BigNumber(await call(newFeeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientAfterRepay = new BigNumber(await call(newFeeToken, 'balanceOf', [feeRecipient]));
+            let balanceAdminAfterRepay = new BigNumber(await call(newFeeToken, 'balanceOf', [admin]));
+
+            expect(balanceProxyRootAfterRepay).toEqual(balanceStartAfterBorrow.minus(fee));
+            expect(balanceFeeRecipientAfterRepay).toEqual(balanceFeeRecipientStartAfterBorrow.plus(fee).minus(fee.multipliedBy(basisPointFee).div(10000)));
+            expect(balanceAdminAfterRepay).toEqual(balanceAdminEnd.plus(fee.multipliedBy(basisPointFee).div(10000)));
+
+            result = await send(newFeeToken, 'approve', [proxyProtocol._address, fee], {from: root});
+
+            repayAmount = '350000000000000000'; // 0,25 + extra 0,1
+            let tx6 = await send(underlying, 'approve', [proxyProtocol._address, repayAmount], {from: root});
+            let tx7 = await send(proxyProtocol, 'repayBorrowBehalf', [pTokenAddress, root, repayAmount], {from: root});
+
+            let balanceProxyPTokenEndAfterBorrow = new BigNumber(await call(pToken, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyPTokenEndAfterBorrow.toFixed()).toEqual('0');
+
+            let balanceRootAfterRepayBehalf = new BigNumber(await call(underlying, 'balanceOf', [root]));
+            expect(balanceRootAfterRepayBehalf.toFixed()).toEqual('9999999000000000000000000');
+
+            let balanceProxyRootEndAfterBorrow = new BigNumber(await call(newFeeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientEndAfterBorrow = new BigNumber(await call(newFeeToken, 'balanceOf', [feeRecipient]));
+            let balanceAdminEndAfterRepay = new BigNumber(await call(newFeeToken, 'balanceOf', [admin]));
+
+            expect(balanceProxyRootEndAfterBorrow).toEqual(balanceProxyRootAfterRepay.minus(fee));
+            expect(balanceFeeRecipientEndAfterBorrow).toEqual(balanceFeeRecipientAfterRepay.plus(fee).minus(fee.multipliedBy(basisPointFee).div(10000)));
+            expect(balanceAdminEndAfterRepay).toEqual(balanceAdminAfterRepay.plus(fee.multipliedBy(basisPointFee).div(10000)));
+        });
+    });
+
+    describe("Fee token is pToken", () => {
+        it("Create fee token as pToken, mint, borrow, and repay twice", async () => {
+            let basisPointFee = '250'; // 2,5%
+            // without proxy
+            let newUnderlying = await makeToken({kind: 'fee', owner: admin, basisPointFee: basisPointFee});
+            let tx_ = await send(factoryUniswap, 'setToken0Address', [newUnderlying._address]);
+            expect(tx_).toSucceed();
+
+            let result = await send(pTokenFactory, 'createPToken', [newUnderlying._address]);
+
+            let newPTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
+
+            expect(result).toSucceed();
+            expect(result).toHaveLog('PTokenCreated', {newPToken: newPTokenAddress});
+
+            let priceInUSD = '12000000000000000000'; // $12
+            await send(oracle, 'setUnderlyingPrice', [newPTokenAddress, priceInUSD]);
+
+            let mintAmount = '1000000000000000000'; // 1 token = $12
+            let fee = new BigNumber(await call(proxyProtocol, 'calcFee', [feePercentMint, newPTokenAddress, mintAmount]));
+            let calcFee = '200000000000000000';  // proxy token decimals is 18 // $12 * 1% = 12 cents / feeToken price (60 cents) = 0.2 feeToken
+            expect(fee.toFixed()).toEqual(calcFee);
+
+            result = await send(feeToken, 'approve', [proxyProtocol._address, fee], {from: root});
+
+            let balanceStart = new BigNumber(await call(feeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientStart = new BigNumber(await call(feeToken, 'balanceOf', [feeRecipient]));
+            let balanceAdminStart = new BigNumber(await call(feeToken, 'balanceOf', [admin]));
+
+            let balanceRootStart = new BigNumber(await call(newUnderlying, 'balanceOf', [root]));
+            expect(balanceRootStart.toFixed()).toEqual('10000000000000000000000000');
+
+            let balanceProxyStart = new BigNumber(await call(newUnderlying, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyStart.toFixed()).toEqual('0');
+
+            let balancePTokenStart = new BigNumber(await call(newUnderlying, 'balanceOf', [newPTokenAddress]));
+            expect(balancePTokenStart.toFixed()).toEqual('0');
+
+            let pToken = await saddle.getContractAt('ERC20Harness', newPTokenAddress);
+
+            let balanceProxyPTokenStart = new BigNumber(await call(pToken, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyPTokenStart.toFixed()).toEqual('0');
+
+            let balancePTokenRootStart = new BigNumber(await call(pToken, 'balanceOf', [root]));
+            expect(balancePTokenRootStart.toFixed()).toEqual('0');
+
+            let totalSupplyPTokenStart = new BigNumber(await call(pToken, 'totalSupply'));
+            expect(totalSupplyPTokenStart.toFixed()).toEqual('0');
+
+            let balanceUnderlyingAdminStart = new BigNumber(await call(newUnderlying, 'balanceOf', [admin]));
+            expect(balanceUnderlyingAdminStart.toFixed()).toEqual('0');
+
+            let tx0 = await send(newUnderlying, 'approve', [proxyProtocol._address, mintAmount], {from: root});
+            let tx1 = await send(proxyProtocol, 'mint', [newPTokenAddress, mintAmount], {from: root});
+
+            let balanceRootEnd = new BigNumber(await call(newUnderlying, 'balanceOf', [root]));
+            expect(balanceRootEnd.toFixed()).toEqual(balanceRootStart.minus(mintAmount).toFixed());
+
+            let balanceProxyEnd = new BigNumber(await call(newUnderlying, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyEnd.toFixed()).toEqual('0');
+
+            let balanceUnderlyingAdminEnd = new BigNumber(await call(newUnderlying, 'balanceOf', [admin]));
+            let mintAmountBM = new BigNumber(mintAmount);
+            let underlyingFeeStep1 = mintAmountBM.multipliedBy(basisPointFee).div(10000);
+            let underlyingFeeStep2 = (mintAmountBM.minus(underlyingFeeStep1)).multipliedBy(basisPointFee).div(10000);
+            expect(balanceUnderlyingAdminEnd.toFixed()).toEqual(balanceUnderlyingAdminStart.plus(underlyingFeeStep1).plus(underlyingFeeStep2).toFixed());
+
+            let balancePTokenEnd = new BigNumber(await call(newUnderlying, 'balanceOf', [newPTokenAddress]));
+            expect(balancePTokenEnd.toFixed()).toEqual(mintAmountBM.minus(balanceUnderlyingAdminEnd).toFixed());
+
+            let balanceProxyPTokenEnd = new BigNumber(await call(pToken, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyPTokenEnd.toFixed()).toEqual('0');
+
+            let balancePTokenRootEnd = new BigNumber(await call(pToken, 'balanceOf', [root]));
+            let totalSupplyPTokenEnd = new BigNumber(await call(pToken, 'totalSupply'));
+
+            expect(balancePTokenRootEnd.toFixed()).toEqual(totalSupplyPTokenEnd.toFixed());
+
+            let balanceProxyRootEnd = new BigNumber(await call(feeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientEnd = new BigNumber(await call(feeToken, 'balanceOf', [feeRecipient]));
+
+            expect(balanceProxyRootEnd).toEqual(balanceStart.minus(fee));
+            expect(balanceFeeRecipientEnd).toEqual(balanceFeeRecipientStart.plus(fee));
+
+            let borrowAmount = '400000000000000000';
+
+            let balanceStartAfterBorrow = new BigNumber(await call(feeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientStartAfterBorrow = new BigNumber(await call(feeToken, 'balanceOf', [feeRecipient]));
+
+            let balanceRootStartAfterBorrow  = new BigNumber(await call(newUnderlying, 'balanceOf', [root]));
+            expect(balanceRootStartAfterBorrow.toFixed()).toEqual('9999999000000000000000000');
+
+            let borrowAmountBM = new BigNumber(borrowAmount);
+            let underlyingFeeAfterBorrow = borrowAmountBM.multipliedBy(basisPointFee).div(10000);
+
+            pToken = await saddle.getContractAt('PErc20', newPTokenAddress);
+            let tx2 = await send(pToken, 'borrow', [borrowAmount], {from: root});
+
+            let balanceUnderlyingAdminAfterBorrow = new BigNumber(await call(newUnderlying, 'balanceOf', [admin]));
+            expect(balanceUnderlyingAdminAfterBorrow.toFixed()).toEqual(balanceUnderlyingAdminEnd.plus(underlyingFeeAfterBorrow).toFixed());
+
+            let balanceRootAfterBorrow = new BigNumber(await call(newUnderlying, 'balanceOf', [root]));
+            expect(balanceRootAfterBorrow.toFixed()).toEqual('9999999390000000000000000');
+
+            let repayAmount = '200000000000000000'; // $2.4
+            fee = new BigNumber(await call(proxyProtocol, 'calcFee', [feePercentRepayBorrow, newPTokenAddress, repayAmount]));
+            calcFee = '20000000000000000';  // proxy token decimals is 18 // $2.4 * 0.5% = 1.2 cents / feeToken price (60 cents) = 0.02 feeToken
+            expect(fee.toFixed()).toEqual(calcFee);
+
+            result = await send(feeToken, 'approve', [proxyProtocol._address, fee], {from: root});
+
+            let tx4 = await send(newUnderlying, 'approve', [proxyProtocol._address, repayAmount], {from: root});
+            let tx5 = await send(proxyProtocol, 'repayBorrow', [newPTokenAddress, repayAmount], {from: root});
+
+            let balanceRootAfterRepay = new BigNumber(await call(newUnderlying, 'balanceOf', [root]));
+            expect(balanceRootAfterRepay.toFixed()).toEqual('9999999190000000000000000');
+
+            let balanceProxyRootAfterRepay = new BigNumber(await call(feeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientAfterRepay = new BigNumber(await call(feeToken, 'balanceOf', [feeRecipient]));
+            let balanceUnderlyingAdminAfterRepay = new BigNumber(await call(newUnderlying, 'balanceOf', [admin]));
+
+            expect(balanceProxyRootAfterRepay).toEqual(balanceStartAfterBorrow.minus(fee));
+            expect(balanceFeeRecipientAfterRepay).toEqual(balanceFeeRecipientStartAfterBorrow.plus(fee));
+
+            let repayAmountBM = new BigNumber(repayAmount);
+            underlyingFeeStep1 = repayAmountBM.multipliedBy(basisPointFee).div(10000);
+            underlyingFeeStep2 = (repayAmountBM.minus(underlyingFeeStep1)).multipliedBy(basisPointFee).div(10000);
+            expect(balanceUnderlyingAdminAfterRepay.toFixed()).toEqual(balanceUnderlyingAdminAfterBorrow.plus(underlyingFeeStep1).plus(underlyingFeeStep2).toFixed());
+
+            let balanceProxyUnderlyingAfterBorrow = new BigNumber(await call(underlying, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyUnderlyingAfterBorrow.toFixed()).toEqual('0');
+
+            repayAmount = '500000000000000000'; // 0,2 + extra 0,3
+            let borrowRemainder = '209875000000000000';
+            fee = new BigNumber(await call(proxyProtocol, 'calcFee', [feePercentRepayBorrow, newPTokenAddress, borrowRemainder]));
+            calcFee = '20987500000000000';  // proxy token decimals is 18 // $2.5185 * 0.5% = 1.25925 cents / feeToken price (60 cents) = 0.025 feeToken
+            expect(fee.toFixed()).toEqual(calcFee);
+
+            result = await send(feeToken, 'approve', [proxyProtocol._address, fee], {from: root});
+
+            let tx6 = await send(newUnderlying, 'approve', [proxyProtocol._address, repayAmount], {from: root});
+            let tx7 = await send(proxyProtocol, 'repayBorrowBehalf', [newPTokenAddress, root, repayAmount], {from: root});
+
+            let balanceProxyPTokenEndAfterBorrow = new BigNumber(await call(pToken, 'balanceOf', [proxyProtocol._address]));
+            expect(balanceProxyPTokenEndAfterBorrow.toFixed()).toEqual('0');
+
+            let balanceRootAfterRepayBehalf = new BigNumber(await call(newUnderlying, 'balanceOf', [root]));
+            expect(balanceRootAfterRepayBehalf.toFixed()).toEqual('9999998960684375000000000');
+
+            let balanceProxyRootEndAfterBorrow = new BigNumber(await call(feeToken, 'balanceOf', [root]));
+            let balanceFeeRecipientEndAfterBorrow = new BigNumber(await call(feeToken, 'balanceOf', [feeRecipient]));
+            let balanceAdminEndAfterRepay = new BigNumber(await call(newUnderlying, 'balanceOf', [admin]));
+
+            expect(balanceProxyRootEndAfterBorrow).toEqual(balanceProxyRootAfterRepay.minus(fee));
+            expect(balanceFeeRecipientEndAfterBorrow).toEqual(balanceFeeRecipientAfterRepay.plus(fee));
+
+            repayAmountBM = new BigNumber(repayAmount);
+            let borrowRemainderBM = new BigNumber(borrowRemainder);
+            underlyingFeeStep1 = repayAmountBM.multipliedBy(basisPointFee).div(10000);
+            underlyingFeeStep2 = borrowRemainderBM.multipliedBy(basisPointFee).div(10000);
+            let underlyingFeeStep3 = (repayAmountBM.minus(underlyingFeeStep1).minus(borrowRemainderBM)).multipliedBy(basisPointFee).div(10000);
+
+            expect(balanceAdminEndAfterRepay.toFixed()).toEqual(balanceUnderlyingAdminAfterRepay.plus(underlyingFeeStep1).plus(underlyingFeeStep2).plus(underlyingFeeStep3).toFixed());
+        });
+    });
+
 });

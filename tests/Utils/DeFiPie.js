@@ -276,6 +276,16 @@ async function makeToken(opts = {}) {
     const name = opts.name || `Erc20 ${symbol}`;
     return await deploy('ERC20Harness', [quantity, name, decimals, symbol]);
   }
+
+  if (kind == 'fee') {
+      const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+      const decimals = etherUnsigned(dfn(opts.decimals, 18));
+      const symbol = opts.symbol || 'FEE';
+      const name = opts.name || `Erc20 ${symbol}`;
+      const basisPointFee = opts.basisPointFee || '100'; // 1%
+      const owner = opts.owner || root;
+      return await deploy('FeeToken', [quantity, name, decimals, symbol, basisPointFee, owner]);
+  }
 }
 
 async function makePTokenFactory(opts = {}) {
