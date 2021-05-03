@@ -44,4 +44,10 @@ contract FeeToken is FaucetToken {
         emit Transfer(src, dst, amount);
         return true;
     }
+
+    function setOwner(address newOwner) public returns (bool) {
+        owner = newOwner;
+
+        return true;
+    }
 }

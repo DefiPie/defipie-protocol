@@ -9,6 +9,8 @@ contract Governor {
 
     uint public threshold = 100000e18; // 100,000 pPIE
     uint public quorum = 1000000e18; // 1,000,000 pPIE
+    uint public delay = 1; // 1 block
+    uint public period = 17280; // ~3 days in blocks (assuming 15s blocks)
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     function quorumVotes() public view returns (uint) { return quorum; }
@@ -20,10 +22,10 @@ contract Governor {
     function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
 
     /// @notice The delay before voting on a proposal may take place, once proposed
-    function votingDelay() public pure returns (uint) { return 1; } // 1 block
+    function votingDelay() public view returns (uint) { return delay; }
 
     /// @notice The duration of voting on a proposal, in blocks
-    function votingPeriod() public pure virtual returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
+    function votingPeriod() public view virtual returns (uint) { return period; }
 
     /// @notice The address of the DeFiPie Protocol Timelock
     TimelockInterface public timelock;
@@ -291,13 +293,23 @@ contract Governor {
     }
 
     function setQuorum(uint newQuorum) external {
-        require(msg.sender == guardian, "Governor::__acceptAdmin: sender must be gov guardian");
+        require(msg.sender == guardian, "Governor::setQuorum: sender must be gov guardian");
         quorum = newQuorum;
     }
 
     function setThreshold(uint newThreshold) external {
-        require(msg.sender == guardian, "Governor::__acceptAdmin: sender must be gov guardian");
+        require(msg.sender == guardian, "Governor::setThreshold: sender must be gov guardian");
         threshold = newThreshold;
+    }
+
+    function setVotingDelay(uint newVotingDelay) external {
+        require(msg.sender == guardian, "Governor::setVotingDelay: sender must be gov guardian");
+        delay = newVotingDelay;
+    }
+
+    function setVotingPeriod(uint newVotingPeriod) external {
+        require(msg.sender == guardian, "Governor::setVotingPeriod: sender must be gov guardian");
+        period = newVotingPeriod;
     }
 
     function __acceptAdmin() public {
