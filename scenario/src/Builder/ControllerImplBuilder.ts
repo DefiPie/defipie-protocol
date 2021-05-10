@@ -12,6 +12,9 @@ const ControllerContract = getContract('Controller');
 const ControllerScenarioG1Contract = getTestContract('ControllerScenarioG1');
 const ControllerScenarioG2Contract = getContract('ControllerScenarioG2');
 const ControllerScenarioG3Contract = getContract('ControllerScenarioG3');
+const ControllerG4Contract = getContract('ControllerG4');
+const ControllerScenarioG4Contract = getContract('ControllerScenarioG4');
+
 const ControllerScenarioContract = getTestContract('ControllerScenario');
 
 const ControllerBorkedContract = getTestContract('ControllerBorked');
@@ -118,6 +121,22 @@ export async function buildControllerImpl(
 
     new Fetcher<{ name: StringV }, ControllerImplData>(
       `
+    #### ScenarioG4
+    * "ScenarioG4 name:<String>" - The Controller Scenario for local testing (G4)
+      * E.g. "ControllerImpl Deploy ScenarioG4 MyScen"
+    `,
+      'ScenarioG4',
+      [new Arg('name', getStringV)],
+      async (world, { name }) => ({
+          invokation: await ControllerScenarioG4Contract.deploy<ControllerImpl>(world, from, []),
+          name: name.val,
+          contract: 'ComptrollerScenarioG4Contract',
+          description: 'ScenarioG4 Comptroller Impl'
+      })
+    ),
+
+    new Fetcher<{ name: StringV }, ControllerImplData>(
+      `
         #### Borked
 
         * "Borked name:<String>" - A Borked Controller for testing
@@ -132,6 +151,25 @@ export async function buildControllerImpl(
         description: 'Borked Controller Impl'
       })
     ),
+
+    new Fetcher<{ name: StringV }, ControllerImplData>(
+      `
+    #### StandardG4
+    * "StandardG4 name:<String>" - The standard generation 4 Comptroller contract
+      * E.g. "Controller Deploy StandardG4 MyStandard"
+    `,
+      'StandardG6',
+      [new Arg('name', getStringV)],
+      async (world, { name }) => {
+          return {
+              invokation: await ControllerG4Contract.deploy<ControllerImpl>(world, from, []),
+              name: name.val,
+              contract: 'ComptrollerG4',
+              description: 'StandardG4 Comptroller Impl'
+          };
+      }
+    ),
+
     new Fetcher<{ name: StringV }, ControllerImplData>(
       `
         #### Default

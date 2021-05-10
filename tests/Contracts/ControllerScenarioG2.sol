@@ -15,4 +15,8 @@ contract ControllerScenarioG2 is Controller {
     function setBlockNumber(uint number) public {
         blockNumber = number;
     }
+
+    function _setPieRate(uint pieRate_) public {
+        pieRate = pieRate_;
+    }
 }

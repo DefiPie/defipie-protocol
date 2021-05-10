@@ -58,7 +58,9 @@ interface ControllerMethods {
   pieBorrowerIndex(market: string, account: string): Callable<string>
   pieSpeeds(string): Callable<string>
   claimPie(string): Sendable<void>
+  _grantPie(account: string, encodedNumber): Sendable<void>
   _setPieRate(encodedNumber): Sendable<void>
+  _setPieSpeed(pToken: string, encodedNumber): Sendable<void>
   getPieAddress(): Callable<string>
 }
 

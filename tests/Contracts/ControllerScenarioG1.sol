@@ -38,4 +38,8 @@ contract ControllerScenarioG1 is Controller {
     function unlist(address pToken) public {
         markets[pToken].isListed = false;
     }
+
+    function _setPieRate(uint pieRate_) public {
+        pieRate = pieRate_;
+    }
 }

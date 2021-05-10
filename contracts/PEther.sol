@@ -43,7 +43,7 @@ contract PEther is ImplementationStorage, PToken {
      * @dev Reverts upon any failure
      */
     function mint() external payable {
-        (uint err,) = mintInternal(msg.value);
+        (uint err,,) = mintInternal(msg.value);
         requireNoError(err, "mint failed");
     }
 
@@ -54,7 +54,9 @@ contract PEther is ImplementationStorage, PToken {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external returns (uint) {
-        return redeemInternal(redeemTokens);
+        (uint err, ) = redeemInternal(redeemTokens);
+
+        return err;
     }
 
     /**
@@ -64,7 +66,9 @@ contract PEther is ImplementationStorage, PToken {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external returns (uint) {
-        return redeemUnderlyingInternal(redeemAmount);
+        (uint err, ) = redeemUnderlyingInternal(redeemAmount);
+
+        return err;
     }
 
     /**
@@ -120,7 +124,7 @@ contract PEther is ImplementationStorage, PToken {
      * @notice Send Ether to PEther to mint
      */
     fallback() external payable {
-        (uint err,) = mintInternal(msg.value);
+        (uint err,,) = mintInternal(msg.value);
         requireNoError(err, "mint failed");
     }
 
@@ -128,7 +132,7 @@ contract PEther is ImplementationStorage, PToken {
      * @notice Send Ether to PEther to mint
      */
     receive() external payable {
-        (uint err,) = mintInternal(msg.value);
+        (uint err,,) = mintInternal(msg.value);
         requireNoError(err, "mint failed");
     }
     /*** Safe Token ***/
