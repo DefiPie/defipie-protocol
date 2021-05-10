@@ -84,12 +84,13 @@ contract PEtherHarness is PEther {
     }
 
     function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
-        (uint err,) = super.mintFresh(account, mintAmount);
+        (uint err,,) = super.mintFresh(account, mintAmount);
         return err;
     }
 
     function harnessRedeemFresh(address payable account, uint pTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        (uint err,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        return err;
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -256,12 +257,13 @@ contract PEtherDelegateHarness is PEtherDelegate {
     }
 
     function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
-        (uint err,) = super.mintFresh(account, mintAmount);
+        (uint err,,) = super.mintFresh(account, mintAmount);
         return err;
     }
 
     function harnessRedeemFresh(address payable account, uint pTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        (uint err,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        return err;
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {

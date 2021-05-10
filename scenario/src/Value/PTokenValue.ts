@@ -391,7 +391,7 @@ export function pTokenFetchers() {
         #### CallNum
 
         * "PToken <PToken> Call <signature>" - Simple direct call method, for now with no parameters
-          * E.g. "PToken pZRX Call \"borrowIndex()\""
+          * E.g. "PToken pZRX CallNum \"borrowIndex()\""
       `,
       "CallNum",
       [

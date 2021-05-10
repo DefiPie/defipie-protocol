@@ -630,7 +630,7 @@ export function pTokenCommands() {
         #### Liquidate
 
         * "PToken <pToken> Liquidate borrower:<User> pTokenCollateral:<Address> repayAmount:<Number>" - Liquidates repayAmount of given token seizing collateral token
-          * E.g. "PToken pZRX Liquidate Geoff cBAT 1.0e18"
+          * E.g. "PToken pZRX Liquidate Geoff pBAT 1.0e18"
       `,
       "Liquidate",
       [

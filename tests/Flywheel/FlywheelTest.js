@@ -52,23 +52,84 @@ describe('Flywheel', () => {
     pZRX = await makePToken({controller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
     pEVIL = await makePToken({controller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
     await send(controller, 'setSupportMarket', [pEVIL._address, false]);
-    await send(controller, '_addPieMarkets', [[pLOW, pREP, pZRX].map(c => c._address)]);
   });
 
   describe('getPieMarkets()', () => {
     it('should return the pie markets', async () => {
+        for (let mkt of [pLOW, pREP, pZRX]) {
+            await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
+        }
       expect(await call(controller, 'getPieMarkets')).toEqual(
         [pLOW, pREP, pZRX].map((c) => c._address)
       );
     });
   });
 
+  describe('_setPieSpeed()', () => {
+    it('should update market index when calling setPieSpeed', async () => {
+        const mkt = pREP;
+        await send(controller, 'setBlockNumber', [0]);
+        await send(mkt, 'harnessSetTotalSupply', [etherUnsigned(10e18)]);
+
+        await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
+        await fastForward(controller, 20);
+        await send(controller, '_setPieSpeed', [mkt._address, etherExp(1)]);
+
+        const {index, block} = await call(controller, 'pieSupplyState', [mkt._address]);
+        expect(index).toEqualNumber(2e36);
+        expect(block).toEqualNumber(20);
+    });
+
+    it('should correctly drop a pie market if called by admin', async () => {
+        for (let mkt of [pLOW, pREP, pZRX]) {
+            await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
+        }
+        const tx = await send(controller, '_setPieSpeed', [pLOW._address, 0]);
+        expect(await call(controller, 'getPieMarkets')).toEqual(
+            [pREP, pZRX].map((c) => c._address)
+        );
+        expect(tx).toHaveLog('PieSpeedUpdated', {
+            pToken: pLOW._address,
+            newSpeed: 0
+        });
+    });
+
+    it('should correctly drop a pie market from middle of array', async () => {
+        for (let mkt of [pLOW, pREP, pZRX]) {
+            await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
+        }
+        await send(controller, '_setPieSpeed', [pREP._address, 0]);
+        expect(await call(controller, 'getPieMarkets')).toEqual(
+            [pLOW, pZRX].map((c) => c._address)
+        );
+    });
+
+    it('should not drop a pie market unless called by admin', async () => {
+        for (let mkt of [pLOW, pREP, pZRX]) {
+            await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
+        }
+        await expect(
+            send(controller, '_setPieSpeed', [pLOW._address, 0], {from: a1})
+        ).rejects.toRevert('revert only admin can set pie speed');
+    });
+
+    it.skip('should not add non-listed markets', async () => {
+        const pBAT = await makePToken({ controller, supportMarket: false });
+        await expect(
+            send(controller, 'harnessAddPieMarkets', [[pBAT._address]])
+        ).rejects.toRevert('revert pie market is not listed');
+
+        const markets = await call(controller, 'getPieMarkets');
+        expect(markets).toEqual([]);
+    });
+  });
+
   describe('updatePieBorrowIndex()', () => {
     it('should calculate pie borrower index correctly', async () => {
       const mkt = pREP;
+      await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
       await send(controller, 'setBlockNumber', [100]);
       await send(mkt, 'harnessSetTotalBorrows', [etherUnsigned(11e18)]);
-      await send(controller, 'setPieSpeed', [mkt._address, etherExp(0.5)]);
       await send(controller, 'harnessUpdatePieBorrowIndex', [
         mkt._address,
         etherExp(1.1),
@@ -110,7 +171,7 @@ describe('Flywheel', () => {
 
     it('should not update index if no blocks passed since last accrual', async () => {
       const mkt = pREP;
-      await send(controller, 'setPieSpeed', [mkt._address, etherExp(0.5)]);
+      await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
       await send(controller, 'harnessUpdatePieBorrowIndex', [
         mkt._address,
         etherExp(1.1),
@@ -123,8 +184,9 @@ describe('Flywheel', () => {
 
     it('should not update index and block if pie speed is 0', async () => {
       const mkt = pREP;
-      await send(controller, 'setPieSpeed', [mkt._address, etherExp(0)]);
+      await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
       await send(controller, 'setBlockNumber', [100]);
+      await send(controller, '_setPieSpeed', [mkt._address, etherExp(0)]);
       await send(controller, 'harnessUpdatePieBorrowIndex', [
         mkt._address,
         etherExp(1.1),
@@ -132,16 +194,16 @@ describe('Flywheel', () => {
 
       const {index, block} = await call(controller, 'pieBorrowState', [mkt._address]);
       expect(index).toEqualNumber(1e36);
-      expect(block).toEqualNumber(0);
+      expect(block).toEqualNumber(100);
     });
   });
 
   describe('updatePieSupplyIndex()', () => {
     it('should calculate pie supplier index correctly', async () => {
       const mkt = pREP;
+      await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
       await send(controller, 'setBlockNumber', [100]);
       await send(mkt, 'harnessSetTotalSupply', [etherUnsigned(10e18)]);
-      await send(controller, 'setPieSpeed', [mkt._address, etherExp(0.5)]);
       await send(controller, 'harnessUpdatePieSupplyIndex', [mkt._address]);
       /*
         suppyTokens = 10e18
@@ -179,7 +241,7 @@ describe('Flywheel', () => {
       const mkt = pREP;
       await send(controller, 'setBlockNumber', [0]);
       await send(mkt, 'harnessSetTotalSupply', [etherUnsigned(10e18)]);
-      await send(controller, 'setPieSpeed', [mkt._address, etherExp(0.5)]);
+      await send(controller, '_setPieSpeed', [mkt._address, etherExp(0.5)]);
       await send(controller, 'harnessUpdatePieSupplyIndex', [mkt._address]);
 
       const {index, block} = await call(controller, 'pieSupplyState', [mkt._address]);
@@ -188,10 +250,11 @@ describe('Flywheel', () => {
     });
 
     it('should not matter if the index is updated multiple times', async () => {
-      const pieRemaining = pieRate.mul(100)
+      const pieRemaining = pieRate.mul(100);
+      await send(controller, 'harnessAddPieMarkets', [[pLOW._address]]);
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       await pretendBorrow(pLOW, a1, 1, 1, 100);
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessRefreshPieSpeeds');
 
       await quickMint(pLOW, a2, etherUnsigned(10e18));
       await quickMint(pLOW, a3, etherUnsigned(15e18));
@@ -228,8 +291,8 @@ describe('Flywheel', () => {
 
       expect(txT1.gasUsed).toBeLessThan(200074);
       expect(txT1.gasUsed).toBeGreaterThan(150000);
-      expect(txT2.gasUsed).toBeLessThan(200000);
-      expect(txT2.gasUsed).toBeGreaterThan(150000);
+      expect(txT2.gasUsed).toBeLessThan(156000);
+      expect(txT2.gasUsed).toBeGreaterThan(100000);
     });
   });
 
@@ -273,7 +336,7 @@ describe('Flywheel', () => {
       });
     });
 
-    it('should not transfer if below pie claim threshold', async () => {
+    it('should not transfer pie automatically', async () => {
       const mkt = pREP;
       await send(controller.pie, 'transfer', [controller._address, etherUnsigned(50e18)], {from: root});
       await send(mkt, "harnessSetAccountBorrows", [a1, etherUnsigned(5.5e17), etherExp(1)]);
@@ -432,7 +495,8 @@ describe('Flywheel', () => {
       const pieRemaining = pieRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       await pretendBorrow(pLOW, a1, 1, 1, 100);
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, '_setPieSpeed', [pLOW._address, etherExp(0.5)]);
+      await send(controller, 'harnessRefreshPieSpeeds');
       const speed = await call(controller, 'pieSpeeds', [pLOW._address]);
       const a2AccruedPre = await pieAccrued(controller, a2);
       const pieBalancePre = await pieBalance(controller, a2);
@@ -442,7 +506,7 @@ describe('Flywheel', () => {
       const tx = await send(controller, 'claimPie', [a2]);
       const a2AccruedPost = await pieAccrued(controller, a2);
       const pieBalancePost = await pieBalance(controller, a2);
-      expect(tx.gasUsed).toBeLessThan(440000);
+      expect(tx.gasUsed).toBeLessThan(400000);
       expect(speed).toEqualNumber(pieRate);
       expect(a2AccruedPre).toEqualNumber(0);
       expect(a2AccruedPost).toEqualNumber(0);
@@ -454,7 +518,8 @@ describe('Flywheel', () => {
       const pieRemaining = pieRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       await pretendBorrow(pLOW, a1, 1, 1, 100);
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, '_setPieSpeed', [pLOW._address, etherExp(0.5)]);
+      await send(controller, 'harnessRefreshPieSpeeds');
       const speed = await call(controller, 'pieSpeeds', [pLOW._address]);
       const a2AccruedPre = await pieAccrued(controller, a2);
       const pieBalancePre = await pieBalance(controller, a2);
@@ -463,7 +528,7 @@ describe('Flywheel', () => {
       const tx = await send(controller, 'claimPie', [a2, [pLOW._address]]);
       const a2AccruedPost = await pieAccrued(controller, a2);
       const pieBalancePost = await pieBalance(controller, a2);
-      expect(tx.gasUsed).toBeLessThan(162077);
+      expect(tx.gasUsed).toBeLessThan(170000);
       expect(speed).toEqualNumber(pieRate);
       expect(a2AccruedPre).toEqualNumber(0);
       expect(a2AccruedPost).toEqualNumber(0);
@@ -503,7 +568,7 @@ describe('Flywheel', () => {
       }
 
       await pretendBorrow(pLOW, root, 1, 1, etherExp(10));
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessRefreshPieSpeeds');
 
       await fastForward(controller, deltaBlocks);
 
@@ -521,7 +586,8 @@ describe('Flywheel', () => {
         send(pLOW, 'mint', [mintAmount], { from });
       }
       await pretendBorrow(pLOW, root, 1, 1, etherExp(10));
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessAddPieMarkets', [[pLOW._address]]);
+      await send(controller, 'harnessRefreshPieSpeeds');
 
       await fastForward(controller, deltaBlocks);
 
@@ -543,7 +609,8 @@ describe('Flywheel', () => {
         send(pLOW, 'mint', [mintAmount], { from });
       }
       await pretendBorrow(pLOW, root, 1, 1, etherExp(10));
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessAddPieMarkets', [[pLOW._address]]);
+      await send(controller, 'harnessRefreshPieSpeeds');
 
       await fastForward(controller, deltaBlocks);
 
@@ -564,7 +631,8 @@ describe('Flywheel', () => {
         await send(pLOW, 'harnessIncrementTotalBorrows', [borrowAmt]);
         await send(pLOW, 'harnessSetAccountBorrows', [acct, borrowAmt, borrowIdx]);
       }
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessAddPieMarkets', [[pLOW._address]]);
+      await send(controller, 'harnessRefreshPieSpeeds');
 
       await send(controller, 'harnessFastForward', [10]);
 
@@ -584,36 +652,30 @@ describe('Flywheel', () => {
     });
   });
 
-  describe('refreshPieSpeeds', () => {
+  describe('harnessRefreshPieSpeeds', () => {
     it('should start out 0', async () => {
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessRefreshPieSpeeds');
       const speed = await call(controller, 'pieSpeeds', [pLOW._address]);
       expect(speed).toEqualNumber(0);
     });
 
     it('should get correct speeds with borrows', async () => {
       await pretendBorrow(pLOW, a1, 1, 1, 100);
-      const tx = await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessAddPieMarkets', [[pLOW._address]]);
+      const tx = await send(controller, 'harnessRefreshPieSpeeds');
       const speed = await call(controller, 'pieSpeeds', [pLOW._address]);
       expect(speed).toEqualNumber(pieRate);
       expect(tx).toHaveLog(['PieSpeedUpdated', 0], {
         pToken: pLOW._address,
         newSpeed: speed
       });
-      expect(tx).toHaveLog(['PieSpeedUpdated', 1], {
-        pToken: pREP._address,
-        newSpeed: 0
-      });
-      expect(tx).toHaveLog(['PieSpeedUpdated', 2], {
-        pToken: pZRX._address,
-        newSpeed: 0
-      });
     });
 
     it('should get correct speeds for 2 assets', async () => {
       await pretendBorrow(pLOW, a1, 1, 1, 100);
       await pretendBorrow(pZRX, a1, 1, 1, 100);
-      await send(controller, 'refreshPieSpeeds');
+      await send(controller, 'harnessAddPieMarkets', [[pLOW._address, pZRX._address]]);
+      await send(controller, 'harnessRefreshPieSpeeds');
       const speed1 = await call(controller, 'pieSpeeds', [pLOW._address]);
       const speed2 = await call(controller, 'pieSpeeds', [pREP._address]);
       const speed3 = await call(controller, 'pieSpeeds', [pZRX._address]);
@@ -621,51 +683,19 @@ describe('Flywheel', () => {
       expect(speed2).toEqualNumber(0);
       expect(speed3).toEqualNumber(pieRate.div(4).mul(3));
     });
-
-    it('should not be callable inside a contract', async () => {
-      await pretendBorrow(pLOW, a1, 1, 1, 100);
-      await pretendBorrow(pZRX, a1, 1, 1, 100);
-      await expect(deploy('RefreshSpeedsProxy', [controller._address])).rejects.toRevert('revert only externally owned accounts may refresh speeds');
-    });
   });
 
-  describe('_addPieMarkets', () => {
+  describe('harnessAddPieMarkets', () => {
     it('should correctly add a pie market if called by admin', async () => {
-      const cBAT = await makePToken({controller, supportMarket: true});
-      const tx = await send(controller, '_addPieMarkets', [[cBAT._address]]);
+      const pBAT = await makePToken({controller, supportMarket: true});
+      const tx1 = await send(controller, 'harnessAddPieMarkets', [[pLOW._address, pREP._address, pZRX._address]]);
+      const tx2 = await send(controller, 'harnessAddPieMarkets', [[pBAT._address]]);
       const markets = await call(controller, 'getPieMarkets');
-      expect(markets).toEqual([pLOW, pREP, pZRX, cBAT].map((c) => c._address));
-      expect(tx).toHaveLog('MarketPied', {
-        pToken: cBAT._address,
-        isPied: true
+      expect(markets).toEqual([pLOW, pREP, pZRX, pBAT].map((c) => c._address));
+      expect(tx2).toHaveLog('PieSpeedUpdated', {
+        pToken: pBAT._address,
+        newSpeed: 1
       });
-    });
-
-    it('should revert if not called by admin', async () => {
-      const cBAT = await makePToken({ controller, supportMarket: true });
-      await expect(
-        send(controller, '_addPieMarkets', [[cBAT._address]], {from: a1})
-      ).rejects.toRevert('revert only admin can add pie market');
-    });
-
-    it('should not add non-listed markets', async () => {
-      const cBAT = await makePToken({ controller, supportMarket: true });
-      await send(controller, 'setSupportMarket', [cBAT._address, false]);
-      await expect(
-        send(controller, '_addPieMarkets', [[cBAT._address]])
-      ).rejects.toRevert('revert pie market is not listed');
-
-      const markets = await call(controller, 'getPieMarkets');
-      expect(markets).toEqual([pLOW, pREP, pZRX].map((c) => c._address));
-    });
-
-    it('should not add duplicate markets', async () => {
-      const cBAT = await makePToken({controller, supportMarket: true});
-      await send(controller, '_addPieMarkets', [[cBAT._address]]);
-
-      await expect(
-        send(controller, '_addPieMarkets', [[cBAT._address]])
-      ).rejects.toRevert('revert pie market already added');
     });
 
     it('should not write over a markets existing state', async () => {
@@ -673,11 +703,12 @@ describe('Flywheel', () => {
       const bn0 = 10, bn1 = 20;
       const idx = etherUnsigned(1.5e36);
 
+      await send(controller, "harnessAddPieMarkets", [[mkt]]);
       await send(controller, "setPieSupplyState", [mkt, idx, bn0]);
       await send(controller, "setPieBorrowState", [mkt, idx, bn0]);
       await send(controller, "setBlockNumber", [bn1]);
-      await send(controller, "_dropPieMarket", [mkt]);
-      await send(controller, "_addPieMarkets", [[mkt]]);
+      await send(controller, "_setPieSpeed", [mkt, 0]);
+      await send(controller, "harnessAddPieMarkets", [[mkt]]);
 
       const supplyState = await call(controller, 'pieSupplyState', [mkt]);
       expect(supplyState.block).toEqual(bn1.toString());
@@ -689,56 +720,4 @@ describe('Flywheel', () => {
     });
   });
 
-  describe('_dropPieMarket', () => {
-    it('should correctly drop a pie market if called by admin', async () => {
-      const tx = await send(controller, '_dropPieMarket', [pLOW._address]);
-      expect(await call(controller, 'getPieMarkets')).toEqual(
-        [pREP, pZRX].map((c) => c._address)
-      );
-      expect(tx).toHaveLog('MarketPied', {
-        pToken: pLOW._address,
-        isPied: false
-      });
-    });
-
-    it('should correctly drop a pie market from middle of array', async () => {
-      await send(controller, '_dropPieMarket', [pREP._address]);
-      expect(await call(controller, 'getPieMarkets')).toEqual(
-        [pLOW, pZRX].map((c) => c._address)
-      );
-    });
-
-    it('should not drop a pie market unless called by admin', async () => {
-      await expect(
-        send(controller, '_dropPieMarket', [pLOW._address], {from: a1})
-      ).rejects.toRevert('revert only admin can drop pie market');
-    });
-
-    it('should not drop a pie market already dropped', async () => {
-      await send(controller, '_dropPieMarket', [pLOW._address]);
-      await expect(
-        send(controller, '_dropPieMarket', [pLOW._address])
-      ).rejects.toRevert('revert market is not a pie market');
-    });
-  });
-
-  describe('_setPieRate', () => {
-    it('should correctly change pie rate if called by admin', async () => {
-      expect(await call(controller, 'pieRate')).toEqualNumber(etherUnsigned(1e18));
-      const tx1 = await send(controller, '_setPieRate', [etherUnsigned(3e18)]);
-      expect(await call(controller, 'pieRate')).toEqualNumber(etherUnsigned(3e18));
-      const tx2 = await send(controller, '_setPieRate', [etherUnsigned(2e18)]);
-      expect(await call(controller, 'pieRate')).toEqualNumber(etherUnsigned(2e18));
-      expect(tx2).toHaveLog('NewPieRate', {
-        oldPieRate: etherUnsigned(3e18),
-        newPieRate: etherUnsigned(2e18)
-      });
-    });
-
-    it('should not change pie rate unless called by admin', async () => {
-      await expect(
-        send(controller, '_setPieRate', [pLOW._address], {from: a1})
-      ).rejects.toRevert('revert only admin can change pie rate');
-    });
-  });
 });

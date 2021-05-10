@@ -43,6 +43,10 @@ Macro NewController price=1.0 closeFactor=0.1 maxAssets=20
     Unitroller SetPendingImpl ControllerG3
     ControllerImpl ControllerG3 Become
     --g4
+    ControllerImpl Deploy ScenarioG4 ControllerG4
+    Unitroller SetPendingImpl ControllerG4
+    ControllerImpl ControllerG4 Become
+    -- current
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
     ControllerImpl ScenController Become

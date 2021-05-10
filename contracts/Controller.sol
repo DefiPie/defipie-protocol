@@ -47,12 +47,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     /// @notice Emitted when an action is paused on a market
     event ActionPaused(address pToken, string action, bool pauseState);
 
-    /// @notice Emitted when market pieed status is changed
-    event MarketPied(address pToken, bool isPied);
-
-    /// @notice Emitted when PIE rate is changed
-    event NewPieRate(uint oldPieRate, uint newPieRate);
-
     /// @notice Emitted when a new PIE speed is calculated for a market
     event PieSpeedUpdated(address indexed pToken, uint newSpeed);
 
@@ -303,8 +297,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      */
     function redeemVerify(address pToken, address redeemer, uint redeemAmount, uint redeemTokens) external override {
         // Shh - currently unused
-        // pToken;
-        // redeemer;
+        pToken;
+        redeemer;
 
         // Require tokens is zero or amount is also zero
         if (redeemTokens == 0 && redeemAmount > 0) {
@@ -380,9 +374,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint repayAmount
     ) external override returns (uint) {
         // Shh - currently unused
-        // payer;
-        // borrower;
-        // repayAmount;
+        payer;
+        borrower;
+        repayAmount;
 
         if (!markets[pToken].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
@@ -459,7 +453,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         require(!seizeGuardianPaused, "seize is paused");
 
         // Shh - currently unused
-        // seizeTokens;
+        seizeTokens;
 
         if (!markets[pTokenCollateral].isListed || !markets[pTokenBorrowed].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
@@ -987,43 +981,45 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
     /*** Pie Distribution ***/
 
-    function refreshPieSpeeds() public {
-        require(msg.sender == tx.origin, "only externally owned accounts may refresh speeds");
-        refreshPieSpeedsInternal();
-    }
-
     /**
-     * @notice Recalculate and update PIE speeds for all PIE markets
+     * @notice Set PIE speed for a single market
+     * @param pToken The market whose PIE speed to update
+     * @param pieSpeed New PIE speed for market
      */
-    function refreshPieSpeedsInternal() internal {
-        address[] memory allMarkets_ = allMarkets;
-
-        for (uint i = 0; i < allMarkets_.length; i++) {
-            address pToken = allMarkets_[i];
+    function setPieSpeedInternal(address pToken, uint pieSpeed) internal {
+        uint currentPieSpeed = pieSpeeds[pToken];
+        if (currentPieSpeed != 0) {
+            // note that PIE speed could be set to 0 to halt liquidity rewards for a market
             Exp memory borrowIndex = Exp({mantissa: PTokenInterface(pToken).borrowIndex()});
             updatePieSupplyIndex(pToken);
             updatePieBorrowIndex(pToken, borrowIndex);
-        }
+        } else if (pieSpeed != 0) {
+            // Add the PIE market
+            Market storage market = markets[pToken];
+            require(market.isListed == true, "pie market is not listed");
 
-        Exp memory totalUtility = Exp({mantissa: 0});
-        Exp[] memory utilities = new Exp[](allMarkets_.length);
-        for (uint i = 0; i < allMarkets_.length; i++) {
-            address pToken = allMarkets_[i];
-            if (markets[pToken].isPied) {
-                oracle.updateUnderlyingPrice(pToken);
-                Exp memory assetPrice = Exp({mantissa: oracle.getUnderlyingPrice(pToken)});
-                Exp memory interestPerBlock = mul_(Exp({mantissa: PTokenInterface(pToken).borrowRatePerBlock()}), PTokenInterface(pToken).totalBorrows());
-                Exp memory utility = mul_(interestPerBlock, assetPrice);
-                utilities[i] = utility;
-                totalUtility = add_(totalUtility, utility);
+            if (pieSupplyState[pToken].index == 0) {
+                pieSupplyState[pToken] = PieMarketState({
+                    index: pieInitialIndex,
+                    block: safe32(getBlockNumber(), "block number exceeds 32 bits")
+                });
+            } else {
+                pieSupplyState[pToken].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
+            }
+
+            if (pieBorrowState[pToken].index == 0) {
+                pieBorrowState[pToken] = PieMarketState({
+                    index: pieInitialIndex,
+                    block: safe32(getBlockNumber(), "block number exceeds 32 bits")
+                });
+            } else {
+                pieBorrowState[pToken].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
             }
         }
 
-        for (uint i = 0; i < allMarkets_.length; i++) {
-            address pToken = allMarkets[i];
-            uint newSpeed = totalUtility.mantissa > 0 ? mul_(pieRate, div_(utilities[i], totalUtility)) : 0;
-            pieSpeeds[pToken] = newSpeed;
-            emit PieSpeedUpdated(pToken, newSpeed);
+        if (currentPieSpeed != pieSpeed) {
+            pieSpeeds[pToken] = pieSpeed;
+            emit PieSpeedUpdated(pToken, pieSpeed);
         }
     }
 
@@ -1120,25 +1116,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     /**
-     * @notice Transfer PIE to the user, if they are above the threshold
-     * @dev Note: If there is not enough PIE, we do not perform the transfer all.
-     * @param user The address of the user to transfer PIE to
-     * @param userAccrued The amount of PIE to (possibly) transfer
-     * @return The amount of PIE which was NOT transferred to the user
-     */
-    function transferPie(address user, uint userAccrued, uint threshold) internal returns (uint) {
-        if (userAccrued >= threshold && userAccrued > 0) {
-            address pie = getPieAddress();
-            uint pieRemaining = EIP20Interface(pie).balanceOf(address(this));
-            if (userAccrued <= pieRemaining) {
-                EIP20Interface(pie).transfer(user, userAccrued);
-                return 0;
-            }
-        }
-        return userAccrued;
-    }
-
-    /**
      * @notice Claim all the pie accrued by holder in all markets
      * @param holder The address to claim PIE for
      */
@@ -1184,73 +1161,35 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
     }
 
+    /**
+     * @notice Transfer PIE to the user
+     * @dev Note: If there is not enough PIE, we do not perform the transfer all.
+     * @param user The address of the user to transfer PIE to
+     * @param userAccrued The amount of PIE to (possibly) transfer
+     * @return The userAccrued of PIE which was NOT transferred to the user
+     */
+    function transferPie(address user, uint userAccrued, uint threshold) internal returns (uint) {
+        if (userAccrued >= threshold && userAccrued > 0) {
+            address pie = getPieAddress();
+            uint pieRemaining = EIP20Interface(pie).balanceOf(address(this));
+            if (userAccrued <= pieRemaining) {
+                EIP20Interface(pie).transfer(user, userAccrued);
+                return 0;
+            }
+        }
+        return userAccrued;
+    }
+
     /*** Pie Distribution Admin ***/
 
     /**
-     * @notice Set the amount of PIE distributed per block
-     * @param pieRate_ The amount of PIE wei per block to distribute
-     */
-    function _setPieRate(uint pieRate_) public {
-        require(msg.sender == admin, "only admin can change pie rate");
-
-        uint oldRate = pieRate;
-        pieRate = pieRate_;
-        emit NewPieRate(oldRate, pieRate_);
-
-        refreshPieSpeedsInternal();
-    }
-
-    function _addPieMarkets(address[] memory pTokens) public {
-        require(msg.sender == admin, "only admin can add pie market");
-
-        for (uint i = 0; i < pTokens.length; i++) {
-            _addPieMarketInternal(pTokens[i]);
-        }
-
-        refreshPieSpeedsInternal();
-    }
-
-    function _addPieMarketInternal(address pToken) internal {
-        Market storage market = markets[pToken];
-        require(market.isListed == true, "pie market is not listed");
-        require(market.isPied == false, "pie market already added");
-
-        market.isPied = true;
-        emit MarketPied(pToken, true);
-
-        if (pieSupplyState[pToken].index == 0) {
-            pieSupplyState[pToken] = PieMarketState({
-                index: pieInitialIndex,
-                block: safe32(getBlockNumber(), "block number exceeds 32 bits")
-            });
-        } else {
-            pieSupplyState[pToken].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
-        }
-
-        if (pieBorrowState[pToken].index == 0) {
-            pieBorrowState[pToken] = PieMarketState({
-                index: pieInitialIndex,
-                block: safe32(getBlockNumber(), "block number exceeds 32 bits")
-            });
-        } else {
-            pieBorrowState[pToken].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
-        }
-    }
-
-    /**
-     * @notice Remove a market from pieMarkets, preventing it from earning PIE in the flywheel
-     * @param pToken The address of the market to drop
-     */
-    function _dropPieMarket(address pToken) public {
-        require(msg.sender == admin, "only admin can drop pie market");
-
-        Market storage market = markets[pToken];
-        require(market.isPied == true, "market is not a pie market");
-
-        market.isPied = false;
-        emit MarketPied(pToken, false);
-
-        refreshPieSpeedsInternal();
+    * @notice Set PIE speed for a single market
+    * @param pToken The market whose PIE speed to update
+    * @param pieSpeed New PIE speed for market
+    */
+    function _setPieSpeed(address pToken, uint pieSpeed) public {
+        require(msg.sender == admin, "only admin can set pie speed");
+        setPieSpeedInternal(pToken, pieSpeed);
     }
 
     /**

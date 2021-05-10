@@ -3,10 +3,11 @@ Macro FlywheelController price=1.0 borrowRate=0.000005 pieInitAmount=5000000e18
     Unitroller Deploy
     PriceOracle Deploy Fixed price
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
-    ----g3
-    ControllerImpl Deploy ScenarioG3 ControllerScen
+    ----g4
+    ControllerImpl Deploy ScenarioG4 ControllerScen
     Unitroller SetPendingImpl ControllerScen
     ControllerImpl ControllerScen Become
+    Assert Equal (Controller PieRate) 0
     Controller SetPieRate 1e18
     Assert Equal (Controller PieRate) 1e18
     --list some tokens
@@ -19,8 +20,10 @@ Macro FlywheelController price=1.0 borrowRate=0.000005 pieInitAmount=5000000e18
     Support pZRX collateralFactor:0.5
     Support pBAT collateralFactor:0.5
     -- final
-    Controller AddPieMarkets pZRX
-    Controller AddPieMarkets pBAT
+    Assert Equal (Controller PieSpeed pZRX) 0
+    Assert Equal (Controller PieSpeed pBAT) 0
+    Controller SetPieSpeed pZRX 1
+    Controller SetPieSpeed pBAT 1
     Erc20 Deploy Standard PIE "PIE Token" 18
     Give (Address Controller) pieInitAmount PIE
     Controller Send "setPieAddress(address)" (Address PIE)
@@ -33,13 +36,19 @@ Macro InitSpeeds
     Mint Coburn 6e18 pBAT--tokenbalance = 6e18 / 2e9 = 3e9
     EnterMarkets Coburn pBAT
     Borrow Coburn 1e18 pZRX
+    Assert Equal (Controller PieSpeed pZRX) 1
+    Assert Equal (Controller PieSpeed pBAT) 1
     Controller RefreshPieSpeeds
+    Assert Equal (Controller PieSpeed pZRX) 1e18
+    Assert Equal (Controller PieSpeed pBAT) 0 -- no borrows
 
 Test "Accrue PIE during a mint"
     FlywheelController
     InitSpeeds
     Assert Equal (Controller BlockNumber) 0
     Assert Equal (Controller PieSupplyState pZRX "block") 0
+    Assert Equal (Controller PieSpeed pZRX) 1e18
+    Assert Equal (Controller PieSpeed pBAT) 0
     FastForward 300000 Blocks
     Assert Equal (Controller BlockNumber) 300000
     Assert Equal (Controller PieAccrued Geoff) 0
@@ -55,16 +64,26 @@ Test "Accrue PIE during a mint"
 Test "Accrue PIE during a borrow"
     FlywheelController
     InitSpeeds
-    Controller FastForward 300000 Blocks
     Assert Equal (Controller PieAccrued Coburn) 0
+    Assert Equal (Controller PieBorrowState pZRX "index") 1e36
+    Assert Equal (Controller PieBorrowState pZRX "block") 0
+    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 1e36
+    Assert Equal (PToken pZRX CallNum "borrowIndex()") 1e18
+    Controller FastForward 300000 Blocks
+    Assert Equal (Controller PieBorrowState pZRX "index") 1e36
+    Assert Equal (Controller PieBorrowState pZRX "block") 0
+    Assert Equal (Controller PieAccrued Coburn) 0
+    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 1e36
+    Assert Equal (PToken pZRX CallNum "borrowIndex()") 1e18
     Borrow Coburn 0.1e18 pZRX
+    Assert Equal (PToken pZRX CallNum "borrowIndex()") 2.5e18
     -- new index = initVal + deltaBlocks * borrowSpeed * 1e36 / totalBorrows
     -- new index = 1e36 + 300000 * 1e18 * 1e36 / 1e18 =  3.00001e41
-    Assert Equal (Controller PieAccrued Coburn) 0
+    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 3.00001e41
     Assert Equal (Controller PieBorrowState pZRX "index") 3.00001e41
     Assert Equal (Controller PieBorrowState pZRX "block") 300000
     Assert Equal (Erc20 PIE TokenBalance Coburn) 300000e18
-    Assert Equal (Controller PieBorrowerIndex pZRX Coburn) 3.00001e41
+    Assert Equal (Controller PieAccrued Coburn) 0
 
 Test "Accrue PIE during a redeem"
     FlywheelController
@@ -170,7 +189,8 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
     NewPToken DAI pDAI
     --
     Support pDAI collateralFactor:0.5
-    Controller AddPieMarkets pDAI
+    Controller SetPieSpeed pDAI 1
+    Controller SetPieSpeed pBAT 1
     Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pBAT) (Address pDAI)]
     Prep Jared Some DAI pDAI
     Mint Jared 6e18 pDAI
@@ -182,9 +202,11 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
     Assert Equal (Controller PieSpeed pDAI) 0.5e18
     --
     FastForward 100 Blocks
-    Controller DropPieMarket pDAI
+    Controller SetPieSpeed pDAI 0
     Controller ClaimPie Geoff
     Assert Equal (Erc20 PIE TokenBalance Geoff) 75e18--half of cdai, all of zrx(.25e18 + .5e18) * 100
+    Controller SetPieSpeed pBAT 1
+    Controller SetPieSpeed pZRX 1e18
     Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pBAT)]
     Assert Equal (Controller PieSpeed pZRX) 1e18
     Assert Equal (Controller PieSpeed pDAI) 0
@@ -194,7 +216,8 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
     Assert Equal (Erc20 PIE TokenBalance Geoff) 175e18-- += 1e18 * 100
     Assert Equal (Controller PieAccrued Geoff) 0
     --
-    Controller AddPieMarkets pDAI
+    Controller SetPieSpeed pDAI 0.5e18
+    Controller SetPieSpeed pZRX 0.5e18
     FastForward 100 Blocks
     Controller ClaimPie Geoff
     Assert Equal (Erc20 PIE TokenBalance Geoff) 250e18--half of cdai, all of zrx. += (.25 + .5) * 100
@@ -203,11 +226,27 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
 Test "TransferPie handles running out of PIE in Controller correctly"
     FlywheelController price:1.0 borrowRate:0.000005 pieInitAmount:1e18
     InitSpeeds
+    Assert Equal (Controller BlockNumber) 0
+    Assert Equal (Controller PieSupplyState pZRX "block") 0
+    Assert Equal (Controller PieSpeed pZRX) 1e18
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (Erc20 PIE TokenBalance Geoff) 0
+    Assert Equal (PToken pZRX CallNum "borrowIndex()") 1e18
     FastForward 2 Blocks
+    Assert Equal (Controller BlockNumber) 2
+    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (Erc20 PIE TokenBalance Geoff) 0
     Controller ClaimPie Geoff
+    -- new index = initVal + deltaBlocks * supplySpeed * 1e36 / totalSupply
+    -- new index = 1e36 + 2 * 1e18 * 1e36 / 2.5e10 = 8.0000001e43
+    Assert Equal (Controller PieSupplyState pZRX "index") 8.0000001e43
+    Assert Equal (Controller PieSupplyState pZRX "block") 2
+    Assert Equal (Controller PieSupplierIndex pZRX Geoff) 8.0000001e43
     Assert Equal (Controller PieAccrued Geoff) 2e18
     Assert Equal (Erc20 PIE TokenBalance Geoff) 0
     Give (Address Controller) 1e18 PIE
+    Assert Equal (Controller PieAccrued Geoff) 2e18
+    Assert Equal (Erc20 PIE TokenBalance Geoff) 0
     Controller ClaimPie Geoff
     Assert Equal (Controller PieAccrued Geoff) 0
     Assert Equal (Erc20 PIE TokenBalance Geoff) 2e18
@@ -218,7 +257,7 @@ Test "Changing PIE rate continues to distribute at the correct speed"
     --
     Assert Equal (Controller PieSpeed pZRX) 1e18
     FastForward 10 Blocks
-    Controller SetPieRate 2e18
+    Controller SetPieSpeed pZRX 2e18
     Assert Equal (Controller PieSpeed pZRX) 2e18
     FastForward 10 Blocks
     Controller ClaimPie Geoff
