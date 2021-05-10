@@ -483,13 +483,13 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @notice Sender supplies assets into the market and receives pTokens in exchange
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param mintAmount The amount of the underlying asset to supply
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
+     * @return (uint, uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the actual mint amount, and actual mint tokens.
      */
-    function mintInternal(uint mintAmount) internal nonReentrant returns (uint, uint) {
+    function mintInternal(uint mintAmount) internal nonReentrant returns (uint, uint, uint) {
         uint error = accrueInterest();
         if (error != uint(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
-            return (fail(Error(error), FailureInfo.MINT_ACCRUE_INTEREST_FAILED), 0);
+            return (fail(Error(error), FailureInfo.MINT_ACCRUE_INTEREST_FAILED), 0, 0);
         }
         // mintFresh emits the actual Mint event if successful and logs on errors, so we don't need to
         return mintFresh(msg.sender, mintAmount);
@@ -510,25 +510,25 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @dev Assumes interest has already been accrued up to the current block
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
+     * @return (uint, uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the actual mint amount, and actual mint tokens.
      */
-    function mintFresh(address minter, uint mintAmount) internal returns (uint, uint) {
+    function mintFresh(address minter, uint mintAmount) internal returns (uint, uint, uint) {
         /* Fail if mint not allowed */
         uint allowed = controller.mintAllowed(address(this), minter, mintAmount);
         if (allowed != 0) {
-            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.MINT_CONTROLLER_REJECTION, allowed), 0);
+            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.MINT_CONTROLLER_REJECTION, allowed), 0, 0);
         }
 
         /* Verify market's block number equals current block number */
         if (accrualBlockNumber != getBlockNumber()) {
-            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.MINT_FRESHNESS_CHECK), 0);
+            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.MINT_FRESHNESS_CHECK), 0, 0);
         }
 
         MintLocalVars memory vars;
 
         (vars.mathErr, vars.exchangeRateMantissa) = exchangeRateStoredInternal();
         if (vars.mathErr != MathError.NO_ERROR) {
-            return (failOpaque(Error.MATH_ERROR, FailureInfo.MINT_EXCHANGE_RATE_READ_FAILED, uint(vars.mathErr)), 0);
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.MINT_EXCHANGE_RATE_READ_FAILED, uint(vars.mathErr)), 0, 0);
         }
 
         /////////////////////////
@@ -571,20 +571,20 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         emit Mint(minter, vars.actualMintAmount, vars.mintTokens);
         emit Transfer(address(this), minter, vars.mintTokens);
 
-        return (uint(Error.NO_ERROR), vars.actualMintAmount);
+        return (uint(Error.NO_ERROR), vars.actualMintAmount, vars.mintTokens);
     }
 
     /**
      * @notice Sender redeems PTokens in exchange for the underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param redeemTokens The number of pTokens to redeem into underlying
-     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the redeem tokens amount.
      */
-    function redeemInternal(uint redeemTokens) internal nonReentrant returns (uint) {
+    function redeemInternal(uint redeemTokens) internal nonReentrant returns (uint, uint) {
         uint error = accrueInterest();
         if (error != uint(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted redeem failed
-            return fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED);
+            return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0);
         }
         // redeemFresh emits redeem-specific logs on errors, so we don't need to
         return redeemFresh(msg.sender, redeemTokens, 0);
@@ -594,13 +594,13 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @notice Sender redeems pTokens in exchange for a specified amount of underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param redeemAmount The amount of underlying to receive from redeeming pTokens
-     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the redeem tokens amount.
      */
-    function redeemUnderlyingInternal(uint redeemAmount) internal nonReentrant returns (uint) {
+    function redeemUnderlyingInternal(uint redeemAmount) internal nonReentrant returns (uint, uint) {
         uint error = accrueInterest();
         if (error != uint(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted redeem failed
-            return fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED);
+            return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0);
         }
         // redeemFresh emits redeem-specific logs on errors, so we don't need to
         return redeemFresh(msg.sender, 0, redeemAmount);
@@ -622,9 +622,9 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @param redeemer The address of the account which is redeeming the tokens
      * @param redeemTokensIn The number of pTokens to redeem into underlying (only one of redeemTokensIn or redeemAmountIn may be non-zero)
      * @param redeemAmountIn The number of underlying tokens to receive from redeeming pTokens (only one of redeemTokensIn or redeemAmountIn may be non-zero)
-     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the redeem tokens amount.
      */
-    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn) internal returns (uint) {
+    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn) internal returns (uint, uint) {
         require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
 
         RedeemLocalVars memory vars;
@@ -632,7 +632,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* exchangeRate = invoke Exchange Rate Stored() */
         (vars.mathErr, vars.exchangeRateMantissa) = exchangeRateStoredInternal();
         if (vars.mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_RATE_READ_FAILED, uint(vars.mathErr));
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_RATE_READ_FAILED, uint(vars.mathErr)), 0);
         }
 
         /* If redeemTokensIn > 0: */
@@ -646,7 +646,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
             (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(Exp({mantissa: vars.exchangeRateMantissa}), redeemTokensIn);
             if (vars.mathErr != MathError.NO_ERROR) {
-                return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED, uint(vars.mathErr));
+                return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED, uint(vars.mathErr)), 0);
             }
         } else {
             /*
@@ -657,7 +657,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
             (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(redeemAmountIn, Exp({mantissa: vars.exchangeRateMantissa}));
             if (vars.mathErr != MathError.NO_ERROR) {
-                return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr));
+                return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr)), 0);
             }
 
             vars.redeemAmount = redeemAmountIn;
@@ -666,12 +666,12 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* Fail if redeem not allowed */
         uint allowed = controller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
         if (allowed != 0) {
-            return failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.REDEEM_CONTROLLER_REJECTION, allowed);
+            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.REDEEM_CONTROLLER_REJECTION, allowed), 0);
         }
 
         /* Verify market's block number equals current block number */
         if (accrualBlockNumber != getBlockNumber()) {
-            return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDEEM_FRESHNESS_CHECK);
+            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REDEEM_FRESHNESS_CHECK), 0);
         }
 
         /*
@@ -681,17 +681,17 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
          */
         (vars.mathErr, vars.totalSupplyNew) = subUInt(totalSupply, vars.redeemTokens);
         if (vars.mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint(vars.mathErr));
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint(vars.mathErr)), 0);
         }
 
         (vars.mathErr, vars.accountTokensNew) = subUInt(accountTokens[redeemer], vars.redeemTokens);
         if (vars.mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED, uint(vars.mathErr));
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED, uint(vars.mathErr)), 0);
         }
 
         /* Fail gracefully if protocol has insufficient cash */
         if (getCashPrior() < vars.redeemAmount) {
-            return fail(Error.TOKEN_INSUFFICIENT_CASH, FailureInfo.REDEEM_TRANSFER_OUT_NOT_POSSIBLE);
+            return (fail(Error.TOKEN_INSUFFICIENT_CASH, FailureInfo.REDEEM_TRANSFER_OUT_NOT_POSSIBLE), 0);
         }
 
         /////////////////////////
@@ -717,7 +717,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We call the defense hook */
         controller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
 
-        return uint(Error.NO_ERROR);
+        return (uint(Error.NO_ERROR), vars.redeemTokens);
     }
 
     /**
@@ -1053,7 +1053,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @param seizeTokens The number of pTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function seizeInternal(address seizerToken, address liquidator, address borrower, uint seizeTokens) internal returns (uint) {
+    function seizeInternal(address seizerToken, address liquidator, address borrower, uint seizeTokens) internal virtual returns (uint) {
         /* Fail if seize not allowed */
         uint allowed = controller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
         if (allowed != 0) {
@@ -1097,7 +1097,6 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
         return uint(Error.NO_ERROR);
     }
-
 
     /*** Admin Functions ***/
 

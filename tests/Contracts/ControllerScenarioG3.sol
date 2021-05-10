@@ -33,7 +33,7 @@ contract ControllerScenarioG3 is Controller {
         uint m = allMarkets.length;
         uint n = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isPied) {
+            if (pieSpeeds[address(allMarkets[i])] > 0) {
                 n++;
             }
         }
@@ -41,7 +41,7 @@ contract ControllerScenarioG3 is Controller {
         address[] memory pieMarkets = new address[](n);
         uint k = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isPied) {
+            if (pieSpeeds[address(allMarkets[i])] > 0) {
                 pieMarkets[k++] = address(allMarkets[i]);
             }
         }
@@ -50,5 +50,9 @@ contract ControllerScenarioG3 is Controller {
 
     function unlist(address pToken) public {
         markets[pToken].isListed = false;
+    }
+
+    function _setPieRate(uint pieRate_) public {
+        pieRate = pieRate_;
     }
 }

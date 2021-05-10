@@ -23,11 +23,12 @@ Test "Standard Upgrade"
     Assert Equal (Controller MaxAssets) 20
     Assert Equal (Controller Implementation) (Address StandardControllerG2)
     -- Upgrade to G3
-    ControllerImpl Deploy StandardG3 ScenControllerG3
+    ControllerImpl Deploy ScenarioG3 ScenControllerG3
     Unitroller SetPendingImpl ScenControllerG3
     ControllerImpl ScenControllerG3 Become
-    Controller AddPieMarkets pZRX
-    Controller AddPieMarkets pDAI
+    Controller SetPieSpeed pZRX 1
+    Controller SetPieSpeed pDAI 1
+    Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pDAI)]
     -- Not checks allMarkets array
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (Controller MaxAssets) 20
@@ -73,15 +74,19 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     -- Upgrade to G3 again
     Unitroller SetPendingImpl ScenControllerG3
     ControllerImpl ScenControllerG3 Become
+    -- Upgrade to G4
+    ControllerImpl Deploy ScenarioG4 ScenControllerG4
+    Unitroller SetPendingImpl ScenControllerG4
+    ControllerImpl ScenControllerG4 Become
     ListedPToken ZRX pZRX
     ListedPToken DAI pDAI
-    Controller AddPieMarkets pZRX
-    Controller AddPieMarkets pDAI
+    Controller SetPieSpeed pZRX 1
+    Controller SetPieSpeed pDAI 1
     Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pDAI)]
     Assert Equal (Controller PauseGuardian) (Address Coburn)
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (Controller MaxAssets) 20
-    Assert Equal (Controller Implementation) (Address ScenControllerG3)
+    Assert Equal (Controller Implementation) (Address ScenControllerG4)
 
 Test "Once become, can become again"
     -- TODO: See why ABI is broken here
@@ -286,8 +291,8 @@ Pending "Keeps all storage"
     Unitroller SetPendingImpl ControllerG3
     ControllerImpl ControllerG3 Become
     Controller SetPieRate 1e18
-    Controller AddPieMarkets pZRX
-    Controller AddPieMarkets pBAT
+    Controller SetPieSpeed pZRX 1
+    Controller SetPieSpeed pBAT 1
     --
     CheckUnitrollerStorage (Address ControllerG3)
     CheckStorage

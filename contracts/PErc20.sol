@@ -50,7 +50,7 @@ contract PErc20 is PToken, PErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint mintAmount) external override returns (uint) {
-        (uint err,) = mintInternal(mintAmount);
+        (uint err,,) = mintInternal(mintAmount);
         return err;
     }
 
@@ -61,7 +61,8 @@ contract PErc20 is PToken, PErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external override returns (uint) {
-        return redeemInternal(redeemTokens);
+        (uint err,) = redeemInternal(redeemTokens);
+        return err;
     }
 
     /**
@@ -71,7 +72,8 @@ contract PErc20 is PToken, PErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external override returns (uint) {
-        return redeemUnderlyingInternal(redeemAmount);
+        (uint err,) = redeemUnderlyingInternal(redeemAmount);
+        return err;
     }
 
     /**

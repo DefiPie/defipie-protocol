@@ -243,6 +243,209 @@ Test "Only one checkpoint is added per block for multiple decreased balance upda
     Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "20") (newBalance "10")
     Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "0")
 
+Test "Delegate from address(0) to account after mint and from account to address(0) after redeem"
+    Pie Deploy Geoff
+    NewController
+    ListedPPIEToken pPIE Pie
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    Assert Log Mint (minter (Address Geoff)) (mintAmount 10e18) (mintTokens 500e18)
+    Assert Log Transfer (from (Address Geoff)) (to (Address pPIE)) (amount 10e18)
+    Assert Equal (PToken pPIE TokenBalance Geoff) 500e18
+    From Geoff (PToken pPIE Transfer Jared 10)
+    Assert Equal (PToken pPIE VotesLength Geoff) 0
+    From Jared (PToken pPIE Delegate Geoff)
+    Assert Equal (PToken pPIE VotesLength Geoff) 1
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 10
+    Assert Equal (PToken pPIE GetCurrentVotesBlock Geoff) LastBlock
+    Assert Equal (PToken pPIE VotesLength Zero) 0
+    Assert Log DelegateChanged (delegator (Address Jared)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "10")
+    From Geoff (PToken pPIE Delegate Geoff)
+    Assert Log DelegateChanged (delegator (Address Geoff)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "10") (newBalance "500e18")
+    Assert Equal (PToken pPIE VotesLength Geoff) 2
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 500e18
+    From Geoff (Pie Approve pPIE 10e18)
+    From Geoff (PToken pPIE Mint 10e18)
+    Assert Log Mint (minter (Address Geoff)) (mintAmount 10e18) (mintTokens 500e18)
+    Assert Log Transfer (from (Address Geoff)) (to (Address pPIE)) (amount 10e18)
+    Assert Equal (PToken pPIE TokenBalance Geoff) 999999999999999999990 --1000e18 - 10
+    Assert Equal (PToken pPIE TokenBalance Jared) 10
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "500e18") (newBalance "1000e18")
+    Assert Equal (PToken pPIE VotesLength Geoff) 3
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 1000e18
+    FastForward 10 Blocks
+    Redeem Geoff 500e18 pPIE
+    Assert Equal (PToken pPIE TokenBalance Geoff) 499999999999999999990 --5000e18 - 10
+    Assert Equal (PToken pPIE TokenBalance Jared) 10
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "1000e18") (newBalance "500e18")
+    Assert Equal (PToken pPIE VotesLength Geoff) 4
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 500e18
+    FastForward 10 Blocks
+    Redeem Jared 10 pPIE
+    Assert Equal (PToken pPIE TokenBalance Geoff) 499999999999999999990 --5000e18 - 10
+    Assert Equal (PToken pPIE TokenBalance Jared) 0
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "500e18") (newBalance "499999999999999999990")
+    Assert Equal (PToken pPIE VotesLength Geoff) 5
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 499999999999999999990
+    FastForward 10 Blocks
+    Redeem Geoff 499999999999999999990 pPIE
+    Assert Equal (PToken pPIE TokenBalance Geoff) 0
+    Assert Equal (PToken pPIE TokenBalance Jared) 0
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "499999999999999999990") (newBalance "0")
+    Assert Equal (PToken pPIE VotesLength Geoff) 6
+    Assert Equal (PToken pPIE GetCurrentVotes Geoff) 0
+
+Macro InKindBorrow borrowAmount borrowRate user=Geoff borrowPrice=1.0 mintAmount=100e18
+    Pie Deploy Coburn
+    PricedController
+    Controller LiquidationIncentive 1.1
+    ListedPPIEToken pPIE PIE borrowRate 0.02 0 18
+    PriceOracle SetPrice pPIE borrowPrice
+    Controller SetCollateralFactor pPIE 0.5
+    From Coburn (ERC20 PIE Transfer Geoff mintAmount)
+    From user (Pie Approve pPIE mintAmount)
+    From user (PToken pPIE Mint mintAmount)
+    EnterMarkets user pPIE
+    Borrow user borrowAmount pPIE
+
+Test "Delegate from borrow to liquidator after liquidate"
+    InKindBorrow borrowAmount:50e18 borrowRate:0.000005
+    Assert Equal (PToken pPIE BorrowBalance Geoff) 50e18
+    Assert Equal (PToken pPIE TotalBorrows) 50e18
+    Assert Equal (Erc20 PIE TokenBalance Geoff) 50e18
+    Assert Equal (Erc20 PIE TokenBalance pPIE) 50e18
+    Assert Equal (Controller Liquidity Geoff) 0e18 -- ( ( 1.0 * 100e18 * 0.5 ) - ( 1.0 * 50e18 ) )
+    From Geoff (PToken pPIE Delegate Geoff)
+    Assert Log DelegateChanged (delegator (Address Geoff)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "5000000000000000000000") -- 100e18 pie mint -> 50 * 100e18 ppie = 5000e18
+    From Torrey (PToken pPIE Delegate Torrey)
+    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Torrey))
+    -- Prices are 1:1 (in-kind) and collateral factor is 0.5, thus supplying 100e18 pPIE gives the user 50e18
+    -- capacity of PIE. User only borrowed 10 PIE (10e18), but after a lot blocks at a 0.0005% interest rate.
+    -- Note: with a reserve rate of zero, that interest will be paid back to himself as supply
+    -- but that will be discounted by 50% by the collateral factor.
+    -- Thus, we will need to accumulate for twice as many blocks to end up where we'd usually be underwater
+    FastForward 20000000 Blocks
+    AccrueInterest pPIE -- Note: we have to accrue interest since it's not automatic for liquidity
+    Assert Equal (PToken pPIE BorrowBalanceStored Geoff) 50001000000000000000
+    Assert Equal (PToken pPIE TotalBorrows) 50001000000000000000 -- 5.0001e+19
+    -- Check user liquidity and verify < 0
+    Assert Equal (Controller Liquidity Geoff) -5e14
+    -- Okay, so we should be able to liquidate, so let's do that.
+    From Coburn (ERC20 PIE Transfer Torrey 5e14)
+    --
+    -- Let's check how values start before liquidation
+    -- Note: we're going to be some-what exhausive in what we check
+    Invariant Remains (Erc20 PIE TokenBalance Geoff) 50e18 -- all was minted, this is what was borrowed
+    Assert Equal (Erc20 PIE TokenBalance Torrey) 5e14 -- from prep above
+    Assert Equal (Erc20 PIE TokenBalance pPIE) 50e18 -- from minting minus 1e18 lent to geoff
+    Assert Equal (Erc20 pPIE TokenBalance Geoff) 5000e18 -- from minting
+    Assert Equal (Erc20 pPIE TokenBalance Torrey) 0e18 -- never had any
+    Invariant Remains (Erc20 PIE TokenBalance Geoff) 50e18 -- original amount borrowed
+    Assert Equal (PToken pPIE BorrowBalanceStored Geoff) 50001000000000000000 -- all that interest
+    Assert Equal (PToken pPIE TotalBorrows) 50001000000000000000 -- all those borrowers
+    Assert Equal (PToken pPIE ExchangeRate) 0.020000250001 --- XXX: Verify this
+    -- Do the liquidation
+    From Torrey (Pie Approve pPIE 5e14)
+    Liquidate Torrey "->" Geoff 5e14 pPIE "Seizing" pPIE -- should now take twice as much collateral
+    --
+    -- And see what they are now
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "5000000000000000000000") (newBalance "4999972500481245703129")
+    Assert Log DelegateVotesChanged (delegate (Address Torrey)) (previousBalance "0") (newBalance "27499518754296871")
+    Assert Equal (PToken pPIE ExchangeRate) 0.020000350003 --- XXX: Verify this
+    Assert Equal (Erc20 pPIE TokenBalance Geoff) 4999972500481245703129 --
+    Assert Equal (Erc20 pPIE TokenBalance Torrey) 27499518754296871 --
+    Assert Equal (Erc20 PIE TokenBalance Torrey) 0e18 --
+    Assert Equal (Erc20 PIE TokenBalance pPIE) 50000500000000000000 --
+    Assert Equal (PToken pPIE BorrowBalanceStored Geoff) 50001250014999999994 -- less closed amount
+    Assert Equal (PToken pPIE TotalBorrows) 50001250015000000000
+    Assert Equal (Controller Liquidity Geoff) -650007499999994 -- -6.50007499999994e+14>
+
+--Macro InKindBorrow borrowAmount borrowRate user=Geoff borrowPrice=1.0 mintAmount=100e18 giveAmount=0e18 borrowTokenType=Standard
+--    Pie Deploy Coburn
+--    PricedController
+--    Controller LiquidationIncentive 1.1
+--    NewPToken BAT pBAT borrowRate 2e9 0 8 borrowTokenType -- note: cannot use macros with named args right now
+--    ListedPPIEToken pPIE PIE borrowRate 0.02 0 18
+--    Give pBAT giveAmount BAT -- Faucet some bat
+--    PriceOracle SetPrice pBAT borrowPrice
+--    PriceOracle SetPrice pPIE borrowPrice
+--    Support pBAT collateralFactor:0.5
+--    Controller SetCollateralFactor pPIE 0.5
+--    Prep user mintAmount BAT pBAT
+--    Mint user mintAmount pBAT
+--    EnterMarkets user pBAT
+--    EnterMarkets user pPIE
+--    Borrow user borrowAmount pBAT
+--    From Coburn (ERC20 PIE Transfer Geoff 1e18)
+--    From user (Pie Approve pPIE 1e18)
+--    From user (PToken pPIE Mint 1e18)
+--
+--Test "Delegate from borrow to liquidator after liquidate"
+--    InKindBorrow borrowAmount:1e18 borrowRate:0.000005
+--    Assert Equal (PToken pBAT BorrowBalance Geoff) 1e18
+--    Assert Equal (PToken pBAT TotalBorrows) 1e18
+--    Assert Equal (Erc20 BAT TokenBalance Geoff) 1e18
+--    Assert Equal (Erc20 BAT TokenBalance pBAT) 99e18
+--    Assert Equal (Controller Liquidity Geoff) 49500000000000000000 -- 4.95e19 = ( ( 1.0 * 100e18 * 0.5 ) - ( 1.0 * 1e18 ) ) / 1e18 + 1e18 pie * 0.5
+--    From Geoff (PToken pPIE Delegate Geoff)
+--    Assert Log DelegateChanged (delegator (Address Geoff)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
+--    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "50000000000000000000") -- 1e18 pie mint -> 50 * 1e18 ppie = 50e18
+--    From Torrey (PToken pPIE Delegate Torrey)
+--    Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Torrey))
+--    -- Prices are 1:1 (in-kind) and collateral factor is 0.5,
+--    -- thus supplying 100e18 pBAT gives the user 50e18
+--    -- capacity of BAT. User only borrowed 1BAT, but after
+--    -- a lot blocks at a 0.0005% interest rate, he'll be
+--    -- underwater. Note: with a reserve rate of zero, that
+--    -- interest will be paid back to himself as supply
+--    -- but that will be discounted by 50% by the collateral factor.
+--    -- Thus, we will need to accumulate for twice as many blocks
+--    -- to end up where we'd usually be underwater
+--    FastForward 20000000 Blocks -- 1e18 * (1 + 20000000 * 0.000005)
+--    AccrueInterest pBAT -- Note: we have to accrue interest
+--                        -- since it's not automatic for liquidity
+--    AccrueInterest pPIE
+--    Assert Equal (PToken pBAT BorrowBalanceStored Geoff) 101e18
+--    Assert Equal (PToken pBAT TotalBorrows) 101e18
+--    -- Check user liquidity and verify < 0
+--    Assert Equal (Controller Liquidity Geoff) -5e17 -- ( ( 1.0 * ( 100e18 + 100e18 ) * 0.5 ) - ( 101 * 1e18 ) ) / 1e18 + 1e18 pie * 0.5
+--    -- Okay, so we should be able to liquidate, so let's do that.
+--    Prep Torrey 2e18 BAT pBAT
+--    --
+--    -- Let's check how values start before liquidation
+--    -- Note: we're going to be some-what exhausive in what we check
+--    Invariant Remains (Erc20 BAT TokenBalance Geoff) 1e18 -- all was minted, this is what was borrowed
+--    Assert Equal (Erc20 BAT TokenBalance Torrey) 2e18 -- from prep above
+--    Assert Equal (Erc20 BAT TokenBalance pBAT) 99e18 -- from minting minus 1e18 lent to geoff
+--    Assert Equal (Erc20 pBAT TokenBalance Geoff) 50e9 -- from minting
+--    Assert Equal (Erc20 pBAT TokenBalance Torrey) 0e9 -- never had any
+--    Invariant Remains (Erc20 BAT TokenBalance Geoff) 1e18 -- original amount borrowed
+--    Assert Equal (PToken pBAT BorrowBalanceStored Geoff) 101e18 -- all that interest
+--    Assert Equal (PToken pBAT TotalBorrows) 101e18 -- all those borrowers
+--    Assert Equal (PToken pBAT ExchangeRate) 4e9 --- XXX: Verify this
+--    -- Do the liquidation
+--    Liquidate Torrey "->" Geoff 1e17 pBAT "Seizing" pPIE -- should now take twice as much collateral
+--    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "50000000000000000000") (newBalance "4999972500481245703129")
+--    Assert Log DelegateVotesChanged (delegate (Address Torrey)) (previousBalance "0") (newBalance "27499518754296871")
+--    --
+--    -- And see what they are now
+--    Assert Equal (PToken pBAT ExchangeRate) 4e9 --- XXX: Verify this
+--    Assert Equal (Erc20 pBAT TokenBalance Geoff) 49.45e9 -- 1:1 -> 1 x 2e18 x 1.1 ÷ 4e9 [exchange rate] = 0.55e9 -> Torrey
+--    Assert Equal (Erc20 pBAT TokenBalance Torrey) 0.55e9 -- didn't have any beforehand
+--    Assert Equal (Erc20 BAT TokenBalance Torrey) 0e18 -- repaid
+--    Assert Equal (Erc20 BAT TokenBalance pBAT) 101e18 -- had 100e18, lent 1e18 to geoff, repaid 2
+--    Assert Equal (PToken pBAT BorrowBalanceStored Geoff) 99e18 -- less closed amount
+--    Assert Equal (PToken pBAT TotalBorrows) 99e18 --
+--    -- Prices are 1:1 and collateral factor is 0.5
+--    -- User now has 49.45e9 outstanding supply (yielding 98.9 borrowing capacity due
+--    -- to the collateral factor (0.5) and exchange rate (4e9)).
+--    -- The user also has a 99e18 borrow outstanding which is weighted 1:1.
+--    -- Thus the liquidity is (98.9-99)e18 or -0.1e18.
+--    Assert Equal (Controller Liquidity Geoff) -0.1e18
+--
 Test "Check transfer reverts when block number exceeds 32 bits"
     Pie Deploy Geoff
     NewController

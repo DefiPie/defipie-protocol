@@ -2,7 +2,6 @@ import {Event} from '../Event';
 import {addAction, describeUser, World} from '../World';
 import {decodeCall, getPastEvents} from '../Contract';
 import {Controller} from '../Contract/Controller';
-import {ControllerImpl} from '../Contract/ControllerImpl';
 import {PToken} from '../Contract/PToken';
 import {invoke} from '../Invokation';
 import {
@@ -270,6 +269,18 @@ async function setPieRate(world: World, from: string, controller: Controller, ra
   );
 
   return world;
+}
+
+async function setPieSpeed(world: World, from: string, controller: Controller, pToken: PToken, speed: NumberV): Promise<World> {
+    let invokation = await invoke(world, controller.methods._setPieSpeed(pToken._address, speed.encode()), from, ControllerErrorReporter);
+
+    world = addAction(
+        world,
+        `Pie speed for market ${pToken._address} set to ${speed.show()}`,
+        invokation
+    );
+
+    return world;
 }
 
 async function printLiquidity(world: World, controller: Controller): Promise<World> {
@@ -714,6 +725,19 @@ export function controllerCommands() {
       ],
       (world, from, {controller, rate}) => setPieRate(world, from, controller, rate)
     ),
+      new Command<{controller: Controller, pToken: PToken, speed: NumberV}>(`
+      #### SetPieSpeed
+      * "Controller SetPieSpeed <pToken> <rate>" - Sets PIE speed for market
+      * E.g. "Controller SetPieSpeed pToken 1000
+      `,
+          "SetPieSpeed",
+          [
+              new Arg("controller", getController, {implicit: true}),
+              new Arg("pToken", getPTokenV),
+              new Arg("speed", getNumberV)
+          ],
+          (world, from, {controller, pToken, speed}) => setPieSpeed(world, from, controller, pToken, speed)
+      ),
   ];
 }
 

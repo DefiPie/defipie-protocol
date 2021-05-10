@@ -51,7 +51,12 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint mintAmount) external override returns (uint) {
-        (uint err,) = mintInternal(mintAmount);
+        (uint err, , uint amount) = mintInternal(mintAmount);
+
+        if (err == 0) {
+            _moveDelegates(address(0), delegates[msg.sender], uint96(amount));
+        }
+
         return err;
     }
 
@@ -62,7 +67,13 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external override returns (uint) {
-        return redeemInternal(redeemTokens);
+        (uint err, uint amount) = redeemInternal(redeemTokens);
+
+        if (err == 0) {
+            _moveDelegates(delegates[msg.sender], address(0), uint96(amount));
+        }
+
+        return err;
     }
 
     /**
@@ -72,7 +83,13 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external override returns (uint) {
-        return redeemUnderlyingInternal(redeemAmount);
+        (uint err, uint amount) = redeemUnderlyingInternal(redeemAmount);
+
+        if (err == 0) {
+            _moveDelegates(delegates[msg.sender], address(0), uint96(amount));
+        }
+
+        return err;
     }
 
     /**
@@ -115,9 +132,29 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      */
     function liquidateBorrow(address borrower, uint repayAmount, PTokenInterface pTokenCollateral) external override returns (uint) {
         (uint err,) = liquidateBorrowInternal(borrower, repayAmount, pTokenCollateral);
+
         return err;
     }
 
+    /**
+     * @notice Transfers collateral tokens (this market) to the liquidator.
+     * @dev Called only during an in-kind liquidation, or by liquidateBorrow during the liquidation of another PToken.
+     *  Its absolutely critical to use msg.sender as the seizer pToken and not a parameter.
+     * @param seizerToken The contract seizing the collateral (i.e. borrowed pToken)
+     * @param liquidator The account receiving seized collateral
+     * @param borrower The account having collateral seized
+     * @param seizeTokens The number of pTokens to seize
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function seizeInternal(address seizerToken, address liquidator, address borrower, uint seizeTokens) internal override returns (uint) {
+        uint err = super.seizeInternal(seizerToken, liquidator, borrower, seizeTokens);
+
+        if (err == 0) {
+            _moveDelegates(delegates[borrower], delegates[liquidator], uint96(seizeTokens));
+        }
+
+        return err;
+    }
     /**
      * @notice The sender adds to reserves.
      * @param addAmount The amount fo underlying token to add as reserves
