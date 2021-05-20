@@ -1,4 +1,4 @@
-pragma solidity ^0.7.4;
+pragma solidity ^0.7.6;
 
 contract ControllerErrorReporter {
     enum Error {
@@ -211,17 +211,18 @@ contract TokenErrorReporter {
 contract OracleErrorReporter {
     enum Error {
         NO_ERROR,
+        POOL_OR_COIN_EXIST,
         UNAUTHORIZED,
         UPDATE_PRICE
     }
 
     enum FailureInfo {
-        ACCEPT_ADMIN_PENDING_ADMIN_CHECK,
+        ADD_POOL_OR_COIN,
+        NO_PAIR,
         NO_RESERVES,
         PERIOD_NOT_ELAPSED,
-        SET_NEW_ADDRESSES,
         SET_NEW_IMPLEMENTATION,
-        SET_PENDING_ADMIN_OWNER_CHECK
+        UPDATE_DATA
     }
 
     /**
@@ -252,8 +253,7 @@ contract FactoryErrorReporter {
         ACCEPT_ADMIN_PENDING_ADMIN_CHECK,
         CREATE_PETH_POOL,
         CREATE_PPIE_POOL,
-        DEFICIENCY_ETH_LIQUIDITY_IN_POOL,
-        PAIR_IS_NOT_EXIST,
+        DEFICIENCY_LIQUIDITY_IN_POOL_OR_PAIR_IS_NOT_EXIST,
         SET_MIN_LIQUIDITY_OWNER_CHECK,
         SET_NEW_CONTROLLER,
         SET_NEW_DECIMALS,

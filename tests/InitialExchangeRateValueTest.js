@@ -6,7 +6,7 @@ const {
 
 describe('PToken Factory tests', () => {
     let root, admin, accounts;
-    let pTokenFactory, registryProxy, mockPriceFeed, uniswapOracle;
+    let pTokenFactory, registryProxy, mockPriceFeed, uniswapOracle, mockUniswapFactory, mockUniswapPool, WETHToken, asset;
     let exchangeRate;
 
     beforeEach(async () => {
@@ -15,13 +15,39 @@ describe('PToken Factory tests', () => {
         exchangeRate = 0.02;
         registryProxy = await makeRegistryProxy();
         mockPriceFeed = await deploy('MockPriceFeed');
-        uniswapOracle = await deploy('UniswapPriceOracleMock', [
+        mockUniswapFactory = await deploy('MockUniswapFactory');
+        mockUniswapPool = await deploy('MockUniswapPool');
+        WETHToken = await makeToken();
+        asset = await makeToken();
+
+        let tx1 = await send(mockUniswapFactory, 'setPair', [mockUniswapPool._address]);
+        let tx2 = await send(mockUniswapFactory, 'setPairExist', [true]);
+        let pair = await call(mockUniswapFactory, "getPair", [WETHToken._address, asset._address]);
+        expect(pair).toEqual(mockUniswapPool._address);
+
+        uniswapOracle = await deploy('UniswapPriceOracleHarness', [
             registryProxy._address,
+            mockUniswapFactory._address,
+            WETHToken._address,
             mockPriceFeed._address,
-            mockPriceFeed._address,
-            mockPriceFeed._address
         ]);
-        pTokenFactory = await makePTokenFactory({registryProxy: registryProxy, exchangeRate: exchangeRate, uniswapOracle: uniswapOracle});
+
+        await send(mockUniswapPool, 'setData', [
+            asset._address,
+            WETHToken._address,
+            '185850109323804242560637514',
+            '517682812260927681611929',
+            '222207120848530231902067171756422825567',
+            '18388112711916799881959720317173237214852815'
+        ]);
+
+        pTokenFactory = await makePTokenFactory({
+            exchangeRate:exchangeRate,
+            mockPriceFeed:mockPriceFeed,
+            mockUniswapFactory:mockUniswapFactory,
+            mockUniswapPool:mockUniswapPool,
+            uniswapOracle:uniswapOracle
+        });
     });
 
     describe("constructor", () => {
@@ -46,15 +72,15 @@ describe('PToken Factory tests', () => {
             expect(await call(decimals22, 'decimals')).toEqual('22');
             expect(await call(decimals0, 'decimals')).toEqual('0');
 
-            await send(mockPriceFeed, 'setToken0Address', [decimals18._address]);
+            await send(mockUniswapPool, 'setData', [decimals18._address, WETHToken._address]);
             let tx1 = await send(pTokenFactory, 'createPToken', [decimals18._address]);
-            await send(mockPriceFeed, 'setToken0Address', [decimals8._address]);
+            await send(mockUniswapPool, 'setData', [decimals8._address, WETHToken._address]);
             let tx2 = await send(pTokenFactory, 'createPToken', [decimals8._address]);
-            await send(mockPriceFeed, 'setToken0Address', [decimals6._address]);
+            await send(mockUniswapPool, 'setData', [decimals6._address, WETHToken._address]);
             let tx3 = await send(pTokenFactory, 'createPToken', [decimals6._address]);
-            await send(mockPriceFeed, 'setToken0Address', [decimals22._address]);
+            await send(mockUniswapPool, 'setData', [decimals22._address, WETHToken._address]);
             let tx4 = await send(pTokenFactory, 'createPToken', [decimals22._address]);
-            await send(mockPriceFeed, 'setToken0Address', [decimals0._address]);
+            await send(mockUniswapPool, 'setData', [decimals0._address, WETHToken._address]);
             let tx5 = await send(pTokenFactory, 'createPToken', [decimals0._address]);
 
             let pTokenAddress1 = tx1.events['PTokenCreated'].returnValues['newPToken'];
@@ -97,7 +123,7 @@ describe('PToken Factory tests', () => {
         it("create token with bad decimals", async () => {
             let decimals100 = await makeToken({decimals: 100});
             expect(await call(decimals100, 'decimals')).toEqual('100');
-            await send(mockPriceFeed, 'setToken0Address', [decimals100._address]);
+            await send(mockUniswapPool, 'setData', [decimals100._address, WETHToken._address]);
 
             await expect(
                 send(pTokenFactory, 'createPToken', [decimals100._address])

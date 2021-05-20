@@ -11,6 +11,7 @@
     "lint": "./script/lint",
     "repl": "./scenario/script/repl",
     "profile": "yarn test tests/gasProfiler.js",
+    "report": "npx run ./script/saddle/gasReport.js",
     "test": "./script/test",
     "test:prepare": "NO_RUN=true ./script/test"
   },
@@ -21,12 +22,13 @@
     "jest-diff": "24.9.0",
     "jest-junit": "6.4.0",
     "solium": "1.2.5",
-    "solparse": "2.2.8"
+    "solparse": "2.2.8",
+    "@openzeppelin/test-helpers": "^0.5.9"
   },
   "dependencies": {
     "eth-saddle": "0.1.17"
   },
   "engines": {
-    "node": "12.20.1"
+    "node": "12.20.2"
   }
 }
