@@ -1,21 +1,28 @@
-pragma solidity ^0.7.4;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.7.6;
+pragma abicoder v2;
 
 import '../../contracts/UniswapPriceOracle.sol';
 
 contract UniswapPriceOracleHarness is UniswapPriceOracle {
+
     constructor(
-        address registryProxy_,
         address uniswapFactory_,
         address WETHUniswap_,
         address ETHUSDPriceFeed_
     ) {
         initialize(
-            registryProxy_,
             uniswapFactory_,
             WETHUniswap_,
             ETHUSDPriceFeed_
         );
+    }
+
+    function setPreviousTimeStampForAsset(address asset_, uint32 blockTimeStamp_) public {
+        cumulativePrices[assetPair[asset_]][asset_].blockTimeStampPrevious = blockTimeStamp_;
+    }
+
+    function _setRegistry(address _registry) public {
+        registry = _registry;
     }
 }
 
@@ -24,13 +31,11 @@ contract UniswapPriceOracleMock is UniswapPriceOracle {
     mapping(address => uint) public underlyingPriceInUSD;
 
     constructor(
-        address registryProxy_,
         address uniswapFactory_,
         address WETHUniswap_,
         address ETHUSDPriceFeed_
     ) {
         initialize(
-            registryProxy_,
             uniswapFactory_,
             WETHUniswap_,
             ETHUSDPriceFeed_
@@ -51,5 +56,9 @@ contract UniswapPriceOracleMock is UniswapPriceOracle {
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
         return underlyingPriceInUSD[pToken];
+    }
+
+    function _setRegistry(address _registry) public {
+        registry = _registry;
     }
 }

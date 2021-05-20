@@ -326,13 +326,13 @@ expect.extend({
     return hasFailure.call(this, result, err, info, detail, TokenErr, 'toHaveTokenFailure');
   },
 
-    toHaveOracleFailure(result, err, info, detail=undefined) {
-        return hasFailure.call(this, result, err, info, detail, OracleErr, 'toHaveOracleFailure');
-    },
+  toHaveOracleFailure(result, err, info, detail=undefined) {
+    return hasFailure.call(this, result, err, info, detail, OracleErr, 'toHaveOracleFailure');
+  },
 
-    toHaveFactoryFailure(result, err, info, detail=undefined) {
-        return hasFailure.call(this, result, err, info, detail, FactoryErr, 'toHaveFactoryFailure');
-    },
+  toHaveFactoryFailure(result, err, info, detail=undefined) {
+    return hasFailure.call(this, result, err, info, detail, FactoryErr, 'toHaveFactoryFailure');
+  },
 
   toHaveRegistryFailure(result, err, info, detail=undefined) {
     return hasFailure.call(this, result, err, info, detail, RegistryErr, 'toHaveRegistryFailure');

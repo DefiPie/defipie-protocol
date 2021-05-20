@@ -1,4 +1,4 @@
-pragma solidity ^0.7.4;
+pragma solidity ^0.7.6;
 
 contract ConstBase {
     uint public constant C = 1;

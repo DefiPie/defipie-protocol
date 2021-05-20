@@ -11,6 +11,7 @@
     "lint": "./script/lint",
     "repl": "./scenario/script/repl",
     "profile": "yarn test tests/gasProfiler.js",
+    "report": "npx run ./script/saddle/gasReport.js",
     "test": "./script/test",
     "test:prepare": "NO_RUN=true ./script/test"
   },
@@ -27,12 +28,13 @@
     "truffle": "^5.0.31",
     "truffle-hdwallet-provider": "^1.0.15",
     "truffle-plugin-verify": "^0.5.4",
-    "truffle-security": "^1.5.3"
+    "truffle-security": "^1.5.3",
+    "@openzeppelin/test-helpers": "^0.5.9"
   },
   "dependencies": {
     "eth-saddle": "0.1.17"
   },
   "engines": {
-    "node": "12.20.1"
+    "node": "12.20.2"
   }
 }

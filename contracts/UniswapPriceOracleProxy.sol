@@ -1,21 +1,13 @@
-pragma solidity ^0.7.4;
+pragma solidity ^0.7.6;
+pragma abicoder v2;
 
 import "./ErrorReporter.sol";
 import "./UniswapPriceOracleStorage.sol";
+import "./RegistryInterface.sol";
 
-contract UniswapPriceOracleProxy is UniswapPriceOracleStorage, OracleErrorReporter {
+contract UniswapPriceOracleProxy is UniswapPriceOracleProxyStorage, OracleErrorReporter {
 
     /*** Admin Events ***/
-
-    /**
-     * @notice Event emitted when pendingAdmin is changed
-     */
-    event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
-
-    /**
-     * @notice Event emitted when pendingAdmin is accepted, which means admin is updated
-     */
-    event NewAdmin(address oldAdmin, address newAdmin);
 
     /**
       * @notice Emitted when implementation is changed
@@ -23,24 +15,23 @@ contract UniswapPriceOracleProxy is UniswapPriceOracleStorage, OracleErrorReport
     event NewImplementation(address oldImplementation, address newImplementation);
 
     constructor(
-        address _implementation, 
+        address implementation_,
         address registry_,
         address uniswapFactory_,
-        address WETHUniswap_,
+        address WETHToken_,
         address ETHUSDPriceFeed_
     ) {
-        admin = msg.sender;
-        implementation = _implementation;
+        implementation = implementation_;
+        registry = registry_;
 
-        delegateTo(implementation, abi.encodeWithSignature("initialize(address,address,address,address)",
-                                                            registry_,
+        delegateTo(implementation, abi.encodeWithSignature("initialize(address,address,address)",
                                                             uniswapFactory_,
-                                                            WETHUniswap_,
+                                                            WETHToken_,
                                                             ETHUSDPriceFeed_));
     }
 
     function setOracleImplementation(address newImplementation) external returns(uint256) {
-        if (msg.sender != admin) {
+        if (msg.sender != RegistryInterface(registry).admin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
         }
 
@@ -50,57 +41,6 @@ contract UniswapPriceOracleProxy is UniswapPriceOracleStorage, OracleErrorReport
         emit NewImplementation(oldImplementation, implementation);
 
         return(uint(Error.NO_ERROR));
-    }
-
-    /**
-      * @notice Begins transfer of admin rights. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
-      * @dev Admin function to begin change of admin. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
-      * @param newPendingAdmin New pending admin.
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _setPendingAdmin(address payable newPendingAdmin) external returns (uint) {
-        // Check caller = admin
-        if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_ADMIN_OWNER_CHECK);
-        }
-
-        // Save current value, if any, for inclusion in log
-        address oldPendingAdmin = pendingAdmin;
-
-        // Store pendingAdmin with value newPendingAdmin
-        pendingAdmin = newPendingAdmin;
-
-        // Emit NewPendingAdmin(oldPendingAdmin, newPendingAdmin)
-        emit NewPendingAdmin(oldPendingAdmin, newPendingAdmin);
-
-        return uint(Error.NO_ERROR);
-    }
-
-    /**
-      * @notice Accepts transfer of admin rights. msg.sender must be pendingAdmin
-      * @dev Admin function for pending admin to accept role and update admin
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _acceptAdmin() external returns (uint) {
-        // Check caller is pendingAdmin
-        if (msg.sender != pendingAdmin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_ADMIN_PENDING_ADMIN_CHECK);
-        }
-
-        // Save current values for inclusion in log
-        address oldAdmin = admin;
-        address oldPendingAdmin = pendingAdmin;
-
-        // Store admin with value pendingAdmin
-        admin = pendingAdmin;
-
-        // Clear the pending value
-        pendingAdmin = address(0);
-
-        emit NewAdmin(oldAdmin, admin);
-        emit NewPendingAdmin(oldPendingAdmin, pendingAdmin);
-
-        return uint(Error.NO_ERROR);
     }
 
     /**
