@@ -1,5 +1,4 @@
-pragma solidity ^0.7.4;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.7.6;
 
 import "../../contracts/Governance/Pie.sol";
 

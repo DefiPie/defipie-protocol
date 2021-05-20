@@ -80,7 +80,7 @@ async function claimComp(controller, holder) {
     return send(controller, 'claimComp', [holder], { from: holder });
 }
 
-/// GAS PROFILER: saves a digest of the gas prices of common PToken operations
+/// GAS PROFILER: saves a digest of the gas prices of common pToken operations
 /// transiently fails, not sure why
 
 describe('Gas report', () => {

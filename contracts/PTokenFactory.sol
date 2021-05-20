@@ -1,4 +1,4 @@
-pragma solidity ^0.7.4;
+pragma solidity ^0.7.6;
 
 import './PErc20Delegator.sol';
 import './RegistryInterface.sol';
@@ -59,14 +59,8 @@ contract PTokenFactory is FactoryErrorReporter {
      * @param underlying_ The address of the underlying asset
      */
     function createPToken(address underlying_) external returns (uint) {
-        IUniswapV2Pair _pair = IUniswapV2Pair(oracle.getUniswapPair(underlying_));
-
-        if (address(_pair) == address(0)) {
-            return fail(Error.INVALID_POOL, FailureInfo.PAIR_IS_NOT_EXIST);
-        }
-
-        if (!reserveIsEnough(underlying_)) {
-            return fail(Error.INVALID_POOL, FailureInfo.DEFICIENCY_ETH_LIQUIDITY_IN_POOL);
+        if (!checkPair(underlying_)) {
+            return fail(Error.INVALID_POOL, FailureInfo.DEFICIENCY_LIQUIDITY_IN_POOL_OR_PAIR_IS_NOT_EXIST);
         }
 
         (string memory name, string memory symbol) = _createPTokenNameAndSymbol(underlying_);
@@ -142,17 +136,10 @@ contract PTokenFactory is FactoryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function reserveIsEnough(address asset) public view returns (bool) {
-        uint reserve;
-        IUniswapV2Pair _pair = IUniswapV2Pair(oracle.getUniswapPair(asset));
+    function checkPair(address asset) public view returns (bool) {
+        (address pair, uint112 ethEquivalentReserves) = oracle.searchPair(asset);
 
-        if(_pair.token0() == asset) {
-            (, reserve, ) = _pair.getReserves();
-        } else {
-            (reserve, , ) = _pair.getReserves();
-        }
-
-        return bool(reserve >= minUniswapLiquidity);
+        return bool(pair != address(0) && ethEquivalentReserves >= minUniswapLiquidity);
     }
 
     function setMinUniswapLiquidity(uint minUniswapLiquidity_) public returns (uint) {
