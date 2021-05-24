@@ -131,6 +131,11 @@ contract Governor {
     /// @notice An event emitted when a proposal has been executed in the Timelock
     event ProposalExecuted(uint id);
 
+    event NewQuorum(uint indexed newQuorum);
+    event NewThreshold(uint indexed newThreshold);
+    event NewVotingDelay(uint indexed newVotingDelay);
+    event NewVotingPeriod(uint indexed newVotingPeriod);
+
     constructor(address timelock_, address registry_, address guardian_) {
         timelock = TimelockInterface(timelock_);
         registry = Registry(registry_);
@@ -295,21 +300,29 @@ contract Governor {
     function setQuorum(uint newQuorum) external {
         require(msg.sender == guardian, "Governor::setQuorum: sender must be gov guardian");
         quorum = newQuorum;
+
+        emit NewQuorum(newQuorum);
     }
 
     function setThreshold(uint newThreshold) external {
         require(msg.sender == guardian, "Governor::setThreshold: sender must be gov guardian");
         threshold = newThreshold;
+
+        emit NewThreshold(newThreshold);
     }
 
     function setVotingDelay(uint newVotingDelay) external {
         require(msg.sender == guardian, "Governor::setVotingDelay: sender must be gov guardian");
         delay = newVotingDelay;
+
+        emit NewVotingDelay(newVotingDelay);
     }
 
     function setVotingPeriod(uint newVotingPeriod) external {
         require(msg.sender == guardian, "Governor::setVotingPeriod: sender must be gov guardian");
         period = newVotingPeriod;
+
+        emit NewVotingPeriod(newVotingPeriod);
     }
 
     function __acceptAdmin() public {
