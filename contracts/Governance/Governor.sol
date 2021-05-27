@@ -7,8 +7,8 @@ contract Governor {
     /// @notice The name of this contract
     string public constant name = "DeFiPie Governor";
 
-    uint public threshold = 100000e18; // 100,000 pPIE
-    uint public quorum = 1000000e18; // 1,000,000 pPIE
+    uint public threshold = 15_000_000e8; // 15M pPIE or ~300K PIE
+    uint public quorum = 150_000_000e8; // 150M pPIE or ~3M PIE
     uint public delay = 1; // 1 block
     uint public period = 86400; // ~3 days in blocks (assuming 3s blocks)
 
