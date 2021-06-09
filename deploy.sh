@@ -14,6 +14,7 @@ npx saddle deploy Maximillion "$PEther"
 npx saddle deploy ClaimCalc "$Unitroller"
 npx saddle deploy Timelock "$admin" 172800
 npx saddle deploy Governor "$Timelock" "$RegistryProxy" "$guardian"
+npx saddle deploy CalcPoolPrice "$UniswapPriceOracleProxy"
 
 npx -n --experimental-repl-await saddle console
 
