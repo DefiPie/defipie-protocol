@@ -314,7 +314,6 @@ describe('UniswapPriceOracle', () => {
 
             await expect(
                 send(testOracle, 'initialize', [
-                    registryProxy._address,
                     mockUniswapFactory._address,
                     WETHToken._address,
                     mockPriceFeed._address,
@@ -372,11 +371,6 @@ describe('UniswapPriceOracle', () => {
                 mockUniswapFactory._address,
             ]);
 
-            let tx0 = await send(uniswapPriceOracle, '_setRegistry', [mockUniswapFactory._address]);
-
-            let registry = await call(uniswapPriceOracle, "registry");
-            expect(registry).toEqual(mockUniswapFactory._address);
-
             let WETHToken = await call(uniswapPriceOracle, "WETHToken");
             expect(WETHToken).toEqual(mockUniswapFactory._address);
 
@@ -388,6 +382,25 @@ describe('UniswapPriceOracle', () => {
             let result = await send(uniswapPriceOracle, '_setNewAddresses', [
                 mockUniswapFactory._address,
                 mockUniswapFactory._address,
+            ], {from: accounts[2]});
+
+            expect(result).toHaveOracleFailure('UNAUTHORIZED', 'UPDATE_DATA');
+        });
+    });
+
+    describe("check _setNewRegistry function", () => {
+        it("Check set new registry address", async () => {
+            let tx = await send(uniswapPriceOracle, '_setNewRegistry', [
+                accounts[2],
+            ]);
+
+            let registry = await call(uniswapPriceOracle, "registry");
+            expect(registry).toEqual(accounts[2]);
+        });
+
+        it("set new registry address, not UNAUTHORIZED", async () => {
+            let result = await send(uniswapPriceOracle, '_setNewRegistry', [
+                accounts[2],
             ], {from: accounts[2]});
 
             expect(result).toHaveOracleFailure('UNAUTHORIZED', 'UPDATE_DATA');
@@ -1804,6 +1817,215 @@ describe('UniswapPriceOracle', () => {
                 asset: token._address,
                 price: "1991368507936111",
             });
+        });
+    });
+
+    describe("update asset pair to new asset pair", () => {
+        let usdc, usdt, dai, newAsset;
+        let newMockUniswapPool1, newMockUniswapPool2, newMockUniswapPool3;
+        let newMockUniswapFactory1, newMockUniswapFactory2;
+        let newMockUniswapPoolDAI, newMockUniswapPoolUSDT, newMockUniswapPoolUSDC;
+
+        beforeEach(async () => {
+            usdc = await makeToken({decimals: '6', name: 'erc20 usdc', symbol: 'usdc'});
+            usdt = await makeToken({decimals: '6', name: 'erc20 usdt', symbol: 'usdt'});
+            dai = await makeToken({decimals: '18', name: 'erc20 dai', symbol: 'dai'});
+            newAsset = await makeToken();
+
+            let decimals = await call(usdc, "decimals");
+            expect(decimals).toEqual('6');
+            decimals = await call(usdt, "decimals");
+            expect(decimals).toEqual('6');
+            decimals = await call(dai, "decimals");
+            expect(decimals).toEqual('18');
+            decimals = await call(newAsset, "decimals");
+            expect(decimals).toEqual('18');
+
+            newMockUniswapFactory1 = await deploy('MockUniswapFactoryV2');
+            newMockUniswapPoolDAI = await deploy('MockUniswapPool');
+            newMockUniswapPoolUSDT = await deploy('MockUniswapPool');
+            newMockUniswapPoolUSDC = await deploy('MockUniswapPool');
+
+            // real data (blockTimeStamp 1617976989)
+            await send(newMockUniswapPoolUSDT, 'setData', [
+                WETHToken._address,
+                usdt._address,
+                '69300414106281610056486',
+                '144136978589498',
+                '108440522331595154328745452759693',
+                '328889143286590183358706488927451804772319811247343'
+            ]);
+
+            // real data (blockTimeStamp 1617977088)
+            await send(newMockUniswapPoolDAI, 'setData', [
+                WETHToken._address,
+                dai._address,
+                '29081378201996628687365',
+                '60423815286154060995479625',
+                '108504765323811843166591297400758083311906011',
+                '343245678014664626911483647466477553703'
+            ]);
+
+            // real data (blockTimeStamp 1617977100)
+            await send(newMockUniswapPoolUSDC, 'setData', [
+                WETHToken._address,
+                usdc._address,
+                '67750901312389818218470',
+                '140711590148267',
+                '109613359197447592748722255800848',
+                '359749687769618128771704981052957704836749272276592'
+            ]);
+
+            let txDai = await send(newMockUniswapFactory1, 'addPair', [WETHToken._address, dai._address, newMockUniswapPoolDAI._address]);
+            let txUSDT = await send(newMockUniswapFactory1, 'addPair', [WETHToken._address, usdt._address, newMockUniswapPoolUSDT._address]);
+            let txUSDC = await send(newMockUniswapFactory1, 'addPair', [WETHToken._address, usdc._address, newMockUniswapPoolUSDC._address]);
+
+            let result = await send(uniswapPriceOracle, '_updatePool', [
+                '0',
+                newMockUniswapFactory1._address
+            ]);
+
+            expect(
+                await send(uniswapPriceOracle, 'update', [usdt._address])
+            ).toHaveLog("PriceUpdated", {
+                asset: usdt._address,
+                price: "480795523705607", // Price in ETH with 18 decimals of precision
+            });
+
+            expect(
+                await send(uniswapPriceOracle, 'update', [dai._address])
+            ).toHaveLog("PriceUpdated", {
+                asset: dai._address,
+                price: "481290002365351", // Price in ETH with 18 decimals of precision
+            });
+
+            expect(
+                await send(uniswapPriceOracle, 'update', [usdc._address])
+            ).toHaveLog("PriceUpdated", {
+                asset: usdc._address,
+                price: "481487710010249", // Price in ETH with 18 decimals of precision
+            });
+
+            newMockUniswapFactory2 = await deploy('MockUniswapFactoryV2');
+            newMockUniswapPool1 = await deploy('MockUniswapPool');
+            newMockUniswapPool2 = await deploy('MockUniswapPool');
+            newMockUniswapPool3 = await deploy('MockUniswapPool');
+
+            await send(newMockUniswapPool1, 'setData', [
+                newAsset._address,
+                usdt._address,
+                '1000000000000000000',
+                '1000000',
+                '0',
+                '0'
+            ]);
+
+            await send(newMockUniswapPool2, 'setData', [
+                newAsset._address,
+                dai._address,
+                '1000000000000000000',
+                '1000000000000000000',
+                '0',
+                '0'
+            ]);
+
+            await send(newMockUniswapPool3, 'setData', [
+                newAsset._address,
+                usdc._address,
+                '1000000000000000000',
+                '1000000',
+                '0',
+                '0'
+            ]);
+
+            let tx3 = await send(newMockUniswapFactory2, 'addPair', [newAsset._address, usdt._address, newMockUniswapPool1._address]);
+            let tx4 = await send(newMockUniswapFactory2, 'addPair', [newAsset._address, dai._address, newMockUniswapPool2._address]);
+            let tx5 = await send(newMockUniswapFactory2, 'addPair', [newAsset._address, usdc._address, newMockUniswapPool3._address]);
+
+            await send(uniswapPriceOracle, '_addPool', [newMockUniswapFactory2._address]);
+
+            await send(uniswapPriceOracle, '_addStableCoin', [usdt._address]);
+            await send(uniswapPriceOracle, '_addStableCoin', [dai._address]);
+            await send(uniswapPriceOracle, '_addStableCoin', [usdc._address]);
+
+            let tx = await send(uniswapPriceOracle, '_setMinReserveLiquidity', [
+                '1',
+            ]);
+        });
+
+        it("remove liquidity for pair", async () => {
+            // update asset (set #1 pair)
+            expect(
+                await send(uniswapPriceOracle, 'update', [newAsset._address])
+            ).toHaveLog("PriceUpdated", {
+                asset: newAsset._address,
+                price: "481487228522538", // Get USDC pool, because reserve is max
+            });
+
+            // remove liquidity from pair usdc/new asset
+            await send(newMockUniswapPool3, 'setData', [
+                newAsset._address,
+                usdc._address,
+                '0',
+                '0',
+                '0',
+                '0'
+            ]);
+
+            // update asset (search new pair and set pair dai/new asset)
+            expect(
+                await send(uniswapPriceOracle, 'update', [newAsset._address])
+            ).toHaveLog("PriceUpdated", {
+                asset: newAsset._address,
+                price: "481290002365351", // Get DAI pool, because reserve is max
+            });
+
+            // remove liquidity from #2 pair
+            await send(newMockUniswapPool2, 'setData', [
+                newAsset._address,
+                dai._address,
+                '0',
+                '0',
+                '0',
+                '0'
+            ]);
+
+            // update asset (search new pair and set pair usdt/new asset)
+            expect(
+                await send(uniswapPriceOracle, 'update', [newAsset._address])
+            ).toHaveLog("PriceUpdated", {
+                asset: newAsset._address,
+                price: "480795042910083", // Get USDT pool, because reserve is max
+            });
+
+            // add liquidity to #1 and #2 pair
+            await send(newMockUniswapPool2, 'setData', [
+                newAsset._address,
+                dai._address,
+                '1000000000000000000',
+                '1000000000000000000',
+                '0',
+                '0'
+            ]);
+
+            await send(newMockUniswapPool3, 'setData', [
+                newAsset._address,
+                usdc._address,
+                '1000000000000000000',
+                '1000000',
+                '0',
+                '0'
+            ]);
+
+            // update asset, check pair - fail (period is not elapsed)
+            expect(
+                await send(uniswapPriceOracle, 'update', [newAsset._address])
+            ).toHaveLog("Failure", {
+                error : '3',
+                info : '3',
+                detail: '0'
+            });
+
         });
     });
 });

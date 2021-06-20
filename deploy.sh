@@ -12,6 +12,9 @@ npx saddle deploy UniswapPriceOracleProxy "$UniswapPriceOracle" "$RegistryProxy"
 npx saddle deploy PTokenFactory "$RegistryProxy" 1000000000000000000 "$UniswapPriceOracleProxy" "$Unitroller" "$BaseInterestRateModel" 20000000000000000 100000000000000000
 npx saddle deploy Maximillion "$PEther"
 npx saddle deploy ClaimCalc "$Unitroller"
+npx saddle deploy Timelock "$admin" 172800
+npx saddle deploy Governor "$Timelock" "$RegistryProxy" "$guardian"
+npx saddle deploy CalcPoolPrice "$UniswapPriceOracleProxy"
 
 npx -n --experimental-repl-await saddle console
 

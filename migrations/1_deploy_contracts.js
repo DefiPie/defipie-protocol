@@ -23,6 +23,7 @@ const UniswapPriceOracleProxy = artifacts.require("UniswapPriceOracleProxy");
 const PTokenFactory = artifacts.require("PTokenFactory");
 const Maximillion = artifacts.require("Maximillion");
 const ClaimCalc = artifacts.require("ClaimCalc");
+const CalcPoolPrice = artifacts.require("CalcPoolPrice");
 
 const ControllerData = require('../build/contracts/Controller.json');
 const RegistryData = require('../build/contracts/Registry.json');
@@ -86,15 +87,22 @@ module.exports = async function(deployer, network, accounts) {
     let WETHPancakeAddress = '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
     let ChainlinkAddress = '0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE';
 
+    let RegistryProxyAddress = '0xddf147af5Bb55B1bE9bf6c37BFA5FEAf08Ac6Abd';
+    let oracle = '0x826a527F5201dFd5a0Add51637faf30a82eA51AE';
+
     await deployer.deploy(UniswapPriceOracleProxy,
-        UniswapPriceOracleInstance.address,
-        RegistryProxyContractInstance.address,
+        oracle,
+        RegistryProxyAddress,
         PancakeFactoryAddress,
         WETHPancakeAddress,
         ChainlinkAddress
     );
     const UniswapPriceOracleProxyContractInstance = await UniswapPriceOracleProxy.deployed();
     console.log('UniswapPriceOracleProxy', UniswapPriceOracleProxyContractInstance.address);
+
+    await deployer.deploy(CalcPoolPrice, UniswapPriceOracleProxyContractInstance.address);
+    const CalcPoolPriceInstance = await CalcPoolPrice.deployed();
+    console.log('CalcPoolPrice', CalcPoolPriceInstance.address);
 
     let minUniswapLiquidity= new BigNumber('1000000000000000000');
     let initialExchangeRateMantissa = new BigNumber('20000000000000000');

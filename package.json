@@ -18,6 +18,7 @@
   "author": "DeFiPie",
   "license": "MIT",
   "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.9",
     "bignumber.js": "8.0.1",
     "jest-diff": "24.9.0",
     "jest-junit": "6.4.0",
@@ -29,10 +30,12 @@
     "truffle-hdwallet-provider": "^1.0.15",
     "truffle-plugin-verify": "^0.5.4",
     "truffle-security": "^1.5.3",
-    "@openzeppelin/test-helpers": "^0.5.9"
+    "ethers": "^5.3.0"
   },
   "dependencies": {
-    "eth-saddle": "0.1.17"
+    "eth-saddle": "0.1.17",
+    "truffle-flattener": "^1.5.0",
+    "web3": "^1.2.1"
   },
   "engines": {
     "node": "12.20.2"

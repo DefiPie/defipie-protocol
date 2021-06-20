@@ -1,3 +1,5 @@
+var HDWalletProvider = require("truffle-hdwallet-provider");
+
 module.exports = {
   compilers: {
       solc: {
@@ -8,14 +10,14 @@ module.exports = {
            enabled: true,
            runs: 200
          },
-         //evmVersion: "byzantium"
+         // evmVersion: "byzantium"
         }
       }
     },
   plugins: ['truffle-plugin-verify'],
 
   api_keys: {
-      bscscan: 'YOU_KEY'
+      bscscan: 'YTYHJVFBXJT82PZ6Z84BR6XAGIGNPRRVJH'
   },
 
   // See <http://truffleframework.com/docs/advanced/configuration>
@@ -26,6 +28,12 @@ module.exports = {
       port: 7545,
       network_id: "*" // Match any network id
     },
+    // testnet: {
+    //   provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
+    //   network_id: 97,
+    //   timeoutBlocks: 200,
+    //   confirmations: 5
+    // },
     bsc: {
       host: "127.0.0.1",
       port: 8575,
