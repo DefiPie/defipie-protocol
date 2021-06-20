@@ -1,9 +1,10 @@
 
 module.exports = {
-    solc: "solc",
+  solc: "solc",
   solc_args: [                                              // Extra solc args
     '--allow-paths', 'contracts,tests/Contracts',
-    '--evm-version', 'istanbul'
+    '--evm-version', 'berlin',
+    '--optimize-runs', '200'
   ],
   solc_shell_args: {                                        // Args passed to `exec`, see:
     maxBuffer: 1024 * 500000,                               // https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
@@ -29,7 +30,7 @@ module.exports = {
             gasPrice: 0,
             defaultBalanceEther: 1000000000,
             allowUnlimitedContractSize: true,
-            hardfork: 'istanbul'
+            hardfork: 'berlin'
           }
         }
       ],
@@ -60,7 +61,7 @@ module.exports = {
             gasPrice: 20000,
             defaultBalanceEther: 1000000000,
             allowUnlimitedContractSize: true,
-            hardfork: 'istanbul'
+            hardfork: 'berlin'
           }
         }
       ],
@@ -138,6 +139,7 @@ module.exports = {
       providers: [
         { env: "PROVIDER" },
         { file: "~/.ethereum/rinkeby-url" },                    // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
+        { http: "http://127.0.0.1:8545" },
       ],
       web3: {
         gas: [

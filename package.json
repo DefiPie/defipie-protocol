@@ -18,12 +18,13 @@
   "author": "DeFiPie",
   "license": "MIT",
   "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.9",
     "bignumber.js": "8.0.1",
     "jest-diff": "24.9.0",
     "jest-junit": "6.4.0",
     "solium": "1.2.5",
     "solparse": "2.2.8",
-    "@openzeppelin/test-helpers": "^0.5.9"
+    "ethers": "^5.3.0"
   },
   "dependencies": {
     "eth-saddle": "0.1.17"

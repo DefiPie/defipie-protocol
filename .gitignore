@@ -19,3 +19,9 @@ package-lock.json
 scenario/package-lock.json
 *.log
 networks
+.env
+.secretKey
+verify.sol
+.secretPhrase
+artifacts
+cache
