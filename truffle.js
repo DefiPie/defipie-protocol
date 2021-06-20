@@ -40,7 +40,8 @@ module.exports = {
       network_id: "56", // Match any network id,
       confirmations: 5,
       timeoutBlocks: 200,
-      skipDryRun: true
+      skipDryRun: true,
+      gasPrice: 5000000000
     },
     bsctestnet: {
       host: "127.0.0.1",
