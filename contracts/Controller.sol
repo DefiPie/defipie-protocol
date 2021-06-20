@@ -971,6 +971,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
 
         factory = _factory;
+
         return uint(Error.NO_ERROR);
     }
 

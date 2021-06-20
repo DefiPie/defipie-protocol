@@ -86,6 +86,36 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
         uint32 blockTimeStamp;
         address pair;
 
+        if (!isNewAsset(asset)) {
+            address pair = assetPair[asset];
+
+            address token0 = IUniswapV2Pair(pair).token0();
+            address token1 = IUniswapV2Pair(pair).token1();
+
+            (, reserve1, ) = getReservesFromPair(asset);
+            uint result = uint(reserve1);
+
+            if (token0 != WETHToken && token1 != WETHToken) {
+                uint power;
+
+                // asset and stable coin pool
+                if (token0 == asset) {
+                    power = EIP20Interface(token1).decimals();
+                    result = uint(reserve1).mul(getCourseInETH(token1)).div(10**power);
+                } else {
+                    power = EIP20Interface(token0).decimals();
+                    result = uint(reserve1).mul(getCourseInETH(token0)).div(10**power);
+                }
+            }
+
+            if (result < minReserveLiquidity) {
+                cumulativePrices[assetPair[asset]][asset].priceAverage._x = 0;
+                cumulativePrices[assetPair[asset]][asset].priceCumulativePrevious = 0;
+                cumulativePrices[assetPair[asset]][asset].blockTimeStampPrevious = 0;
+                assetPair[asset] = address(0);
+            }
+        }
+
         if (isNewAsset(asset)) {
             if (assetPair[asset] == address(0)) {
                 // first update from factory or other users
@@ -110,20 +140,11 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
             }
         } else {
             // second and next updates
-            (, , blockTimeStamp) = getReservesFromPair(asset);
-
-            if (reserve1 < minReserveLiquidity) {
-                cumulativePrices[assetPair[asset]][asset].priceAverage._x = 0;
-                cumulativePrices[assetPair[asset]][asset].priceCumulativePrevious = 0;
-                cumulativePrices[assetPair[asset]][asset].blockTimeStampPrevious = 0;
-
-                return fail(Error.UPDATE_PRICE, FailureInfo.NO_RESERVES);
-            }
-
             if (!isPeriodElapsed(asset)) {
                 return fail(Error.UPDATE_PRICE, FailureInfo.PERIOD_NOT_ELAPSED);
             }
 
+            (, , blockTimeStamp) = getReservesFromPair(asset);
             pair = assetPair[asset];
 
             uint32 timeElapsed = blockTimeStamp - cumulativePrices[pair][asset].blockTimeStampPrevious;
@@ -332,6 +353,17 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
 
         WETHToken = WETHToken_;
         ETHUSDPriceFeed = ETHUSDPriceFeed_;
+
+        return uint(Error.NO_ERROR);
+    }
+
+    function _setNewRegistry(address registry_) external returns (uint) {
+        // Check caller = admin
+        if (msg.sender != getMyAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
+        }
+
+        registry = registry_;
 
         return uint(Error.NO_ERROR);
     }
