@@ -10,7 +10,7 @@ contract Governor {
     uint public threshold = 15_000_000e8; // 15M pPIE or ~300K PIE
     uint public quorum = 150_000_000e8; // 150M pPIE or ~3M PIE
     uint public delay = 1; // 1 block
-    uint public period = 98550; // ~3 days in blocks (assuming 3s blocks)
+    uint public period = 86400; // ~3 days in blocks (assuming 3s blocks)
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     function quorumVotes() public view returns (uint) { return quorum; }
