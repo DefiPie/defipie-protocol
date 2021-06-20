@@ -1,9 +1,10 @@
 
 module.exports = {
-    solc: "solc",
+  solc: "solc",
   solc_args: [                                              // Extra solc args
     '--allow-paths', 'contracts,tests/Contracts',
-    '--evm-version', 'istanbul'
+    '--evm-version', 'istanbul',
+    '--optimize-runs', '200'
   ],
   solc_shell_args: {                                        // Args passed to `exec`, see:
     maxBuffer: 1024 * 500000,                               // https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
@@ -83,6 +84,30 @@ module.exports = {
         { unlocked: 0 }
       ]
     },
+    bsctestnet: {
+        providers: [
+            { env: "PROVIDER" },
+            { http: "http://127.0.0.1:8575" },
+        ],
+        web3: {                                               // Web3 options for immediate confirmation in development mode
+            gas: [
+                { env: "GAS" },
+                { default: "20000000" }
+            ],
+            gas_price: [
+                { env: "GAS_PRICE" },
+                { default: "4000000000" }
+            ],
+            options: {
+                transactionConfirmationBlocks: 1,
+                transactionBlockTimeout: 5
+            }
+        },
+        accounts: [                                           // How to load default account for transactions
+            { env: "ACCOUNT" },                                   // Load from `ACCOUNT` env variable (e.g. env ACCOUNT=0x...)
+            { unlocked: 0 }                                       // Else, try to grab first "unlocked" account from provider
+        ]
+    },
     goerli: {
       providers: [
         { env: "PROVIDER" },
@@ -138,6 +163,7 @@ module.exports = {
       providers: [
         { env: "PROVIDER" },
         { file: "~/.ethereum/rinkeby-url" },                    // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
+        { http: "http://127.0.0.1:8545" },
       ],
       web3: {
         gas: [

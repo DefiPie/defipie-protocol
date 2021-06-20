@@ -7,10 +7,10 @@ contract Governor {
     /// @notice The name of this contract
     string public constant name = "DeFiPie Governor";
 
-    uint public threshold = 15_000_000e18; // 15M pPIE or ~300K PIE
-    uint public quorum = 150_000_000e18; // 150M pPIE or ~3M PIE
+    uint public threshold = 100000e8; // 100,000 pPIE
+    uint public quorum = 1000000e8; // 1,000,000 pPIE
     uint public delay = 1; // 1 block
-    uint public period = 19710; // ~3 days in blocks (assuming 15s blocks)
+    uint public period = 129600; // ~3 days in blocks (assuming 3s blocks)
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     function quorumVotes() public view returns (uint) { return quorum; }

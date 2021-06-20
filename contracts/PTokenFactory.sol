@@ -3,7 +3,6 @@ pragma solidity ^0.7.6;
 import './PErc20Delegator.sol';
 import './RegistryInterface.sol';
 import './EIP20Interface.sol';
-import './Strings.sol';
 import "./IPriceFeeds.sol";
 import "./ErrorReporter.sol";
 import "./SafeMath.sol";
@@ -13,7 +12,6 @@ import "./Controller.sol";
 import "./UniswapPriceOracle.sol";
 
 contract PTokenFactory is FactoryErrorReporter {
-    using strings for *;
     using SafeMath for uint;
 
     UniswapPriceOracle public oracle;
@@ -89,8 +87,8 @@ contract PTokenFactory is FactoryErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PETH_POOL);
         }
 
-        string memory name = "DeFiPie ETH";
-        string memory symbol = "pETH";
+        string memory name = "DeFiPie MATIC";
+        string memory symbol = "pMATIC";
 
         uint power = 18;
         uint exchangeRateMantissa = calcExchangeRate(power);
@@ -227,9 +225,9 @@ contract PTokenFactory is FactoryErrorReporter {
         return registry.admin();
     }
 
-    function _createPTokenNameAndSymbol(address underlying) internal view returns (string memory, string memory) {
-        string memory name = ("DeFiPie ".toSlice().concat(EIP20Interface(underlying).name().toSlice()));
-        string memory symbol = ("p".toSlice().concat(EIP20Interface(underlying).symbol().toSlice()));
+    function _createPTokenNameAndSymbol(address underlying_) internal view returns (string memory, string memory) {
+        string memory name = string(abi.encodePacked("DeFiPie ", EIP20Interface(underlying_).name()));
+        string memory symbol = string(abi.encodePacked("p", EIP20Interface(underlying_).symbol()));
         return (name, symbol);
     }
 
