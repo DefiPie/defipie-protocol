@@ -11,7 +11,7 @@ contract Pie {
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public constant totalSupply = 220_000_000e18; // 220 million Pie
+    uint public totalSupply; // 0 Pie after deploy
 
     /// @dev Allowance amounts on behalf of others
     mapping (address => mapping (address => uint)) internal allowances;
@@ -19,19 +19,30 @@ contract Pie {
     /// @dev Official record of token balances for each account
     mapping (address => uint) internal balances;
 
+    /// @notice Polygon depositer address
+    address public childChainManager;
+
+    address public admin;
+    address public pendingAdmin;
+
     /// @notice The standard EIP-20 transfer event
     event Transfer(address indexed from, address indexed to, uint amount);
 
     /// @notice The standard EIP-20 approval event
     event Approval(address indexed owner, address indexed spender, uint amount);
 
+    event NewAdmin(address indexed newAdmin);
+    event NewPendingAdmin(address indexed newPendingAdmin);
+
     /**
      * @notice Construct a new Pie token
      * @param account The initial account to grant all the tokens
      */
     constructor(address account) {
+        admin = msg.sender;
         balances[account] = totalSupply;
         emit Transfer(address(0), account, totalSupply);
+        emit NewAdmin(msg.sender);
     }
 
     /**
@@ -101,6 +112,50 @@ contract Pie {
         return true;
     }
 
+    /**
+     * @notice called when token is deposited on root chain
+     * @dev Should be callable only by ChildChainManager
+     * Should handle deposit by minting the required amount for user
+     * Make sure minting is done only by this function
+     * @param user user address for whom deposit is being done
+     * @param depositData abi encoded amount
+     */
+    function deposit(address user, bytes calldata depositData) external {
+        require(msg.sender == childChainManager, "Pie:: deposit: Only childChainManager can call deposit function");
+        uint amount = abi.decode(depositData, (uint));
+        _mint(user, amount);
+    }
+
+    /**
+     * @notice called when user wants to withdraw tokens back to root chain
+     * @dev Should burn user's tokens. This transaction will be verified when exiting on root chain
+     * @param amount amount of tokens to withdraw
+     */
+    function withdraw(uint amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    function setChildChainManager(address _childChainManager) external {
+        require(msg.sender == admin, "Pie:: caller is not the owner");
+
+        childChainManager = _childChainManager;
+    }
+
+    function acceptAdmin() public {
+        require(msg.sender == pendingAdmin, "Pie::acceptAdmin: Call must come from pendingAdmin");
+        admin = msg.sender;
+        pendingAdmin = address(0);
+
+        emit NewAdmin(admin);
+    }
+
+    function setPendingAdmin(address _pendingAdmin) public {
+        require(msg.sender == admin, "Pie::setPendingAdmin: Call must come from admin");
+        pendingAdmin = _pendingAdmin;
+
+        emit NewPendingAdmin(pendingAdmin);
+    }
+
     function _transferTokens(address src, address dst, uint amount) internal {
         require(src != address(0), "Pie::_transferTokens: cannot transfer from the zero address");
         require(dst != address(0), "Pie::_transferTokens: cannot transfer to the zero address");
@@ -119,5 +174,21 @@ contract Pie {
     function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
         require(b <= a, errorMessage);
         return a - b;
+    }
+
+    function _mint(address dst, uint amount) internal {
+        require(dst != address(0), "Pie::_mint to the zero address");
+
+        totalSupply = add(totalSupply, amount, "Pie::_mint: totalSupply overflows");
+        balances[dst] = add(balances[dst], amount, "Pie::_mint: amount overflows");
+        emit Transfer(address(0), dst, amount);
+    }
+
+    function _burn(address src, uint amount) internal {
+        require(src != address(0), "Pie::_burn from the zero address");
+
+        balances[src] = sub(balances[src], amount, "Pie::_burn: amount exceeds balance");
+        totalSupply = sub(totalSupply, amount, "Pie::_burn: totalSupply overflows");
+        emit Transfer(src, address(0), amount);
     }
 }
