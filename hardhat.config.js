@@ -11,6 +11,11 @@ module.exports = {
             url: "https://rpc-mumbai.maticvigil.com",
             accounts: [privateKey],
             gasPrice: 2e9
+        },
+        matic: {
+            url: "https://rpc-mainnet.matic.network",
+            accounts: [privateKey],
+            gasPrice: 3e9
         }
     },
     solidity: {

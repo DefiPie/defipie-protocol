@@ -40,8 +40,7 @@ contract Pie {
      */
     constructor(address account) {
         admin = msg.sender;
-        balances[account] = totalSupply;
-        emit Transfer(address(0), account, totalSupply);
+
         emit NewAdmin(msg.sender);
     }
 
