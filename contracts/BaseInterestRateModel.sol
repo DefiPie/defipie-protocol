@@ -15,7 +15,7 @@ contract BaseInterestRateModel is InterestRateModel {
     /**
      * @notice The approximate number of blocks per year that is assumed by the interest rate model
      */
-    uint public constant blocksPerYear = 10512000; // in binance smart chain block mine every ~3 sec
+    uint public constant blocksPerYear = 15768000; // in matic chain block mine every ~2 sec
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate

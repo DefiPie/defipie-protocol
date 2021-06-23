@@ -1,6 +1,9 @@
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secretPhrase").toString().trim();
+const privateKey = fs.readFileSync(".secretKey").toString().trim();
+let privateKeys = [];
+privateKeys[0] = privateKey;
 
 module.exports = {
   compilers: {
@@ -18,10 +21,10 @@ module.exports = {
     },
   plugins: ['truffle-plugin-verify'],
 
-  // api_keys: {
-  //     bscscan: 'YTYHJVFBXJT82PZ6Z84BR6XAGIGNPRRVJH'
-  //     polygonscan: 'BK5G8JANY99Z9VS7H9G54S9SX1UEW6XXFP'
-  // },
+  api_keys: {
+      bscscan: 'YTYHJVFBXJT82PZ6Z84BR6XAGIGNPRRVJH',
+      polygonscan: 'BK5G8JANY99Z9VS7H9G54S9SX1UEW6XXFP'
+  },
 
   // See <http://truffleframework.com/docs/advanced/configuration>
   // for more about customizing your Truffle configuration!
@@ -60,5 +63,16 @@ module.exports = {
       timeoutBlocks: 200,
       skipDryRun: true
     },
+      matic: {
+          provider: () => new HDWalletProvider({
+              privateKeys: privateKeys,
+              providerOrUrl: `https://rpc-mainnet.matic.network`
+          }),
+          gasPrice: 2e9,
+          network_id: 137, // Match any network id,
+          confirmations: 5,
+          timeoutBlocks: 200,
+          skipDryRun: true
+      }
   }
 };

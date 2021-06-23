@@ -91,7 +91,7 @@ async function main() {
 
     console.log(`CalcPoolPrice smart contract has been deployed to: ${calcPoolPrice.address}`);
 
-    let minUniswapLiquidity= new BigNumber('1');
+    let minUniswapLiquidity = new BigNumber(process.env.minLiquidity);
     let initialExchangeRateMantissa = new BigNumber('20000000000000000');
     let initialReserveFactorMantissa = new BigNumber('100000000000000000');
 
@@ -127,6 +127,8 @@ async function main() {
 
     await pTokenFactory.createPETH(pEtherDelegate.address);
     await pTokenFactory.createPPIE(process.env.PIE_ADDRESS, ppieDelegate.address);
+
+    console.log('Finish!');
 }
 
 main()

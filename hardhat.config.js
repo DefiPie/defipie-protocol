@@ -13,9 +13,13 @@ module.exports = {
             gasPrice: 2e9
         },
         matic: {
-            url: "https://rpc-mainnet.matic.network",
+            url: "https://rpc-mainnet.matic.quiknode.pro",
             accounts: [privateKey],
-            gasPrice: 3e9
+            gasPrice: 10e9,
+            network_id: "137", // Match any network id,
+            confirmations: 5,
+            timeoutBlocks: 200,
+            skipDryRun: true
         }
     },
     solidity: {
