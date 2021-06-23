@@ -12,13 +12,6 @@ for (const k in envConfig) {
 }
 
 async function main() {
-    // const Pie = await hre.ethers.getContractFactory("Pie");
-    // const pie = await Pie.deploy(
-    //     process.env.PIE_HOLDER
-    // );
-    //
-    // console.log(`Pie smart contract has been deployed to: ${pie.address}`);
-
     const PPIEDelegate = await hre.ethers.getContractFactory("PPIEDelegate");
     const ppieDelegate = await PPIEDelegate.deploy();
 
@@ -80,26 +73,13 @@ async function main() {
 
     console.log(`UniswapPriceOracle smart contract has been deployed to: ${uniswapPriceOracle.address}`);
 
-    // Mumbai addresses
-    let SushiFactoryAddress = '0xc35dadb65012ec5796536bd9864ed8773abc74c4';
-    let WETHAddress = '0x5b67676a984807a212b1c59ebfc9b3568a474f0a';
-    let ChainlinkAddress = '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada';
-
-    // // Mainnet addresses
-    // let FactoryAddress = '';
-    // let WETHAddress = '';
-    // let ChainlinkAddress = '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0';
-
-    // let RegistryProxyAddress = '';
-    // let oracle = '';
-
     const UniswapPriceOracleProxy = await hre.ethers.getContractFactory("UniswapPriceOracleProxy");
     const uniswapPriceOracleProxy = await UniswapPriceOracleProxy.deploy(
         uniswapPriceOracle.address,
         registryProxy.address,
-        SushiFactoryAddress,
-        WETHAddress,
-        ChainlinkAddress
+        process.env.SushiFactoryAddress,
+        process.env.WMATICAddress,
+        process.env.ChainlinkAddress
     );
 
     console.log(`UniswapPriceOracleProxy smart contract has been deployed to: ${uniswapPriceOracleProxy.address}`);
@@ -146,14 +126,7 @@ async function main() {
     await registry1._setFactoryContract(pTokenFactory.address);
 
     await pTokenFactory.createPETH(pEtherDelegate.address);
-    await pTokenFactory.createPPIE(pie.address, ppieDelegate.address);
-
-    // const Maximillion = await hre.ethers.getContractFactory("Maximillion");
-    // const maximillion = await Maximillion.deploy(
-    //     PETH address
-    // );
-    //
-    // console.log(`Maximillion smart contract has been deployed to: ${maximillion.address}`);
+    await pTokenFactory.createPPIE(process.env.PIE_ADDRESS, ppieDelegate.address);
 }
 
 main()
