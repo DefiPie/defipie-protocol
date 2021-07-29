@@ -3,7 +3,7 @@ module.exports = {
   solc: "solc",
   solc_args: [                                              // Extra solc args
     '--allow-paths', 'contracts,tests/Contracts',
-    '--evm-version', 'berlin',
+    '--evm-version', 'istanbul',
     '--optimize-runs', '200'
   ],
   solc_shell_args: {                                        // Args passed to `exec`, see:
@@ -30,7 +30,7 @@ module.exports = {
             gasPrice: 0,
             defaultBalanceEther: 1000000000,
             allowUnlimitedContractSize: true,
-            hardfork: 'berlin'
+            hardfork: 'istanbul'
           }
         }
       ],
@@ -61,7 +61,7 @@ module.exports = {
             gasPrice: 20000,
             defaultBalanceEther: 1000000000,
             allowUnlimitedContractSize: true,
-            hardfork: 'berlin'
+            hardfork: 'istanbul'
           }
         }
       ],
