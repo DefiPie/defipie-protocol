@@ -22,14 +22,18 @@ describe('Governor#propose/5', () => {
 
   let trivialProposal, targets, values, signatures, callDatas;
   let proposalBlock;
+  let delay = 1;
+  let period = 19710;
+  let threshold = etherMantissa(15000001);
+
   beforeAll(async () => {
     targets = [root];
     values = ["0"];
     signatures = ["getBalanceOf(address)"];
     callDatas = [encodeParameters(['address'], [acct])];
 
-    await send(pie, 'approve', [ppie._address, etherMantissa(400001)]);
-    await send(ppie, 'mint', [etherMantissa(400001)]);
+    await send(pie, 'approve', [ppie._address, threshold]);
+    await send(ppie, 'mint', [threshold]);
     await send(ppie, 'delegate', [root]);
     await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"]);
     proposalBlock = +(await web3.eth.getBlockNumber());
@@ -51,11 +55,11 @@ describe('Governor#propose/5', () => {
     });
 
     it("Start block is set to the current block number plus vote delay", async () => {
-      expect(trivialProposal.startBlock).toEqual(proposalBlock + 1 + "");
+      expect(trivialProposal.startBlock).toEqual(proposalBlock + delay + "");
     });
 
     it("End block is set to the current block number plus the sum of vote delay and vote period", async () => {
-      expect(trivialProposal.endBlock).toEqual(proposalBlock + 1 + 17280 + "");
+      expect(trivialProposal.endBlock).toEqual(proposalBlock + delay + period + "");
     });
 
     it("ForVotes and AgainstVotes are initialized to zero", async () => {
@@ -128,8 +132,8 @@ describe('Governor#propose/5', () => {
     });
 
     it("This function returns the id of the newly created proposal. # proposalId(n) = succ(proposalId(n-1))", async () => {
-      await send(pie, 'transfer', [accounts[2], etherMantissa(400001)]);
-      await send(pie, 'approve', [ppie._address, etherMantissa(400001)], {from: accounts[2]});
+      await send(pie, 'transfer', [accounts[2], threshold]);
+      await send(pie, 'approve', [ppie._address, threshold], {from: accounts[2]});
       await send(ppie, 'mint', [etherMantissa(400001)], {from: accounts[2]});
       await send(ppie, 'delegate', [accounts[2]], {from: accounts[2]});
 
@@ -141,12 +145,13 @@ describe('Governor#propose/5', () => {
     });
 
     it("emits log with id and description", async () => {
-      await send(pie, 'transfer', [accounts[3], etherMantissa(400001)]);
-      await send(pie, 'approve', [ppie._address, etherMantissa(400001)], {from: accounts[3]});
-      await send(ppie, 'mint', [etherMantissa(400001)], {from: accounts[3]});
+      await send(pie, 'transfer', [accounts[3], threshold]);
+      await send(pie, 'approve', [ppie._address, threshold], {from: accounts[3]});
+      await send(ppie, 'mint', [threshold], {from: accounts[3]});
       await send(ppie, 'delegate', [accounts[3]], {from: accounts[3]});
       await mineBlock();
       let nextProposalId = await gov.methods['propose'](targets, values, signatures, callDatas, "yoot").call({ from: accounts[3] });
+      let startBlock = 50;
 
       expect(
         await send(gov, 'propose', [targets, values, signatures, callDatas, "second proposal"], { from: accounts[3] })
@@ -156,8 +161,8 @@ describe('Governor#propose/5', () => {
         values: values,
         signatures: signatures,
         calldatas: callDatas,
-        startBlock: 44,
-        endBlock: 17324,
+        startBlock: startBlock,
+        endBlock: startBlock + period,
         description: "second proposal",
         proposer: accounts[3]
       });

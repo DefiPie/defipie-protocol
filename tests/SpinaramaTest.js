@@ -1,7 +1,8 @@
 const {
   etherMantissa,
   minerStart,
-  minerStop
+  minerStop,
+  UInt256Max
 } = require('./Utils/Ethereum');
 
 const {
@@ -22,7 +23,7 @@ describe('Spinarama', () => {
     it('should succeed', async () => {
       const pToken = await makePToken({supportMarket: true});
       await send(pToken.underlying, 'harnessSetBalance', [from, 100], {from});
-      await send(pToken.underlying, 'approve', [pToken._address, -1], {from});
+      await send(pToken.underlying, 'approve', [pToken._address, UInt256Max()], {from});
       await minerStop();
       const p1 = send(pToken, 'mint', [1], {from});
       const p2 = send(pToken, 'mint', [2], {from});

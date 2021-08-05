@@ -26,8 +26,8 @@ module.exports = {
         { http: "http://127.0.0.1:8545" },
         {
           ganache: {
-            gasLimit: 8000000000,
-            gasPrice: 0,
+            gasLimit: 20000000,
+            gasPrice: 20000,
             defaultBalanceEther: 1000000000,
             allowUnlimitedContractSize: true,
             hardfork: 'istanbul'
@@ -110,7 +110,7 @@ module.exports = {
       ]
     },
     ropsten: {
-      providers: [        
+      providers: [
         { env: "PROVIDER" },
         { file: "~/.ethereum/ropsten-url" },                    // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
         { http: "http://127.0.0.1:8545" }

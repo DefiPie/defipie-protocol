@@ -5,14 +5,14 @@ Macro DeployGov
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 10000000e18)
-    From Bank (PToken pPIE Mint 10000000e18)
+    From Bank (Pie Approve pPIE 150000002e18)
+    From Bank (PToken pPIE Mint 150000002e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
-    Enfranchise Root 100001e18
-    Enfranchise Jared 200000e18
-    Enfranchise Torrey 600001e18
-    Enfranchise Geoff 700001e18
+    Enfranchise Root 15000001e18
+    Enfranchise Jared 30000001e18
+    Enfranchise Torrey 90000001e18
+    Enfranchise Geoff 105000001e18
 
 Macro Enfranchise user amount
     From Bank (PToken pPIE Transfer user amount)
