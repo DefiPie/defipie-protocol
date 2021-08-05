@@ -1,6 +1,7 @@
 const {
   etherUnsigned,
-  etherMantissa
+  etherMantissa,
+  UInt256Max
 } = require('../Utils/Ethereum');
 
 const {
@@ -93,7 +94,7 @@ describe('PToken', function () {
     });
 
     it("fails if error if protocol has less than borrowAmount of underlying", async () => {
-      expect(await borrowFresh(pToken, borrower, borrowAmount.add(1))).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'BORROW_CASH_NOT_AVAILABLE');
+      expect(await borrowFresh(pToken, borrower, borrowAmount.plus(1))).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'BORROW_CASH_NOT_AVAILABLE');
     });
 
     it("fails if borrowBalanceStored fails (due to non-zero stored principal with zero account index)", async () => {
@@ -102,12 +103,12 @@ describe('PToken', function () {
     });
 
     it("fails if calculating account new total borrow balance overflows", async () => {
-      await pretendBorrow(pToken, borrower, 1e-18, 1e-18, -1);
+      await pretendBorrow(pToken, borrower, 1e-18, 1e-18, UInt256Max());
       expect(await borrowFresh(pToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED');
     });
 
     it("fails if calculation of new total borrow balance overflows", async () => {
-      await send(pToken, 'harnessSetTotalBorrows', [-1]);
+      await send(pToken, 'harnessSetTotalBorrows', [UInt256Max()]);
       expect(await borrowFresh(pToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED');
     });
 
@@ -122,9 +123,9 @@ describe('PToken', function () {
       const beforeAccountCash = await balanceOf(pToken.underlying, borrower);
       const result = await borrowFresh(pToken, borrower, borrowAmount);
       expect(result).toSucceed();
-      expect(await balanceOf(pToken.underlying, borrower)).toEqualNumber(beforeAccountCash.add(borrowAmount));
-      expect(await balanceOf(pToken.underlying, pToken._address)).toEqualNumber(beforeProtocolCash.sub(borrowAmount));
-      expect(await totalBorrows(pToken)).toEqualNumber(beforeProtocolBorrows.add(borrowAmount));
+      expect(await balanceOf(pToken.underlying, borrower)).toEqualNumber(beforeAccountCash.plus(borrowAmount));
+      expect(await balanceOf(pToken.underlying, pToken._address)).toEqualNumber(beforeProtocolCash.minus(borrowAmount));
+      expect(await totalBorrows(pToken)).toEqualNumber(beforeProtocolBorrows.plus(borrowAmount));
       expect(result).toHaveLog('Transfer', {
         from: pToken._address,
         to: borrower,
@@ -134,7 +135,7 @@ describe('PToken', function () {
         borrower: borrower,
         borrowAmount: borrowAmount.toString(),
         accountBorrows: borrowAmount.toString(),
-        totalBorrows: beforeProtocolBorrows.add(borrowAmount).toString()
+        totalBorrows: beforeProtocolBorrows.plus(borrowAmount).toString()
       });
     });
 
@@ -145,7 +146,7 @@ describe('PToken', function () {
       const borrowSnap = await borrowSnapshot(pToken, borrower);
       expect(borrowSnap.principal).toEqualNumber(borrowAmount);
       expect(borrowSnap.interestIndex).toEqualNumber(etherMantissa(3));
-      expect(await totalBorrows(pToken)).toEqualNumber(beforeProtocolBorrows.add(borrowAmount));
+      expect(await totalBorrows(pToken)).toEqualNumber(beforeProtocolBorrows.plus(borrowAmount));
     });
   });
 
@@ -158,14 +159,14 @@ describe('PToken', function () {
     });
 
     it("returns error from borrowFresh without emitting any extra logs", async () => {
-      expect(await borrow(pToken, borrower, borrowAmount.add(1))).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'BORROW_CASH_NOT_AVAILABLE');
+      expect(await borrow(pToken, borrower, borrowAmount.plus(1))).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'BORROW_CASH_NOT_AVAILABLE');
     });
 
     it("returns success from borrowFresh and transfers the correct amount", async () => {
       const beforeAccountCash = await balanceOf(pToken.underlying, borrower);
       await fastForward(pToken);
       expect(await borrow(pToken, borrower, borrowAmount)).toSucceed();
-      expect(await balanceOf(pToken.underlying, borrower)).toEqualNumber(beforeAccountCash.add(borrowAmount));
+      expect(await balanceOf(pToken.underlying, borrower)).toEqualNumber(beforeAccountCash.plus(borrowAmount));
     });
   });
 
@@ -219,7 +220,7 @@ describe('PToken', function () {
         it("transfers the underlying cash, and emits Transfer, RepayBorrow events", async () => {
           const beforeProtocolCash = await balanceOf(pToken.underlying, pToken._address);
           const result = await repayBorrowFresh(pToken, payer, borrower, repayAmount);
-          expect(await balanceOf(pToken.underlying, pToken._address)).toEqualNumber(beforeProtocolCash.add(repayAmount));
+          expect(await balanceOf(pToken.underlying, pToken._address)).toEqualNumber(beforeProtocolCash.plus(repayAmount));
           expect(result).toHaveLog('Transfer', {
             from: payer,
             to: pToken._address,
@@ -239,9 +240,9 @@ describe('PToken', function () {
           const beforeAccountBorrowSnap = await borrowSnapshot(pToken, borrower);
           expect(await repayBorrowFresh(pToken, payer, borrower, repayAmount)).toSucceed();
           const afterAccountBorrows = await borrowSnapshot(pToken, borrower);
-          expect(afterAccountBorrows.principal).toEqualNumber(beforeAccountBorrowSnap.principal.sub(repayAmount));
+          expect(afterAccountBorrows.principal).toEqualNumber(beforeAccountBorrowSnap.principal.minus(repayAmount));
           expect(afterAccountBorrows.interestIndex).toEqualNumber(etherMantissa(1));
-          expect(await totalBorrows(pToken)).toEqualNumber(beforeProtocolBorrows.sub(repayAmount));
+          expect(await totalBorrows(pToken)).toEqualNumber(beforeProtocolBorrows.minus(repayAmount));
         });
       });
     });
@@ -267,12 +268,12 @@ describe('PToken', function () {
       const beforeAccountBorrowSnap = await borrowSnapshot(pToken, borrower);
       expect(await repayBorrow(pToken, borrower, repayAmount)).toSucceed();
       const afterAccountBorrowSnap = await borrowSnapshot(pToken, borrower);
-      expect(afterAccountBorrowSnap.principal).toEqualNumber(beforeAccountBorrowSnap.principal.sub(repayAmount));
+      expect(afterAccountBorrowSnap.principal).toEqualNumber(beforeAccountBorrowSnap.principal.minus(repayAmount));
     });
 
     it("repays the full amount owed if payer has enough", async () => {
       await fastForward(pToken);
-      expect(await repayBorrow(pToken, borrower, -1)).toSucceed();
+      expect(await repayBorrow(pToken, borrower, UInt256Max())).toSucceed();
       const afterAccountBorrowSnap = await borrowSnapshot(pToken, borrower);
       expect(afterAccountBorrowSnap.principal).toEqualNumber(0);
     });
@@ -280,7 +281,7 @@ describe('PToken', function () {
     it("fails gracefully if payer does not have enough", async () => {
       await setBalance(pToken.underlying, borrower, 3);
       await fastForward(pToken);
-      await expect(repayBorrow(pToken, borrower, -1)).rejects.toRevert('revert Insufficient balance');
+      await expect(repayBorrow(pToken, borrower, UInt256Max())).rejects.toRevert('revert Insufficient balance');
     });
   });
 
@@ -307,7 +308,7 @@ describe('PToken', function () {
       const beforeAccountBorrowSnap = await borrowSnapshot(pToken, borrower);
       expect(await repayBorrowBehalf(pToken, payer, borrower, repayAmount)).toSucceed();
       const afterAccountBorrowSnap = await borrowSnapshot(pToken, borrower);
-      expect(afterAccountBorrowSnap.principal).toEqualNumber(beforeAccountBorrowSnap.principal.sub(repayAmount));
+      expect(afterAccountBorrowSnap.principal).toEqualNumber(beforeAccountBorrowSnap.principal.minus(repayAmount));
     });
   });
 });

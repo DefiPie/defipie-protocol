@@ -480,7 +480,7 @@ async function adjustBalances(balances, deltas) {
       ([pToken, key, diff] = delta);
       account = pToken._address;
     }
-    balances[pToken._address][account][key] = balances[pToken._address][account][key].add(diff);
+    balances[pToken._address][account][key] = balances[pToken._address][account][key].plus(diff);
   }
   return balances;
 }

@@ -237,7 +237,7 @@ Test "When price oracle for collateral token is whack"
     Assert Equal (Controller Liquidity Geoff) -1e18
     -- Okay, so we should be able to liquidate, so let's do that.
     Prep Torrey 10e18 BAT pBAT
-    PriceOracle SetPrice pBAT UInt256Max
+    PriceOracle SetPrice pBAT 1.15792e59
     AllowFailures
     Liquidate Torrey "->" Geoff 2e18 pBAT "Seizing" pBAT
     Assert Failure CONTROLLER_REJECTION LIQUIDATE_CONTROLLER_REJECTION MATH_ERROR

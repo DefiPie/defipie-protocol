@@ -24,7 +24,7 @@ async function pieBalance(controller, user) {
 }
 
 async function totalPieAccrued(controller, user) {
-  return (await pieAccrued(controller, user)).add(await pieBalance(controller, user));
+  return (await pieAccrued(controller, user)).plus(await pieBalance(controller, user));
 }
 
 describe('Flywheel upgrade', () => {
@@ -250,7 +250,7 @@ describe('Flywheel', () => {
     });
 
     it('should not matter if the index is updated multiple times', async () => {
-      const pieRemaining = pieRate.mul(100);
+      const pieRemaining = pieRate.multipliedBy(100);
       await send(controller, 'harnessAddPieMarkets', [[pLOW._address]]);
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       await pretendBorrow(pLOW, a1, 1, 1, 100);
@@ -266,7 +266,7 @@ describe('Flywheel', () => {
 
       await fastForward(controller, 20);
 
-      const txT1 = await send(pLOW, 'transfer', [a2, a3Balance0.sub(a2Balance0)], {from: a3});
+      const txT1 = await send(pLOW, 'transfer', [a2, a3Balance0.minus(a2Balance0)], {from: a3});
 
       const a2Accrued1 = await totalPieAccrued(controller, a2);
       const a3Accrued1 = await totalPieAccrued(controller, a3);
@@ -277,7 +277,7 @@ describe('Flywheel', () => {
       await send(controller, 'harnessUpdatePieSupplyIndex', [pLOW._address]);
       await fastForward(controller, 10);
 
-      const txT2 = await send(pLOW, 'transfer', [a3, a2Balance1.sub(a3Balance1)], {from: a2});
+      const txT2 = await send(pLOW, 'transfer', [a3, a2Balance1.minus(a3Balance1)], {from: a2});
 
       const a2Accrued2 = await totalPieAccrued(controller, a2);
       const a3Accrued2 = await totalPieAccrued(controller, a3);
@@ -286,8 +286,8 @@ describe('Flywheel', () => {
       expect(a3Accrued0).toEqualNumber(0);
       expect(a2Accrued1).not.toEqualNumber(0);
       expect(a3Accrued1).not.toEqualNumber(0);
-      expect(a2Accrued1).toEqualNumber(a3Accrued2.sub(a3Accrued1));
-      expect(a3Accrued1).toEqualNumber(a2Accrued2.sub(a2Accrued1));
+      expect(a2Accrued1).toEqualNumber(a3Accrued2.minus(a3Accrued1));
+      expect(a3Accrued1).toEqualNumber(a2Accrued2.minus(a2Accrued1));
 
       expect(txT1.gasUsed).toBeLessThan(200074);
       expect(txT1.gasUsed).toBeGreaterThan(150000);
@@ -332,7 +332,7 @@ describe('Flywheel', () => {
         pToken: mkt._address,
         borrower: a1,
         pieDelta: etherUnsigned(25e18).toString(),
-        pieBorrowIndex: etherDouble(6).toString()
+        pieBorrowIndex: etherDouble(6).toFixed()
       });
     });
 
@@ -394,7 +394,7 @@ describe('Flywheel', () => {
         pToken: mkt._address,
         supplier: a1,
         pieDelta: etherUnsigned(25e18).toString(),
-        pieSupplyIndex: etherDouble(6).toString()
+        pieSupplyIndex: etherDouble(6).toFixed()
       });
     });
 
@@ -492,7 +492,7 @@ describe('Flywheel', () => {
 
   describe('claimPie', () => {
     it('should accrue pie and then transfer pie accrued', async () => {
-      const pieRemaining = pieRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
+      const pieRemaining = pieRate.multipliedBy(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       await pretendBorrow(pLOW, a1, 1, 1, 100);
       await send(controller, '_setPieSpeed', [pLOW._address, etherExp(0.5)]);
@@ -511,11 +511,11 @@ describe('Flywheel', () => {
       expect(a2AccruedPre).toEqualNumber(0);
       expect(a2AccruedPost).toEqualNumber(0);
       expect(pieBalancePre).toEqualNumber(0);
-      expect(pieBalancePost).toEqualNumber(pieRate.mul(deltaBlocks).sub(1)); // index is 8333...
+      expect(pieBalancePost).toEqualNumber(pieRate.multipliedBy(deltaBlocks).minus(1)); // index is 8333...
     });
 
     it('should accrue pie and then transfer pie accrued in a single market', async () => {
-      const pieRemaining = pieRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
+      const pieRemaining = pieRate.multipliedBy(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       await pretendBorrow(pLOW, a1, 1, 1, 100);
       await send(controller, '_setPieSpeed', [pLOW._address, etherExp(0.5)]);
@@ -533,7 +533,7 @@ describe('Flywheel', () => {
       expect(a2AccruedPre).toEqualNumber(0);
       expect(a2AccruedPost).toEqualNumber(0);
       expect(pieBalancePre).toEqualNumber(0);
-      expect(pieBalancePost).toEqualNumber(pieRate.mul(deltaBlocks).sub(1)); // index is 8333...
+      expect(pieBalancePost).toEqualNumber(pieRate.multipliedBy(deltaBlocks).minus(1)); // index is 8333...
     });
 
     it('should claim when pie accrued is below threshold', async () => {
@@ -557,7 +557,7 @@ describe('Flywheel', () => {
   describe('claimPie batch', () => {
     it('should revert when claiming pie from non-listed market', async () => {
 
-      const pieRemaining = pieRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
+      const pieRemaining = pieRate.multipliedBy(100), deltaBlocks = 10, mintAmount = etherExp(10);
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       let [_, __, ...claimAccts] = saddle.accounts;
 
@@ -577,7 +577,7 @@ describe('Flywheel', () => {
 
 
     it('should claim the expected amount when holders and pTokens arg is duplicated', async () => {
-      const pieRemaining = pieRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
+      const pieRemaining = pieRate.multipliedBy(100), deltaBlocks = 10, mintAmount = etherExp(10);
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       let [_, __, ...claimAccts] = saddle.accounts;
       for(let from of claimAccts) {
@@ -600,7 +600,7 @@ describe('Flywheel', () => {
     });
 
     it('claims pie for multiple suppliers only', async () => {
-      const pieRemaining = pieRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
+      const pieRemaining = pieRate.multipliedBy(100), deltaBlocks = 10, mintAmount = etherExp(10);
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       let [_, __, ...claimAccts] = saddle.accounts;
       for(let from of claimAccts) {
@@ -623,7 +623,7 @@ describe('Flywheel', () => {
     });
 
     it('claims pie for multiple borrowers only, primes uninitiated', async () => {
-      const pieRemaining = pieRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10), borrowAmt = etherExp(1), borrowIdx = etherExp(1)
+      const pieRemaining = pieRate.multipliedBy(100), deltaBlocks = 10, mintAmount = etherExp(10), borrowAmt = etherExp(1), borrowIdx = etherExp(1)
       await send(controller.pie, 'transfer', [controller._address, pieRemaining], {from: root});
       let [_,__, ...claimAccts] = saddle.accounts;
 
@@ -679,9 +679,9 @@ describe('Flywheel', () => {
       const speed1 = await call(controller, 'pieSpeeds', [pLOW._address]);
       const speed2 = await call(controller, 'pieSpeeds', [pREP._address]);
       const speed3 = await call(controller, 'pieSpeeds', [pZRX._address]);
-      expect(speed1).toEqualNumber(pieRate.div(4));
+      expect(speed1).toEqualNumber(pieRate.dividedBy(4));
       expect(speed2).toEqualNumber(0);
-      expect(speed3).toEqualNumber(pieRate.div(4).mul(3));
+      expect(speed3).toEqualNumber(pieRate.dividedBy(4).multipliedBy(3));
     });
   });
 
@@ -701,7 +701,7 @@ describe('Flywheel', () => {
     it('should not write over a markets existing state', async () => {
       const mkt = pLOW._address;
       const bn0 = 10, bn1 = 20;
-      const idx = etherUnsigned(1.5e36);
+      const idx = etherUnsigned(1.5e36).toFixed();
 
       await send(controller, "harnessAddPieMarkets", [[mkt]]);
       await send(controller, "setPieSupplyState", [mkt, idx, bn0]);

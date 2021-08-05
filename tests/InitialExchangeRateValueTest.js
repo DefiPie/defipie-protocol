@@ -26,7 +26,6 @@ describe('PToken Factory tests', () => {
         expect(pair).toEqual(mockUniswapPool._address);
 
         uniswapOracle = await deploy('UniswapPriceOracleHarness', [
-            registryProxy._address,
             mockUniswapFactory._address,
             WETHToken._address,
             mockPriceFeed._address,

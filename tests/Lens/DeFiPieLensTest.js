@@ -250,6 +250,7 @@ describe('DeFiPieLens', () => {
     let pie, ppie, registryAddress, gov;
     let targets, values, signatures, callDatas;
     let proposalBlock, proposalId;
+    let threshold = etherMantissa(15000001);
 
     beforeEach(async () => {
       pie = await deploy('Pie', [acct]);
@@ -261,8 +262,8 @@ describe('DeFiPieLens', () => {
       signatures = ["getBalanceOf(address)"];
       callDatas = [encodeParameters(['address'], [acct])];
 
-      await send(pie, 'approve', [ppie._address, etherMantissa(400001)]);
-      await send(ppie, 'mint', [etherMantissa(400001)]);
+      await send(pie, 'approve', [ppie._address, threshold]);
+      await send(ppie, 'mint', [threshold]);
       await send(ppie, 'delegate', [acct]);
       await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"]);
       proposalBlock = +(await web3.eth.getBlockNumber());
@@ -293,7 +294,7 @@ describe('DeFiPieLens', () => {
             againstVotes: "0",
             calldatas: callDatas,
             canceled: false,
-            endBlock: (Number(proposalBlock) + 17281).toString(),
+            endBlock: (Number(proposalBlock) + 19711).toString(),
             eta: "0",
             executed: false,
             forVotes: "0",
