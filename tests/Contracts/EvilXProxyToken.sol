@@ -22,7 +22,6 @@ contract EvilXProxyToken is ImplementationStorage {
     }
 
     function setImplementation(address newImplementation) external returns (uint) {
-        address oldImplementation = implementation;
         _setImplementation(newImplementation);
 
         return 0;

@@ -29,6 +29,7 @@ const ControllerErrorReporter = {
         'PRICE_ERROR',
         'PRICE_UPDATE_ERROR',
         'REJECTION',
+        'GUARDIAN_REJECTION',
         'SNAPSHOT_ERROR',
         'TOO_MANY_ASSETS',
         'TOO_MUCH_REPAY'
