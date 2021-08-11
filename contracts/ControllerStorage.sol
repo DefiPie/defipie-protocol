@@ -120,4 +120,7 @@ contract ControllerStorage is UnitrollerAdminStorage {
 
     /// @notice The PIE accrued but not yet transferred to each user
     mapping(address => uint) public pieAccrued;
+
+    /// @notice Only the Liquidate guardian can liquidate loans with collateral below the loan amount
+    address public liquidateGuardian;
 }

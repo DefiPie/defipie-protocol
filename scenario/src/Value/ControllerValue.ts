@@ -46,6 +46,10 @@ async function getPriceOracle(world: World, controller: Controller): Promise<Add
     return new AddressV(await controller.methods.oracle().call());
 }
 
+async function getLiquidateGuardian(world: World, controller: Controller): Promise<AddressV> {
+    return new AddressV(await controller.methods.liquidateGuardian().call());
+}
+
 async function getPieAddress(world: World, controller: Controller): Promise<AddressV> {
     return new AddressV(await controller.methods.getPieAddress().call());
 }
@@ -205,6 +209,16 @@ export function controllerFetchers() {
           "PriceOracle",
           [new Arg("controller", getController, {implicit: true})],
           (world, {controller}) => getPriceOracle(world, controller)
+      ),
+      new Fetcher<{controller: Controller}, AddressV>(`
+        #### LiquidateGuardian
+
+        * "Controller LiquidateGuardian" - Returns the Controllers's liquidate guardian
+          * E.g. "Controller LiquidateGuardian"
+      `,
+          "LiquidateGuardian",
+          [new Arg("controller", getController, {implicit: true})],
+          (world, {controller}) => getLiquidateGuardian(world, controller)
       ),
       new Fetcher<{controller: Controller}, AddressV>(`
         #### PieAddress
@@ -466,7 +480,7 @@ export function controllerFetchers() {
         const res = await world.web3.eth.call({
             to: controller._address,
             data: fnData
-          })
+          });
         const resNum : any = world.web3.eth.abi.decodeParameter('uint256',res);
         return new NumberV(resNum);
       }

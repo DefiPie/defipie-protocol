@@ -145,4 +145,6 @@ contract Unitroller is UnitrollerAdminStorage, ControllerErrorReporter {
             default { return(free_mem_ptr, returndatasize()) }
         }
     }
+
+    receive() payable external {}
 }

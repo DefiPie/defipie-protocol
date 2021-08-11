@@ -10,6 +10,7 @@ interface ControllerMethods {
   getAssetsIn(string): Callable<string[]>
   admin(): Callable<string>
   oracle(): Callable<string>
+  liquidateGuardian(): Callable<string>
   maxAssets(): Callable<number>
   liquidationIncentiveMantissa(): Callable<number>
   closeFactorMantissa(): Callable<number>
@@ -21,6 +22,7 @@ interface ControllerMethods {
   _setLiquidationIncentive(encodedNumber): Sendable<number>
   _supportMarket(string): Sendable<number>
   _setPriceOracle(string): Sendable<number>
+  _setLiquidateGuardian(string): Sendable<number>
   _setPieAddress(string): Sendable<number>
   _setCollateralFactor(string, encodedNumber): Sendable<number>
   _setCloseFactor(encodedNumber): Sendable<number>

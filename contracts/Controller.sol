@@ -41,6 +41,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     /// @notice Emitted when pause guardian is changed
     event NewPauseGuardian(address oldPauseGuardian, address newPauseGuardian);
 
+    /// @notice Emitted when pause guardian is changed
+    event NewLiquidateGuardian(address oldLiquidateGuardian, address newLiquidateGuardian);
+
     /// @notice Emitted when an action is paused globally
     event ActionPaused(string action, bool pauseState);
 
@@ -405,19 +408,16 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         address borrower,
         uint repayAmount
     ) external override returns (uint) {
-        // Shh - currently unused
-        liquidator;
-
         if (!markets[pTokenBorrowed].isListed || !markets[pTokenCollateral].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
-        /* The borrower must have shortfall in order to be liquidatable */
-        (Error err, , uint shortfall) = getAccountLiquidityInternal(borrower);
+        /* The borrower must have shortfall(sumCollateral < sumBorrowPlusEffects) in order to be liquidatable */
+        (Error err, uint sumCollateral, uint sumBorrowPlusEffects, uint sumDeposit) = calcHypotheticalAccountLiquidityInternal(borrower, address(0), 0, 0);
         if (err != Error.NO_ERROR) {
             return uint(err);
         }
-        if (shortfall == 0) {
+        if (sumCollateral >= sumBorrowPlusEffects) {
             return uint(Error.INSUFFICIENT_SHORTFALL);
         }
 
@@ -429,6 +429,12 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         }
         if (repayAmount > maxClose) {
             return uint(Error.TOO_MUCH_REPAY);
+        }
+
+        if ((sumBorrowPlusEffects * liquidationIncentiveMantissa / 1e18) > sumDeposit
+            && liquidator != liquidateGuardian
+        ) {
+            return uint(Error.GUARDIAN_REJECTION);
         }
 
         return uint(Error.NO_ERROR);
@@ -517,6 +523,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint borrowBalance;
         uint exchangeRateMantissa;
         uint oraclePriceMantissa;
+        uint sumDeposit;
         Exp collateralFactor;
         Exp exchangeRate;
         Exp oraclePrice;
@@ -584,6 +591,26 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint borrowAmount
     ) internal view returns (Error, uint, uint) {
 
+        (Error err, uint sumCollateral, uint sumBorrowPlusEffects, ) = calcHypotheticalAccountLiquidityInternal(account, pTokenModify, redeemTokens, borrowAmount);
+        if (err != Error.NO_ERROR) {
+            return (err, sumCollateral, sumBorrowPlusEffects);
+        }
+
+        // These are safe, as the underflow condition is checked first
+        if (sumCollateral > sumBorrowPlusEffects) {
+            return (Error.NO_ERROR, sumCollateral - sumBorrowPlusEffects, 0);
+        } else {
+            return (Error.NO_ERROR, 0, sumBorrowPlusEffects - sumCollateral);
+        }
+    }
+
+    function calcHypotheticalAccountLiquidityInternal(
+        address account,
+        address pTokenModify,
+        uint redeemTokens,
+        uint borrowAmount
+    ) internal view returns (Error, uint, uint, uint) {
+
         AccountLiquidityLocalVars memory vars; // Holds all our calculation results
         uint oErr;
         MathError mErr;
@@ -596,7 +623,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             // Read the balances and exchange rate from the pToken
             (oErr, vars.pTokenBalance, vars.borrowBalance, vars.exchangeRateMantissa) = PTokenInterface(asset).getAccountSnapshot(account);
             if (oErr != 0) { // semi-opaque error code, we assume NO_ERROR == 0 is invariant between upgrades
-                return (Error.SNAPSHOT_ERROR, 0, 0);
+                return (Error.SNAPSHOT_ERROR, 0, 0, 0);
             }
             vars.collateralFactor = Exp({mantissa: markets[address(asset)].collateralFactorMantissa});
             vars.exchangeRate = Exp({mantissa: vars.exchangeRateMantissa});
@@ -604,26 +631,36 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             // Get the normalized price of the asset
             vars.oraclePriceMantissa = oracle.getUnderlyingPrice(asset);
             if (vars.oraclePriceMantissa == 0) {
-                return (Error.PRICE_ERROR, 0, 0);
+                return (Error.PRICE_ERROR, 0, 0, 0);
             }
             vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
 
             // Pre-compute a conversion factor from tokens -> ether (normalized price value)
-            (mErr, vars.tokensToDenom) = mulExp3(vars.collateralFactor, vars.exchangeRate, vars.oraclePrice);
+            (mErr, vars.tokensToDenom) = mulExp(vars.exchangeRate, vars.oraclePrice);
             if (mErr != MathError.NO_ERROR) {
-                return (Error.MATH_ERROR, 0, 0);
+                return (Error.MATH_ERROR, 0, 0, 0);
+            }
+
+            (mErr, vars.sumDeposit) = mulScalarTruncateAddUInt(vars.tokensToDenom, vars.pTokenBalance, vars.sumDeposit);
+            if (mErr != MathError.NO_ERROR) {
+                return (Error.MATH_ERROR, 0, 0, 0);
+            }
+
+            (mErr, vars.tokensToDenom) = mulExp(vars.collateralFactor, vars.tokensToDenom);
+            if (mErr != MathError.NO_ERROR) {
+                return (Error.MATH_ERROR, 0, 0, 0);
             }
 
             // sumCollateral += tokensToDenom * pTokenBalance
             (mErr, vars.sumCollateral) = mulScalarTruncateAddUInt(vars.tokensToDenom, vars.pTokenBalance, vars.sumCollateral);
             if (mErr != MathError.NO_ERROR) {
-                return (Error.MATH_ERROR, 0, 0);
+                return (Error.MATH_ERROR, 0, 0, 0);
             }
 
             // sumBorrowPlusEffects += oraclePrice * borrowBalance
             (mErr, vars.sumBorrowPlusEffects) = mulScalarTruncateAddUInt(vars.oraclePrice, vars.borrowBalance, vars.sumBorrowPlusEffects);
             if (mErr != MathError.NO_ERROR) {
-                return (Error.MATH_ERROR, 0, 0);
+                return (Error.MATH_ERROR, 0, 0, 0);
             }
 
             // Calculate effects of interacting with pTokenModify
@@ -632,24 +669,19 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
                 // sumBorrowPlusEffects += tokensToDenom * redeemTokens
                 (mErr, vars.sumBorrowPlusEffects) = mulScalarTruncateAddUInt(vars.tokensToDenom, redeemTokens, vars.sumBorrowPlusEffects);
                 if (mErr != MathError.NO_ERROR) {
-                    return (Error.MATH_ERROR, 0, 0);
+                    return (Error.MATH_ERROR, 0, 0, 0);
                 }
 
                 // borrow effect
                 // sumBorrowPlusEffects += oraclePrice * borrowAmount
                 (mErr, vars.sumBorrowPlusEffects) = mulScalarTruncateAddUInt(vars.oraclePrice, borrowAmount, vars.sumBorrowPlusEffects);
                 if (mErr != MathError.NO_ERROR) {
-                    return (Error.MATH_ERROR, 0, 0);
+                    return (Error.MATH_ERROR, 0, 0, 0);
                 }
             }
         }
 
-        // These are safe, as the underflow condition is checked first
-        if (vars.sumCollateral > vars.sumBorrowPlusEffects) {
-            return (Error.NO_ERROR, vars.sumCollateral - vars.sumBorrowPlusEffects, 0);
-        } else {
-            return (Error.NO_ERROR, 0, vars.sumBorrowPlusEffects - vars.sumCollateral);
-        }
+        return (Error.NO_ERROR, vars.sumCollateral, vars.sumBorrowPlusEffects, vars.sumDeposit);
     }
 
     /**
@@ -912,7 +944,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      */
     function _setPauseGuardian(address newPauseGuardian) public returns (uint) {
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PAUSE_GUARDIAN_OWNER_CHECK);
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_GUARDIAN_OWNER_CHECK);
         }
 
         // Save current value for inclusion in log
@@ -923,6 +955,23 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
         // Emit NewPauseGuardian(OldPauseGuardian, NewPauseGuardian)
         emit NewPauseGuardian(oldPauseGuardian, pauseGuardian);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    function _setLiquidateGuardian(address newLiquidateGuardian) public returns (uint) {
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_GUARDIAN_OWNER_CHECK);
+        }
+
+        // Save current value for inclusion in log
+        address oldLiquidateGuardian = liquidateGuardian;
+
+        // Store pauseGuardian with value newLiquidateGuardian
+        liquidateGuardian = newLiquidateGuardian;
+
+        // Emit newLiquidateGuardian(OldPauseGuardian, NewLiquidateGuardian)
+        emit NewLiquidateGuardian(oldLiquidateGuardian, liquidateGuardian);
 
         return uint(Error.NO_ERROR);
     }

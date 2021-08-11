@@ -153,6 +153,18 @@ async function setPriceOracle(world: World, from: string, controller: Controller
   return world;
 }
 
+async function setLiquidateGuardian(world: World, from: string, controller: Controller, liquidateGuardianAddr: string): Promise<World> {
+    let invokation = await invoke(world, controller.methods._setLiquidateGuardian(liquidateGuardianAddr), from, ControllerErrorReporter);
+
+    world = addAction(
+        world,
+        `Controller: ${describeUser(world, from)} sets liquidate guardian to ${liquidateGuardianAddr}`,
+        invokation
+    );
+
+    return world;
+}
+
 async function setPieAddress(world: World, from: string, controller: Controller, pieAddress: string): Promise<World> {
     let invokation = await invoke(world, controller.methods._setPieAddress(pieAddress), from, ControllerErrorReporter);
 
@@ -207,7 +219,7 @@ async function sendAny(world: World, from:string, controller: Controller, signat
       to: controller._address,
       data: fnData,
       from: from
-    })
+    });
   return world;
 }
 
@@ -497,6 +509,19 @@ export function controllerCommands() {
         new Arg("priceOracle", getAddressV)
       ],
       (world, from, {controller, priceOracle}) => setPriceOracle(world, from, controller, priceOracle.val)
+    ),
+    new Command<{controller: Controller, liquidateGuardian: AddressV}>(`
+        #### SetLiquidateGuardian
+
+        * "Controller SetLiquidateGuardian liquidateGuardian:<Address>" - Sets the liquidate guardian address
+          * E.g. "Controller SetLiquidateGuardian 0x..."
+      `,
+      "SetLiquidateGuardian",
+      [
+        new Arg("controller", getController, {implicit: true}),
+        new Arg("liquidateGuardian", getAddressV)
+      ],
+      (world, from, {controller, liquidateGuardian}) => setLiquidateGuardian(world, from, controller, liquidateGuardian.val)
     ),
     new Command<{controller: Controller, pieAddress: AddressV}>(`
         #### SetPieAddress
