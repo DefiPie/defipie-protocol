@@ -1,17 +1,19 @@
 const { etherMantissa } = require('../Utils/Ethereum');
-const { makePToken, makePriceOracle } = require('../Utils/DeFiPie');
+const { makePToken, makePriceOracle, makeRegistryProxy } = require('../Utils/DeFiPie');
 
 describe('Controller', function() {
   let root, accounts;
   let unitroller;
+  let registryProxy;
   let brains;
   let oracle;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
-    oracle = await makePriceOracle();
     brains = await deploy('Controller');
-    unitroller = await deploy('Unitroller');
+    registryProxy = await makeRegistryProxy();
+    oracle = await makePriceOracle();
+    unitroller = await deploy('Unitroller', [registryProxy._address]);
   });
 
   let initializeBrains = async () => {
@@ -32,9 +34,9 @@ describe('Controller', function() {
     let unitrollerAsController, pToken;
 
     beforeEach(async () => {
-      unitrollerAsController = await initializeBrains(oracle, etherMantissa(0.06), 30);
-      await send(unitrollerAsController, '_setPriceOracle', [oracle._address]);
-      pToken = await makePToken({ controller: unitrollerAsController });
+      unitrollerAsController = await initializeBrains();
+      await send(unitrollerAsController, '_setMaxAssets', [+maxAssets - 1]);
+      pToken = await makePToken({ controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
     });
 
     describe('becoming brains sets initial state', () => {
@@ -45,8 +47,7 @@ describe('Controller', function() {
       });
 
       it('on success it sets admin to caller of constructor', async () => {
-        expect(await call(unitrollerAsController, 'admin')).toEqual(root);
-        expect(await call(unitrollerAsController, 'pendingAdmin')).toBeAddressZero();
+        expect(await call(unitrollerAsController, 'getAdmin')).toEqual(root);
       });
 
       it('on success it sets closeFactor and maxAssets as specified', async () => {
@@ -120,14 +121,14 @@ describe('Controller', function() {
       });
 
       it('fails if factor is too high', async () => {
-        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController });
+        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
         expect(
           await send(unitrollerAsController, '_setCollateralFactor', [pToken._address, one])
         ).toHaveTrollFailure('INVALID_COLLATERAL_FACTOR', 'SET_COLLATERAL_FACTOR_VALIDATION');
       });
 
       it('fails if factor is set without an underlying price', async () => {
-        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController });
+        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
         await send(oracle, 'setUnderlyingPrice', [pToken._address, 0]);
         expect(
           await send(unitrollerAsController, '_setCollateralFactor', [pToken._address, half])
@@ -135,7 +136,7 @@ describe('Controller', function() {
       });
 
       it('succeeds and sets market', async () => {
-        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController });
+        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
         await send(oracle, 'setUnderlyingPrice', [pToken._address, 1]);
         expect(
           await send(unitrollerAsController, '_setCollateralFactor', [pToken._address, half])
@@ -170,8 +171,8 @@ describe('Controller', function() {
       });
 
       it('can list two different markets', async () => {
-        const pToken1 = await makePToken({ controller: unitrollerAsController });
-        const pToken2 = await makePToken({ controller: unitrollerAsController });
+        const pToken1 = await makePToken({ controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
+        const pToken2 = await makePToken({ controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy, pTokenFactory: pToken1.pTokenFactory, });
         const result1 = await call(unitrollerAsController, 'markets', [pToken1._address]);
         const result2 = await call(unitrollerAsController, 'markets', [pToken2._address]);
         expect(result1.isListed).toEqual(true);

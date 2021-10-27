@@ -4,8 +4,8 @@ import "./InterestRateModel.sol";
 import "./SafeMath.sol";
 
 /**
-  * @title DefiPie's BaseInterestRateModel Contract
-  * @author DefiPie
+  * @title DeFiPie's BaseInterestRateModel Contract
+  * @author DeFiPie
   */
 contract BaseInterestRateModel is InterestRateModel {
     using SafeMath for uint;

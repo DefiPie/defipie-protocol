@@ -6,6 +6,7 @@ import "./PriceOracle.sol";
 import "./ControllerInterface.sol";
 import "./ControllerStorage.sol";
 import "./PTokenInterfaces.sol";
+import "./PTokenFactory.sol";
 import "./EIP20Interface.sol";
 import "./Unitroller.sol";
 
@@ -80,9 +81,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     // liquidationIncentiveMantissa must be no greater than this value
     uint internal constant liquidationIncentiveMaxMantissa = 1.5e18; // 1.5
 
-    constructor() {
-        admin = msg.sender;
-    }
+    constructor() {}
 
     /*** Assets You Are In ***/
 
@@ -340,7 +339,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             assert(markets[pToken].accountMembership[borrower]);
         }
 
-        if (oracle.getUnderlyingPrice(pToken) == 0) {
+        if (getOracle().getUnderlyingPrice(pToken) == 0) {
             return uint(Error.PRICE_ERROR);
         }
 
@@ -629,7 +628,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             vars.exchangeRate = Exp({mantissa: vars.exchangeRateMantissa});
 
             // Get the normalized price of the asset
-            vars.oraclePriceMantissa = oracle.getUnderlyingPrice(asset);
+            vars.oraclePriceMantissa = getOracle().getUnderlyingPrice(asset);
             if (vars.oraclePriceMantissa == 0) {
                 return (Error.PRICE_ERROR, 0, 0, 0);
             }
@@ -698,8 +697,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint actualRepayAmount
     ) external view override returns (uint, uint) {
         /* Read oracle prices for borrowed and collateral markets */
-        uint priceBorrowedMantissa = oracle.getUnderlyingPrice(pTokenBorrowed);
-        uint priceCollateralMantissa = oracle.getUnderlyingPrice(pTokenCollateral);
+        uint priceBorrowedMantissa = getOracle().getUnderlyingPrice(pTokenBorrowed);
+        uint priceCollateralMantissa = getOracle().getUnderlyingPrice(pTokenCollateral);
         if (priceBorrowedMantissa == 0 || priceCollateralMantissa == 0) {
             return (uint(Error.PRICE_ERROR), 0);
         }
@@ -743,34 +742,11 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     /*** Admin Functions ***/
 
     /**
-      * @notice Sets a new price oracle for the controller
-      * @dev Admin function to set a new price oracle
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _setPriceOracle(PriceOracle newOracle) public returns (uint) {
-        // Check caller is admin
-        if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK);
-        }
-
-        // Track the old oracle for the controller
-        PriceOracle oldOracle = oracle;
-
-        // Set controller's oracle to newOracle
-        oracle = newOracle;
-
-        // Emit NewPriceOracle(oldOracle, newOracle)
-        emit NewPriceOracle(oldOracle, newOracle);
-
-        return uint(Error.NO_ERROR);
-    }
-
-    /**
       * @notice Sets a PIE address for the controller
       * @return uint 0=success
       */
     function _setPieAddress(address pieAddress_) public returns (uint) {
-        require(msg.sender == admin && pieAddress == address(0),"pie address may only be initialized once");
+        require(msg.sender == getAdmin() && pieAddress == address(0), "pie address may only be initialized once");
 
         pieAddress = pieAddress_;
 
@@ -785,7 +761,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       */
     function _setCloseFactor(uint newCloseFactorMantissa) external returns (uint) {
         // Check caller is admin
-        if (msg.sender != admin) {
+        if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_CLOSE_FACTOR_OWNER_CHECK);
         }
 
@@ -816,7 +792,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       */
     function _setCollateralFactor(address pToken, uint newCollateralFactorMantissa) external returns (uint) {
         // Check caller is admin
-        if (msg.sender != admin) {
+        if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_COLLATERAL_FACTOR_OWNER_CHECK);
         }
 
@@ -834,9 +810,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             return fail(Error.INVALID_COLLATERAL_FACTOR, FailureInfo.SET_COLLATERAL_FACTOR_VALIDATION);
         }
 
-        oracle.updateUnderlyingPrice(pToken);
+        getOracle().updateUnderlyingPrice(pToken);
         // If collateral factor != 0, fail if price == 0
-        if (newCollateralFactorMantissa != 0 && oracle.getUnderlyingPrice(pToken) == 0) {
+        if (newCollateralFactorMantissa != 0 && getOracle().getUnderlyingPrice(pToken) == 0) {
             return fail(Error.PRICE_ERROR, FailureInfo.SET_COLLATERAL_FACTOR_WITHOUT_PRICE);
         }
 
@@ -858,7 +834,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       */
     function _setMaxAssets(uint newMaxAssets) external returns (uint) {
         // Check caller is admin
-        if (msg.sender != admin) {
+        if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_MAX_ASSETS_OWNER_CHECK);
         }
 
@@ -877,7 +853,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       */
     function _setLiquidationIncentive(uint newLiquidationIncentiveMantissa) external returns (uint) {
         // Check caller is admin
-        if (msg.sender != admin) {
+        if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_LIQUIDATION_INCENTIVE_OWNER_CHECK);
         }
 
@@ -912,7 +888,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       * @return uint 0=success, otherwise a failure. (See enum Error for details)
       */
     function _supportMarket(address pToken) external returns (uint) {
-        if (msg.sender != admin && msg.sender != factory) {
+        if (msg.sender != getAdmin() && msg.sender != registry.factory()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SUPPORT_MARKET_OWNER_CHECK);
         }
 
@@ -943,7 +919,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      * @return uint 0=success, otherwise a failure. (See enum Error for details)
      */
     function _setPauseGuardian(address newPauseGuardian) public returns (uint) {
-        if (msg.sender != admin) {
+        if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_GUARDIAN_OWNER_CHECK);
         }
 
@@ -960,7 +936,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     function _setLiquidateGuardian(address newLiquidateGuardian) public returns (uint) {
-        if (msg.sender != admin) {
+        if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_GUARDIAN_OWNER_CHECK);
         }
 
@@ -978,8 +954,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
     function _setMintPaused(address pToken, bool state) public returns (bool) {
         require(markets[pToken].isListed, "cannot pause a market that is not listed");
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
+        require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         mintGuardianPaused[pToken] = state;
         emit ActionPaused(pToken, "Mint", state);
@@ -988,8 +964,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
     function _setBorrowPaused(address pToken, bool state) public returns (bool) {
         require(markets[pToken].isListed, "cannot pause a market that is not listed");
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
+        require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         borrowGuardianPaused[pToken] = state;
         emit ActionPaused(pToken, "Borrow", state);
@@ -997,8 +973,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     function _setTransferPaused(bool state) public returns (bool) {
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
+        require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         transferGuardianPaused = state;
         emit ActionPaused("Transfer", state);
@@ -1006,26 +982,16 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     function _setSeizePaused(bool state) public returns (bool) {
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
+        require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         seizeGuardianPaused = state;
         emit ActionPaused("Seize", state);
         return state;
     }
 
-    function _setFactoryContract(address _factory) external returns (uint) {
-        if (msg.sender != admin) {
-            return uint(Error.UNAUTHORIZED);
-        }
-
-        factory = _factory;
-
-        return uint(Error.NO_ERROR);
-    }
-
     function _become(address payable unitroller) public {
-        require(msg.sender == Unitroller(unitroller).admin(), "only unitroller admin can change brains");
+        require(msg.sender == Unitroller(unitroller).getAdmin(), "only unitroller admin can change brains");
         require(Unitroller(unitroller)._acceptImplementation() == 0, "change not authorized");
     }
 
@@ -1238,7 +1204,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     * @param pieSpeed New PIE speed for market
     */
     function _setPieSpeed(address pToken, uint pieSpeed) public {
-        require(msg.sender == admin, "only admin can set pie speed");
+        require(msg.sender == getAdmin(), "only admin can set pie speed");
         setPieSpeedInternal(pToken, pieSpeed);
     }
 
@@ -1264,6 +1230,10 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     function getOracle() public view override returns (PriceOracle) {
-        return oracle;
+        return PriceOracle(PTokenFactory(registry.factory()).oracle());
+    }
+
+    function getAdmin() public view virtual returns (address payable) {
+        return registry.admin();
     }
 }

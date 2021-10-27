@@ -29,6 +29,13 @@ contract ControllerScenarioG4 is Controller {
         return blockNumber;
     }
 
+    function harnessAddPieMarkets(address[] memory pTokens) public {
+        for (uint i = 0; i < pTokens.length; i++) {
+            // temporarily set compSpeed to 1 (will be fixed by `refreshPieSpeeds`)
+            setPieSpeedInternal(pTokens[i], 1);
+        }
+    }
+
     function getPieMarkets() public view returns (address[] memory) {
         uint m = allMarkets.length;
         uint n = 0;
@@ -54,6 +61,10 @@ contract ControllerScenarioG4 is Controller {
 
     function setPieSpeed(address pToken, uint pieSpeed) public {
         pieSpeeds[pToken] = pieSpeed;
+    }
+
+    function harnessSetPieRate(uint pieRate_) public {
+        pieRate = pieRate_;
     }
 
     function _setPieRate(uint pieRate_) public {

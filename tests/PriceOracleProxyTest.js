@@ -1,5 +1,3 @@
-const BigNumber = require('bignumber.js');
-
 const {
   address,
   etherMantissa
@@ -8,21 +6,23 @@ const {
 const {
   makePToken,
   makePriceOracle,
+  makeController
 } = require('./Utils/DeFiPie');
 
 describe('PriceOracleProxy', () => {
   let root, accounts;
-  let oracle, backingOracle, pETH, pUsdc, pSai, pDai, pUsdt, pOther;
+  let controller, oracle, backingOracle, pETH, pUsdc, pSai, pDai, pUsdt, pOther;
   let daiOracleKey = address(2);
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
-    pETH = await makePToken({kind: "pether", controllerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
-    pUsdc = await makePToken({controller: pETH.controller, supportMarket: true});
-    pSai = await makePToken({controller: pETH.controller, supportMarket: true});
-    pDai = await makePToken({controller: pETH.controller, supportMarket: true});
-    pUsdt = await makePToken({controller: pETH.controller, supportMarket: true});
-    pOther = await makePToken({controller: pETH.controller, supportMarket: true});
+    controller = await makeController();
+    pETH = await makePToken({kind: "pether", controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, supportMarket: true});
+    pUsdc = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pETH.pTokenFactory, supportMarket: true});
+    pSai = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pETH.pTokenFactory, supportMarket: true});
+    pDai = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pETH.pTokenFactory, supportMarket: true});
+    pUsdt = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pETH.pTokenFactory, supportMarket: true});
+    pOther = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pETH.pTokenFactory, supportMarket: true});
 
     backingOracle = await makePriceOracle();
     oracle = await deploy('PriceOracleProxy',
@@ -116,7 +116,7 @@ describe('PriceOracleProxy', () => {
     });
 
     it("returns 0 for token without a price", async () => {
-      let unlistedToken = await makePToken({controller: pETH.controller});
+      let unlistedToken = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pETH.pTokenFactory});
 
       await readAndVerifyProxyPrice(unlistedToken, 0);
     });
@@ -142,5 +142,5 @@ describe('PriceOracleProxy', () => {
     it("sai price must be bounded", async () => {
       await expect(send(oracle, "setSaiPrice", [etherMantissa(10)])).rejects.toRevert("revert SAI price must be < 0.1 ETH");
     });
-});
+  });
 });

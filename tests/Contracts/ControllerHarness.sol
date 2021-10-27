@@ -60,7 +60,7 @@ contract ControllerHarness is Controller {
         for (uint i = 0; i < allMarkets_.length; i++) {
             address pToken = allMarkets_[i];
             if (pieSpeeds[address(pToken)] > 0) {
-                Exp memory assetPrice = Exp({mantissa: oracle.getUnderlyingPrice(pToken)});
+                Exp memory assetPrice = Exp({mantissa: getOracle().getUnderlyingPrice(pToken)});
                 Exp memory utility = mul_(assetPrice, PTokenInterface(pToken).totalBorrows());
                 utilities[i] = utility;
                 totalUtility = add_(totalUtility, utility);
@@ -146,9 +146,22 @@ contract ControllerHarness is Controller {
     }
 }
 
+contract ControllerHarnessWithAdmin is ControllerHarness {
+    address public admin;
+
+    constructor() ControllerHarness() {
+        admin = msg.sender;
+    }
+
+    function getAdmin() public view override returns (address payable) {
+        return payable(admin);
+    }
+
+}
+
 contract ControllerBorked {
     function _become(address payable unitroller) public {
-        require(msg.sender == Unitroller(unitroller).admin(), "only unitroller admin can change brains");
+        require(msg.sender == Unitroller(unitroller).getAdmin(), "only unitroller admin can change brains");
         Unitroller(unitroller)._acceptImplementation();
     }
 }
@@ -175,7 +188,7 @@ contract BoolController is ControllerInterface {
     uint calculatedSeizeTokens;
 
     uint noError = 0;
-    uint opaqueError = noError + 11; // an arbitrary, opaque error code
+    uint opaqueError = noError + 10; // an arbitrary, opaque error code
 
     PriceOracle oracle;
 

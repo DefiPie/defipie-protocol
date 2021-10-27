@@ -2,7 +2,8 @@ const {both} = require('../Utils/Ethereum');
 const {
   fastForward,
   makePToken,
-  makeInterestRateModel
+  makeInterestRateModel,
+  makePriceOracle
 } = require('../Utils/DeFiPie');
 
 describe('PToken', function () {
@@ -69,9 +70,10 @@ describe('PToken', function () {
   });
 
   describe("_setInterestRateModel", () => {
-    let pToken;
+    let pToken, oracle;
     beforeEach(async () => {
-      pToken = await makePToken();
+      oracle = await makePriceOracle();
+      pToken = await makePToken({uniswapOracle: oracle});
     });
 
     beforeEach(async () => {

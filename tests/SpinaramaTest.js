@@ -9,19 +9,21 @@ const {
   makePToken,
   balanceOf,
   borrowSnapshot,
-  enterMarkets
+  enterMarkets,
+  makePriceOracle
 } = require('./Utils/DeFiPie');
 
 describe('Spinarama', () => {
-  let root, from, accounts;
+  let root, from, accounts, priceOracle;
 
   beforeEach(async () => {
     [root, from, ...accounts] = saddle.accounts;
+    priceOracle = await makePriceOracle();
   });
 
   describe('#mintMint', () => {
     it('should succeed', async () => {
-      const pToken = await makePToken({supportMarket: true});
+      const pToken = await makePToken({uniswapOracle: priceOracle, supportMarket: true});
       await send(pToken.underlying, 'harnessSetBalance', [from, 100], {from});
       await send(pToken.underlying, 'approve', [pToken._address, UInt256Max()], {from});
       await minerStop();
@@ -34,7 +36,7 @@ describe('Spinarama', () => {
     });
 
     it('should partial succeed', async () => {
-      const pToken = await makePToken({supportMarket: true});
+      const pToken = await makePToken({uniswapOracle: priceOracle, supportMarket: true});
       await send(pToken.underlying, 'harnessSetBalance', [from, 100], {from});
       await send(pToken.underlying, 'approve', [pToken._address, 10], {from});
       await minerStop();
@@ -54,7 +56,7 @@ describe('Spinarama', () => {
 
   describe('#mintRedeem', () => {
     it('should succeed', async () => {
-      const pToken = await makePToken({supportMarket: true});
+      const pToken = await makePToken({uniswapOracle: priceOracle, supportMarket: true});
       await send(pToken.underlying, 'harnessSetBalance', [from, 100], {from});
       await send(pToken.underlying, 'approve', [pToken._address, 10], {from});
       await minerStop();
@@ -69,7 +71,7 @@ describe('Spinarama', () => {
 
   describe('#redeemMint', () => {
     it('should succeed', async () => {
-      const pToken = await makePToken({supportMarket: true});
+      const pToken = await makePToken({uniswapOracle: priceOracle, supportMarket: true});
       await send(pToken, 'harnessSetTotalSupply', [10]);
       await send(pToken, 'harnessSetExchangeRate', [etherMantissa(1)]);
       await send(pToken, 'harnessSetBalance', [from, 10]);
@@ -87,8 +89,8 @@ describe('Spinarama', () => {
 
   describe('#repayRepay', () => {
     it('should succeed', async () => {
-      const pToken1 = await makePToken({supportMarket: true, underlyingPrice: 1, collateralFactor: .5});
-      const pToken2 = await makePToken({supportMarket: true, underlyingPrice: 1, controller: pToken1.controller});
+      const pToken1 = await makePToken({uniswapOracle: priceOracle, supportMarket: true, underlyingPrice: 1, collateralFactor: .5});
+      const pToken2 = await makePToken({uniswapOracle: priceOracle, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, supportMarket: true, underlyingPrice: 1, controller: pToken1.controller});
       await send(pToken1.underlying, 'harnessSetBalance', [from, 10]);
       await send(pToken1.underlying, 'approve', [pToken1._address, 10], {from});
       await send(pToken2.underlying, 'harnessSetBalance', [pToken2._address, 10]);

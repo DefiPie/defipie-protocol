@@ -38,20 +38,20 @@ Test "Accept unitroller admin from Timelock"
     Assert Equal (Timelock Admin) (User Geoff Address)
     NewController
     Assert Equal (Unitroller Admin) (Address Root)
-    Assert Equal (Unitroller PendingAdmin) (Address Zero)
-    From Root (Unitroller SetPendingAdmin (Timelock Address))
-    Assert Equal (Unitroller PendingAdmin) (Timelock Address)
+    Assert Equal (RegistryProxy PendingAdmin) (Address Zero)
+    From Root (RegistryProxy SetPendingAdmin (Timelock Address))
+    Assert Equal (RegistryProxy PendingAdmin) (Timelock Address)
     -- eta = 1 week (604800) + blockTimestamp (100) = 604900
-    Assert False (Timelock QueuedTransaction (Timelock TxHash (Unitroller Address) 0 604900 "_acceptAdmin()" ""))
+    Assert False (Timelock QueuedTransaction (Timelock TxHash (RegistryProxy Address) 0 604900 "_acceptAdmin()" ""))
     FreezeTime 90
-    From Geoff (Timelock QueueTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
-    Assert True (Timelock QueuedTransaction (Timelock TxHash (Unitroller Address) 0 604900 "_acceptAdmin()" ""))
+    From Geoff (Timelock QueueTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
+    Assert True (Timelock QueuedTransaction (Timelock TxHash (RegistryProxy Address) 0 604900 "_acceptAdmin()" ""))
     --  Now execute after delay time
     FreezeTime 604900
-    From Geoff (Timelock ExecuteTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
-    Assert False (Timelock QueuedTransaction (Timelock TxHash (Unitroller Address) 0 604900 "_acceptAdmin()" ""))
+    From Geoff (Timelock ExecuteTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
+    Assert False (Timelock QueuedTransaction (Timelock TxHash (RegistryProxy Address) 0 604900 "_acceptAdmin()" ""))
     Assert Equal (Unitroller Admin) (Timelock Address)
-    Assert Equal (Unitroller PendingAdmin) (Address Zero)
+    Assert Equal (RegistryProxy PendingAdmin) (Address Zero)
 
 Test "Reduce reserves for PErc20 from Timelock and send reserves to external address"
     NewController
@@ -181,7 +181,8 @@ Test "Reduce reserves for PEther from Timelock and send reserves to external add
     Assert Equal (EtherBalance (Timelock Address)) (Exactly 0e18)
 
 Test "Set Pending Controller implementation on Unitroller from Timelock"
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Simple
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
@@ -196,16 +197,16 @@ Test "Set Pending Controller implementation on Unitroller from Timelock"
     Timelock Deploy Coburn 604800
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
-    Unitroller SetPendingAdmin (Timelock Address)
-    Assert Equal (Unitroller PendingAdmin) (Timelock Address)
+    RegistryProxy SetPendingAdmin (Timelock Address)
+    Assert Equal (RegistryProxy PendingAdmin) (Timelock Address)
     Assert Equal (Unitroller PendingImplementation) (ControllerImpl ScenController Address)
     FreezeTime 90
-    From Coburn (Timelock QueueTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
+    From Coburn (Timelock QueueTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
     From Coburn (Timelock QueueTransaction (ControllerImpl ScenController Address) 0 604900 "_become(address)" (Unitroller Address))
     FreezeTime 604900
-    From Coburn (Timelock ExecuteTransaction (Unitroller Address) 0 604900 "_acceptAdmin()" "")
-    Assert Equal (Unitroller Admin) (Timelock Address)
-    Assert Equal (Unitroller PendingAdmin) (Address Zero)
+    From Coburn (Timelock ExecuteTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
+    Assert Equal (RegistryProxy Admin) (Timelock Address)
+    Assert Equal (RegistryProxy PendingAdmin) (Address Zero)
     From Coburn (Timelock ExecuteTransaction (ControllerImpl ScenController Address) 0 604900 "_become(address)" (Unitroller Address))
     Assert Equal (Unitroller Implementation) (Address ScenController)
     Assert Equal (Unitroller PendingImplementation) (Address Zero)

@@ -55,6 +55,10 @@ contract UniswapPriceOracleMock is UniswapPriceOracle {
     }
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
+        if (pToken == Registry(registry).pETH()) {
+            return 1000000000000000000;
+        }
+
         return underlyingPriceInUSD[pToken];
     }
 

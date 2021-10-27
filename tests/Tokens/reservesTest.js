@@ -4,7 +4,7 @@ const {
   both
 } = require('../Utils/Ethereum');
 
-const {fastForward, makePToken} = require('../Utils/DeFiPie');
+const {fastForward, makePToken, makePriceOracle} = require('../Utils/DeFiPie');
 
 const factor = etherMantissa(.02);
 
@@ -68,9 +68,10 @@ describe('PToken', function () {
   });
 
   describe('_setReserveFactor', () => {
-    let pToken;
+    let pToken, oracle;
     beforeEach(async () => {
-      pToken = await makePToken();
+      oracle = await makePriceOracle();
+      pToken = await makePToken({uniswapOracle: oracle});
     });
 
     beforeEach(async () => {
@@ -101,9 +102,10 @@ describe('PToken', function () {
   });
 
   describe("_reduceReservesFresh", () => {
-    let pToken;
+    let pToken, oracle;
     beforeEach(async () => {
-      pToken = await makePToken();
+      oracle = await makePriceOracle();
+      pToken = await makePToken({uniswapOracle: oracle});
       expect(await send(pToken, 'harnessSetTotalReserves', [reserves])).toSucceed();
       expect(
         await send(pToken.underlying, 'harnessSetBalance', [pToken._address, cash])
@@ -153,9 +155,10 @@ describe('PToken', function () {
   });
 
   describe("_reduceReserves", () => {
-    let pToken;
+    let pToken, oracle;
     beforeEach(async () => {
-      pToken = await makePToken();
+      oracle = await makePriceOracle();
+      pToken = await makePToken({uniswapOracle: oracle});
       await send(pToken.interestRateModel, 'setFailBorrowRate', [false]);
       expect(await send(pToken, 'harnessSetTotalReserves', [reserves])).toSucceed();
       expect(

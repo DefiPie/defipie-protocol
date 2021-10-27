@@ -1,6 +1,7 @@
 
 Test "Standard Upgrade"
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
     -- Upgrade to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
@@ -35,7 +36,8 @@ Test "Standard Upgrade"
     Assert Equal (Controller Implementation) (Address ScenControllerG3)
 
 Test "Standard Upgrade, then downgrade then upgrade again"
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
     -- Upgrade to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
@@ -90,7 +92,8 @@ Test "Standard Upgrade, then downgrade then upgrade again"
 
 Test "Once become, can become again"
     -- TODO: See why ABI is broken here
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
@@ -114,7 +117,8 @@ Test "Once become, can become again"
 
 --G1 recome
 Test "Recome has default values"
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
@@ -125,7 +129,8 @@ Test "Recome has default values"
 
 --G1 bork
 Test "Bork and unbork"
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     -- Set a normal impl
@@ -252,7 +257,8 @@ Macro CheckV3Storage
 
 -- Times out coverage, disable for now - ideally set flag to not run in coverage
 Pending "Keeps all storage"
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
     ControllerImpl Deploy StandardG3 ControllerG1
     Unitroller SetPendingImpl ControllerG1

@@ -1,15 +1,16 @@
 const {
-  address,
-  etherMantissa
+  address
 } = require('../Utils/Ethereum');
 
 const {
-  makePriceOracle
+  makePriceOracle,
+  makeRegistryProxy
 } = require('../Utils/DeFiPie');
 
 describe('Unitroller', () => {
   let root, accounts;
   let unitroller;
+  let registryProxy;
   let brains;
   let oracle;
 
@@ -17,7 +18,8 @@ describe('Unitroller', () => {
     [root, ...accounts] = saddle.accounts;
     oracle = await makePriceOracle();
     brains = await deploy('Controller');
-    unitroller = await deploy('Unitroller');
+    registryProxy = await makeRegistryProxy();
+    unitroller = await deploy('Unitroller', [registryProxy._address]);
   });
 
   let setPending = (implementation, from) => {
@@ -26,8 +28,7 @@ describe('Unitroller', () => {
 
   describe("constructor", () => {
     it("sets admin to caller and addresses to 0", async () => {
-      expect(await call(unitroller, 'admin')).toEqual(root);
-      expect(await call(unitroller, 'pendingAdmin')).toBeAddressZero();
+      expect(await call(unitroller, 'getAdmin')).toEqual(root);
       expect(await call(unitroller, 'pendingControllerImplementation')).toBeAddressZero();
       expect(await call(unitroller, 'controllerImplementation')).toBeAddressZero();
     });
@@ -131,7 +132,8 @@ describe('Unitroller', () => {
       let troll;
       beforeEach(async () => {
         troll = await deploy('EchoTypesController');
-        unitroller = await deploy('Unitroller');
+        registryProxy = await makeRegistryProxy();
+        unitroller = await deploy('Unitroller', [registryProxy._address]);
         await setPending(troll, root);
         await send(troll, 'becomeBrains', [unitroller._address]);
         troll.options.address = unitroller._address;
