@@ -24,8 +24,8 @@ describe('Controller', () => {
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     controller = await makeController();
-    pTokenBorrowed = await makePToken({controller: controller, underlyingPrice: 0});
-    pTokenCollateral = await makePToken({controller: controller, underlyingPrice: 0});
+    pTokenBorrowed = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, underlyingPrice: 0});
+    pTokenCollateral = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pTokenBorrowed.pTokenFactory, underlyingPrice: 0});
   });
 
   beforeEach(async () => {

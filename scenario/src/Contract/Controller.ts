@@ -8,7 +8,7 @@ interface ControllerMethods {
   membershipLength(string): Callable<string>
   checkMembership(user: string, pToken: string): Callable<string>
   getAssetsIn(string): Callable<string[]>
-  admin(): Callable<string>
+  getAdmin(): Callable<string>
   oracle(): Callable<string>
   liquidateGuardian(): Callable<string>
   maxAssets(): Callable<number>
@@ -32,10 +32,6 @@ interface ControllerMethods {
   _setPendingImplementation(string): Sendable<number>
   controllerImplementation(): Callable<string>
   unlist(string): Sendable<void>
-  admin(): Callable<string>
-  pendingAdmin(): Callable<string>
-  _setPendingAdmin(string): Sendable<number>
-  _acceptAdmin(): Sendable<number>
   _setPauseGuardian(string): Sendable<number>
   pauseGuardian(): Callable<string>
   _setMintPaused(market: string, string): Sendable<number>

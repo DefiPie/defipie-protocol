@@ -4,7 +4,7 @@ npx saddle deploy PPIEDelegate
 npx saddle deploy PEtherDelegate
 npx saddle deploy Controller
 npx saddle deploy Unitroller
-npx saddle deploy BaseInterestRateModel 20000000000000000 1000000000000000000
+npx saddle deploy BaseInterestRateModel 20000000000000000 850000000000000000
 npx saddle deploy Registry
 npx saddle deploy RegistryProxy "$Registry" "$PErc20Delegate"
 npx saddle deploy UniswapPriceOracle

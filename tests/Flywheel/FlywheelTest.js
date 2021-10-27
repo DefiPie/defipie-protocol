@@ -1,16 +1,17 @@
 const {
   makeController,
+  makePTokenFactory,
   makePToken,
   balanceOf,
   fastForward,
   pretendBorrow,
   quickMint
 } = require('../Utils/DeFiPie');
+
 const {
   etherExp,
   etherDouble,
-  etherUnsigned,
-  etherMantissa
+  etherUnsigned
 } = require('../Utils/Ethereum');
 
 const pieRate = etherUnsigned(1e18);
@@ -32,8 +33,10 @@ describe('Flywheel upgrade', () => {
     it('_supportMarket() adds to all markets, and only once', async () => {
       let unitroller = await makeController({kind: 'unitroller-g3'});
       let allMarkets = [];
+      let factory = await makePTokenFactory({controller: unitroller, uniswapOracle: unitroller.priceOracle, registryProxy: unitroller.registryProxy});
+
       for (let _ of Array(10)) {
-        allMarkets.push(await makePToken({controller: unitroller, supportMarket: true}));
+        allMarkets.push(await makePToken({controller: unitroller, uniswapOracle: unitroller.priceOracle, registryProxy: unitroller.registryProxy, pTokenFactory: factory, supportMarket: true}));
       }
       expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets.map(c => c._address));
     });
@@ -43,14 +46,17 @@ describe('Flywheel upgrade', () => {
 describe('Flywheel', () => {
   let root, a1, a2, a3, accounts;
   let controller, pLOW, pREP, pZRX, pEVIL;
+
   beforeEach(async () => {
     let interestRateModelOpts = {borrowRate: 0.000001};
     [root, a1, a2, a3, ...accounts] = saddle.accounts;
+
     controller = await makeController();
-    pLOW = await makePToken({controller, supportMarket: true, underlyingPrice: 1, interestRateModelOpts});
-    pREP = await makePToken({controller, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
-    pZRX = await makePToken({controller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
-    pEVIL = await makePToken({controller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
+    pLOW = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, supportMarket: true, underlyingPrice: 1, interestRateModelOpts});
+    pREP = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
+    pZRX = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
+    pEVIL = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
+
     await send(controller, 'setSupportMarket', [pEVIL._address, false]);
   });
 
@@ -152,7 +158,7 @@ describe('Flywheel', () => {
 
     it('should not revert or update pieBorrowState index and block if pToken not in PIE markets', async () => {
       const mkt = await makePToken({
-        controller: controller,
+        controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory,
         supportMarket: true,
         addPieMarket: false,
       });
@@ -219,7 +225,7 @@ describe('Flywheel', () => {
 
     it('should not update index and block on non-PIE markets', async () => {
       const mkt = await makePToken({
-        controller: controller,
+        controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory,
         supportMarket: true,
         addPieMarket: false
       });
@@ -358,7 +364,7 @@ describe('Flywheel', () => {
 
     it('should not revert or distribute when called with non-PIE market', async () => {
       const mkt = await makePToken({
-        controller: controller,
+        controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory,
         supportMarket: true,
         addPieMarket: false,
       });
@@ -439,7 +445,7 @@ describe('Flywheel', () => {
 
     it('should not revert or distribute when called with non-PIE market', async () => {
       const mkt = await makePToken({
-        controller: controller,
+        controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory,
         supportMarket: true,
         addPieMarket: false,
       });
@@ -546,7 +552,7 @@ describe('Flywheel', () => {
     });
 
     it('should revert when a market is not listed', async () => {
-      const cNOT = await makePToken({controller});
+      const cNOT = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory});
       await send(controller, 'setSupportMarket', [cNOT._address, false]);
       await expect(
         send(controller, 'claimPie', [a1, [cNOT._address]])
@@ -574,7 +580,6 @@ describe('Flywheel', () => {
 
       await expect(send(controller, 'claimPie', [claimAccts, [pLOW._address, pEVIL._address], true, true])).rejects.toRevert('revert market must be listed');
     });
-
 
     it('should claim the expected amount when holders and pTokens arg is duplicated', async () => {
       const pieRemaining = pieRate.multipliedBy(100), deltaBlocks = 10, mintAmount = etherExp(10);
@@ -644,7 +649,7 @@ describe('Flywheel', () => {
     });
 
     it('should revert when a market is not listed', async () => {
-      const cNOT = await makePToken({controller});
+      const cNOT = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory});
       await send(controller, 'setSupportMarket', [cNOT._address, false]);
       await expect(
         send(controller, 'claimPie', [[a1, a2], [cNOT._address], true, true])
@@ -687,7 +692,7 @@ describe('Flywheel', () => {
 
   describe('harnessAddPieMarkets', () => {
     it('should correctly add a pie market if called by admin', async () => {
-      const pBAT = await makePToken({controller, supportMarket: true});
+      const pBAT = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: pLOW.pTokenFactory, supportMarket: true});
       const tx1 = await send(controller, 'harnessAddPieMarkets', [[pLOW._address, pREP._address, pZRX._address]]);
       const tx2 = await send(controller, 'harnessAddPieMarkets', [[pBAT._address]]);
       const markets = await call(controller, 'getPieMarkets');

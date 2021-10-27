@@ -24,10 +24,9 @@ import {
 import {Arg, Command, View, processCommandEvent} from '../Command';
 import {buildControllerImpl} from '../Builder/ControllerImplBuilder';
 import {ControllerErrorReporter} from '../ErrorReporter';
-import {getController, getControllerImpl} from '../ContractLookup';
+import {getController} from '../ContractLookup';
 import {getLiquidity} from '../Value/ControllerValue';
 import {getPTokenV} from '../Value/PTokenValue';
-import {encodedNumber} from '../Encoding';
 import {encodeABI, rawValues} from "../Utils";
 
 async function genController(world: World, from: string, params: Event): Promise<World> {
@@ -315,30 +314,6 @@ async function printLiquidity(world: World, controller: Controller): Promise<Wor
   return world;
 }
 
-async function setPendingAdmin(world: World, from: string, controller: Controller, newPendingAdmin: string): Promise<World> {
-  let invokation = await invoke(world, controller.methods._setPendingAdmin(newPendingAdmin), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Controller: ${describeUser(world, from)} sets pending admin to ${newPendingAdmin}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function acceptAdmin(world: World, from: string, controller: Controller): Promise<World> {
-  let invokation = await invoke(world, controller.methods._acceptAdmin(), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Controller: ${describeUser(world, from)} accepts admin`,
-    invokation
-  );
-
-  return world;
-}
-
 async function setPauseGuardian(world: World, from: string, controller: Controller, newPauseGuardian: string): Promise<World> {
   let invokation = await invoke(world, controller.methods._setPauseGuardian(newPauseGuardian), from, ControllerErrorReporter);
 
@@ -562,31 +537,6 @@ export function controllerCommands() {
         new Arg("closeFactor", getPercentV)
       ],
       (world, from, {controller, closeFactor}) => setCloseFactor(world, from, controller, closeFactor)
-    ),
-    new Command<{controller: Controller, newPendingAdmin: AddressV}>(`
-        #### SetPendingAdmin
-
-        * "Controller SetPendingAdmin newPendingAdmin:<Address>" - Sets the pending admin for the Controller
-          * E.g. "Controller SetPendingAdmin Geoff"
-      `,
-      "SetPendingAdmin",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("newPendingAdmin", getAddressV)
-      ],
-      (world, from, {controller, newPendingAdmin}) => setPendingAdmin(world, from, controller, newPendingAdmin.val)
-    ),
-    new Command<{controller: Controller}>(`
-        #### AcceptAdmin
-
-        * "Controller AcceptAdmin" - Accepts admin for the Controller
-          * E.g. "From Geoff (Controller AcceptAdmin)"
-      `,
-      "AcceptAdmin",
-      [
-        new Arg("controller", getController, {implicit: true}),
-      ],
-      (world, from, {controller}) => acceptAdmin(world, from, controller)
     ),
     new Command<{controller: Controller, newPauseGuardian: AddressV}>(`
         #### SetPauseGuardian

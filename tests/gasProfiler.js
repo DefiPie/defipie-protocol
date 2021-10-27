@@ -76,15 +76,15 @@ async function mint(pToken, minter, mintAmount, exchangeRate) {
     return send(pToken, 'mint', [mintAmount], { from: minter });
 }
 
-async function claimComp(controller, holder) {
-    return send(controller, 'claimComp', [holder], { from: holder });
+async function claimPie(controller, holder) {
+    return send(controller, 'claimPie', [holder], { from: holder });
 }
 
 /// GAS PROFILER: saves a digest of the gas prices of common pToken operations
 /// transiently fails, not sure why
 
 describe('Gas report', () => {
-    let root, minter, redeemer, accounts, pToken;
+    let root, minter, redeemer, accounts, pToken, controller;
     const exchangeRate = 50e3;
     const preMintAmount = etherUnsigned(30e4);
     const mintAmount = etherUnsigned(10e4);
@@ -98,7 +98,7 @@ describe('Gas report', () => {
             [root, minter, redeemer, ...accounts] = saddle.accounts;
             pToken = await makePToken({
                 controllerOpts: { kind: 'bool'},
-                interestRateModelOpts: { kind: 'white-paper'},
+                interestRateModelOpts: { kind: 'harnessed'},
                 exchangeRate
             });
         });
@@ -182,11 +182,11 @@ describe('Gas report', () => {
             [root, minter, redeemer, ...accounts] = saddle.accounts;
             controller = await makeController({ kind: patch });
             let interestRateModelOpts = {borrowRate: 0.000001};
-            pToken = await makePToken({controller, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
+            pToken = await makePToken({kind: 'ppie', controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
             if (patch == 'unitroller') {
                 await send(controller, '_setPieSpeed', [pToken._address, etherExp(0.05)]);
             } else {
-                await send(controller, '_addPieMarkets', [[pToken].map(c => c._address)]);
+                await send(controller, 'harnessAddPieMarkets', [[pToken].map(c => c._address)]);
                 await send(controller, 'setPieSpeed', [pToken._address, etherExp(0.05)]);
             }
             await send(controller.pie, 'transfer', [controller._address, etherUnsigned(50e18)], {from: root});
@@ -199,7 +199,9 @@ describe('Gas report', () => {
 
             console.log('Pie balance before mint', (await pieBalance(controller, minter)).toString());
             console.log('Pie accrued before mint', (await pieAccrued(controller, minter)).toString());
+
             const mint2Receipt = await mint(pToken, minter, mintAmount, exchangeRate);
+
             console.log('Pie balance after mint', (await pieBalance(controller, minter)).toString());
             console.log('Pie accrued after mint', (await pieAccrued(controller, minter)).toString());
             recordGasCost(mint2Receipt.gasUsed, `${patch} second mint with pie accrued`, filename);
@@ -212,7 +214,9 @@ describe('Gas report', () => {
 
             console.log('Pie balance before claim', (await pieBalance(controller, minter)).toString());
             console.log('Pie accrued before claim', (await pieAccrued(controller, minter)).toString());
+
             const claimReceipt = await claimPie(controller, minter);
+
             console.log('Pie balance after claim', (await pieBalance(controller, minter)).toString());
             console.log('Pie accrued after claim', (await pieAccrued(controller, minter)).toString());
             recordGasCost(claimReceipt.gasUsed, `${patch} claim pie`, filename);

@@ -34,32 +34,6 @@ async function verifyUnitroller(world: World, unitroller: Unitroller, apiKey: st
   return world;
 }
 
-async function acceptAdmin(world: World, from: string, unitroller: Unitroller): Promise<World> {
-  let invokation = await invoke(world, unitroller.methods._acceptAdmin(), from, ControllerErrorReporter);
-
-  world = addAction(world, `Accept admin as ${from}`, invokation);
-
-  return world;
-}
-
-async function setPendingAdmin(
-  world: World,
-  from: string,
-  unitroller: Unitroller,
-  pendingAdmin: string
-): Promise<World> {
-  let invokation = await invoke(
-    world,
-    unitroller.methods._setPendingAdmin(pendingAdmin),
-    from,
-    ControllerErrorReporter
-  );
-
-  world = addAction(world, `Set pending admin to ${pendingAdmin}`, invokation);
-
-  return world;
-}
-
 async function setPendingImpl(
   world: World,
   from: string,
@@ -85,7 +59,7 @@ export function unitrollerCommands() {
         #### Deploy
 
         * "Unitroller Deploy ...unitrollerParams" - Generates a new Unitroller
-          * E.g. "Unitroller Deploy"
+          * E.g. "Unitroller Deploy ..."
       `,
       'Deploy',
       [new Arg('unitrollerParams', getEventV, { variadic: true })],
@@ -101,29 +75,6 @@ export function unitrollerCommands() {
       'Verify',
       [new Arg('unitroller', getUnitroller, { implicit: true }), new Arg('apiKey', getStringV)],
       (world, { unitroller, apiKey }) => verifyUnitroller(world, unitroller, apiKey.val)
-    ),
-    new Command<{ unitroller: Unitroller; pendingAdmin: AddressV }>(
-      `
-        #### AcceptAdmin
-
-        * "AcceptAdmin" - Accept admin for this unitroller
-          * E.g. "Unitroller AcceptAdmin"
-      `,
-      'AcceptAdmin',
-      [new Arg('unitroller', getUnitroller, { implicit: true })],
-      (world, from, { unitroller }) => acceptAdmin(world, from, unitroller)
-    ),
-    new Command<{ unitroller: Unitroller; pendingAdmin: AddressV }>(
-      `
-        #### SetPendingAdmin
-
-        * "SetPendingAdmin admin:<Admin>" - Sets the pending admin for this unitroller
-          * E.g. "Unitroller SetPendingAdmin Jared"
-      `,
-      'SetPendingAdmin',
-      [new Arg('unitroller', getUnitroller, { implicit: true }), new Arg('pendingAdmin', getAddressV)],
-      (world, from, { unitroller, pendingAdmin }) =>
-        setPendingAdmin(world, from, unitroller, pendingAdmin.val)
     ),
     new Command<{ unitroller: Unitroller; controllerImpl: ControllerImpl }>(
       `

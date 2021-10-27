@@ -26,11 +26,16 @@ contract PTokenFactory is FactoryErrorReporter {
     uint256 public initialExchangeRateMantissa;
     uint256 public initialReserveFactorMantissa;
 
+    mapping (address => bool) public isUnderlyingBlackListed;
+
     /**
      * Fired on creation new pToken proxy
      * @param newPToken Address of new PToken proxy contract
      */
     event PTokenCreated(address newPToken);
+
+    event AddedBlackList(address _underlying);
+    event RemovedBlackList(address _underlying);
 
     RegistryInterface public registry;
 
@@ -57,6 +62,10 @@ contract PTokenFactory is FactoryErrorReporter {
      * @param underlying_ The address of the underlying asset
      */
     function createPToken(address underlying_) external returns (uint) {
+        if (getBlackListStatus(underlying_)) {
+            return fail(Error.INVALID_POOL, FailureInfo.UNDERLYING_IN_BLACKLIST);
+        }
+
         if (!checkPair(underlying_)) {
             return fail(Error.INVALID_POOL, FailureInfo.DEFICIENCY_LIQUIDITY_IN_POOL_OR_PAIR_IS_NOT_EXIST);
         }
@@ -219,6 +228,34 @@ contract PTokenFactory is FactoryErrorReporter {
         decimals = uint8(_decimals);
 
         return(uint(Error.NO_ERROR));
+    }
+
+    function addBlackList(address _underlying) public returns (uint) {
+        if (msg.sender != getAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.ADD_UNDERLYING_TO_BLACKLIST);
+        }
+
+        isUnderlyingBlackListed[_underlying] = true;
+
+        emit AddedBlackList(_underlying);
+
+        return(uint(Error.NO_ERROR));
+    }
+
+    function removeBlackList(address _underlying) public returns (uint) {
+        if (msg.sender != getAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.REMOVE_UNDERLYING_FROM_BLACKLIST);
+        }
+
+        isUnderlyingBlackListed[_underlying] = false;
+
+        emit RemovedBlackList(_underlying);
+
+        return(uint(Error.NO_ERROR));
+    }
+
+    function getBlackListStatus(address _underlying) public view returns (bool) {
+        return isUnderlyingBlackListed[_underlying];
     }
 
     function getAdmin() public view returns(address payable) {

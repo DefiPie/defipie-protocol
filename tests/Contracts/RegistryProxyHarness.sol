@@ -49,6 +49,10 @@ contract RegistryProxyHarness is RegistryProxy {
         delegateAndReturn();
     }
 
+    function factory() public returns (address) {
+        delegateAndReturn();
+    }
+
     function pTokens(address underlying_) public returns (address) {
         underlying_; // Shh
         delegateAndReturn();

@@ -7,6 +7,7 @@ interface RegistryInterface {
      *  @return admin address
      */
     function admin() external view returns (address payable);
+    function factory() external view returns (address);
 
     /**
      *  Returns address of actual PToken implementation contract

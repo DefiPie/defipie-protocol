@@ -16,14 +16,14 @@ describe('EvilX Token tests', () => {
         [root, admin, ...accounts] = saddle.accounts;
 
         oracle = await deploy('FixedPriceOracleV2');
-        controller = await makeController({priceOracle: oracle});
+        registryProxy = await makeRegistryProxy();
+        controller = await makeController({priceOracle: oracle, registryProxy: registryProxy});
         interestRateModel = await makeInterestRateModel();
         exchangeRate = 1;
         reserveFactor = 0.1;
 
-        registryProxy = await makeRegistryProxy();
-
         pTokenFactory = await makePTokenFactory({
+            registryProxy: registryProxy,
             controller: controller,
             interestRateModel: interestRateModel,
             uniswapOracle: oracle
@@ -40,12 +40,6 @@ describe('EvilX Token tests', () => {
             let oracleAddress = await call(pTokenFactory, "oracle");
             expect(oracleAddress).toEqual(oracle._address);
         });
-
-        it("gets address of oracle from controller", async () => {
-            let oracleAddress = await call(controller, "oracle");
-            expect(oracleAddress).toEqual(oracle._address);
-        });
-
     });
 
     describe("Create simple and evil token", () => {

@@ -75,11 +75,7 @@ async function getBlockNumber(world: World, controller: Controller): Promise<Num
 }
 
 async function getAdmin(world: World, controller: Controller): Promise<AddressV> {
-  return new AddressV(await controller.methods.admin().call());
-}
-
-async function getPendingAdmin(world: World, controller: Controller): Promise<AddressV> {
-  return new AddressV(await controller.methods.pendingAdmin().call());
+  return new AddressV(await controller.methods.getAdmin().call());
 }
 
 async function getCollateralFactor(world: World, controller: Controller, pToken: PToken): Promise<NumberV> {
@@ -187,18 +183,6 @@ export function controllerFetchers() {
       "Admin",
       [new Arg("controller", getController, {implicit: true})],
       (world, {controller}) => getAdmin(world, controller)
-    ),
-    new Fetcher<{controller: Controller}, AddressV>(`
-        #### PendingAdmin
-
-        * "Controller PendingAdmin" - Returns the pending admin of the Controller
-          * E.g. "Controller PendingAdmin" - Returns Controller's pending admin
-      `,
-      "PendingAdmin",
-      [
-        new Arg("controller", getController, {implicit: true}),
-      ],
-      (world, {controller}) => getPendingAdmin(world, controller)
     ),
       new Fetcher<{controller: Controller}, AddressV>(`
         #### PriceOracle
