@@ -14,7 +14,6 @@ import "./UniswapPriceOracle.sol";
 contract PTokenFactory is FactoryErrorReporter {
     using SafeMath for uint;
 
-    UniswapPriceOracle public oracle;
     uint public minUniswapLiquidity;
 
     // decimals for pToken
@@ -42,7 +41,6 @@ contract PTokenFactory is FactoryErrorReporter {
     constructor(
         RegistryInterface registry_,
         uint minUniswapLiquidity_,
-        address oracle_,
         address _controller,
         address _interestRateModel,
         uint256 _initialExchangeRateMantissa,
@@ -50,7 +48,6 @@ contract PTokenFactory is FactoryErrorReporter {
     ) {
         registry = registry_;
         minUniswapLiquidity = minUniswapLiquidity_;
-        oracle = UniswapPriceOracle(oracle_);
         controller = _controller;
         interestRateModel = _interestRateModel;
         initialExchangeRateMantissa = _initialExchangeRateMantissa;
@@ -86,7 +83,7 @@ contract PTokenFactory is FactoryErrorReporter {
 
         emit PTokenCreated(address(newPToken));
 
-        oracle.update(underlying_);
+        getOracle().update(underlying_);
 
         return uint(Error.NO_ERROR);
     }
@@ -138,13 +135,13 @@ contract PTokenFactory is FactoryErrorReporter {
 
         emit PTokenCreated(address(newPPIE));
 
-        oracle.update(underlying_);
+        getOracle().update(underlying_);
 
         return uint(Error.NO_ERROR);
     }
 
     function checkPair(address asset) public view returns (bool) {
-        (address pair, uint112 ethEquivalentReserves) = oracle.searchPair(asset);
+        (address pair, uint112 ethEquivalentReserves) = getOracle().searchPair(asset);
 
         return bool(pair != address(0) && ethEquivalentReserves >= minUniswapLiquidity);
     }
@@ -155,16 +152,6 @@ contract PTokenFactory is FactoryErrorReporter {
         }
 
         minUniswapLiquidity = minUniswapLiquidity_;
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function setOracle(address oracle_) public returns (uint) {
-        if (msg.sender != getAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_ORACLE);
-        }
-
-        oracle = UniswapPriceOracle(oracle_);
 
         return uint(Error.NO_ERROR);
     }
@@ -260,6 +247,10 @@ contract PTokenFactory is FactoryErrorReporter {
 
     function getAdmin() public view returns(address payable) {
         return registry.admin();
+    }
+
+    function getOracle() public view returns (UniswapPriceOracle) {
+        return UniswapPriceOracle(registry.oracle());
     }
 
     function _createPTokenNameAndSymbol(address underlying_) internal view returns (string memory, string memory) {

@@ -398,7 +398,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      *   up to the current block and writes new checkpoint to storage.
      */
     function accrueInterest() public override returns (uint) {
-        controller.getOracle().updateUnderlyingPrice(address(this));
+        getOracle().updateUnderlyingPrice(address(this));
 
         /* Remember the initial block number */
         uint currentBlockNumber = getBlockNumber();
@@ -1358,6 +1358,10 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
     function getMyAdmin() public view returns (address payable) {
         return RegistryInterface(registry).admin();
+    }
+
+    function getOracle() public view returns (PriceOracle) {
+        return PriceOracle(RegistryInterface(registry).oracle());
     }
 
     /*** Safe Token ***/
