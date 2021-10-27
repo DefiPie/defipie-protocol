@@ -236,7 +236,6 @@ contract FactoryErrorReporter {
         SET_NEW_DECIMALS,
         SET_NEW_EXCHANGE_RATE,
         SET_NEW_INTEREST_RATE_MODEL,
-        SET_NEW_ORACLE,
         SET_NEW_RESERVE_FACTOR,
         SUPPORT_MARKET_BAD_RESULT,
         ADD_UNDERLYING_TO_BLACKLIST,
@@ -270,7 +269,8 @@ contract RegistryErrorReporter {
         ACCEPT_ADMIN_PENDING_ADMIN_CHECK,
         SET_NEW_IMPLEMENTATION,
         SET_PENDING_ADMIN_OWNER_CHECK,
-        SET_NEW_FACTORY
+        SET_NEW_FACTORY,
+        SET_NEW_ORACLE
     }
 
     /**

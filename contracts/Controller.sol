@@ -1230,7 +1230,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     function getOracle() public view override returns (PriceOracle) {
-        return PriceOracle(PTokenFactory(registry.factory()).oracle());
+        return PriceOracle(registry.oracle());
     }
 
     function getAdmin() public view virtual returns (address payable) {

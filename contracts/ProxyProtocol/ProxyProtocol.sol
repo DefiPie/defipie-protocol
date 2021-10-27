@@ -49,7 +49,7 @@ contract ProxyProtocol {
 
         admin = admin_;
         feeToken = feeToken_;
-        oracle = PTokenFactory(pTokenFactory).oracle();
+        oracle = PTokenFactory(pTokenFactory).getOracle();
 
         feeRecipient = feeRecipient_;
         feeAmountCreatePool = feeAmountCreatePool_; // value

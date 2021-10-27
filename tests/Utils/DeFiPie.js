@@ -163,7 +163,6 @@ async function makePToken(opts = {}) {
   pTokenFactory = opts.pTokenFactory || await deploy('PTokenFactoryHarness', [
     registryProxy._address,
     0,
-    uniswapOracle._address,
     controller._address,
     interestRateModel._address,
     exchangeRate,
@@ -171,6 +170,7 @@ async function makePToken(opts = {}) {
   ]);
 
   tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
+  let tx2_ = await send(registryProxy, 'setOracle', [uniswapOracle._address]);
 
   let token0, token1;
 
@@ -344,7 +344,6 @@ async function makePTokenFactory(opts = {}) {
     pTokenFactory = await deploy('PTokenFactoryHarness', [
         registryProxy._address,
         0,
-        uniswapOracle._address,
         controller._address,
         interestRateModel._address,
         exchangeRate,
@@ -352,6 +351,7 @@ async function makePTokenFactory(opts = {}) {
     ]);
 
     let tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
+    let tx2_ = await send(registryProxy, 'setOracle', [uniswapOracle._address]);
 
     pTokenFactory = await saddle.getContractAt('PTokenFactoryHarness', pTokenFactory._address);
 
