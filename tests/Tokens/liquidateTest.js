@@ -1,6 +1,7 @@
 const {
   etherGasCost,
-  etherUnsigned
+  etherUnsigned,
+  UInt256Max
 } = require('../Utils/Ethereum');
 
 const {
@@ -15,7 +16,7 @@ const {
 
 const repayAmount = etherUnsigned(10e2);
 const seizeAmount = repayAmount;
-const seizeTokens = seizeAmount.mul(4); // forced
+const seizeTokens = seizeAmount.multipliedBy(4); // forced
 
 async function preLiquidate(pToken, liquidator, borrower, repayAmount, pTokenCollateral) {
   // setup for success in liquidating
@@ -208,7 +209,7 @@ describe('PToken', function () {
     });
 
     it("fails if pTokenBalances[liquidator] overflows", async () => {
-      await setBalance(pTokenCollateral, liquidator, -1);
+      await setBalance(pTokenCollateral, liquidator, UInt256Max());
       expect(await seize(pTokenCollateral, liquidator, borrower, seizeTokens)).toHaveTokenMathFailure('LIQUIDATE_SEIZE_BALANCE_INCREMENT_FAILED', 'INTEGER_OVERFLOW');
     });
 

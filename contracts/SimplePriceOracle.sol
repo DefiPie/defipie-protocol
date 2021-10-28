@@ -4,6 +4,7 @@ import "./PriceOracle.sol";
 import "./PErc20.sol";
 
 contract SimplePriceOracle is PriceOracle {
+    address public registry;
     mapping(address => uint) prices;
     event PricePosted(address asset, uint previousPriceMantissa, uint requestedPriceMantissa, uint newPriceMantissa);
 
@@ -35,8 +36,19 @@ contract SimplePriceOracle is PriceOracle {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
-    function updateUnderlyingPrice(address pToken) external override returns (uint) {
-        pToken; //shh
+    function updateUnderlyingPrice(address) external override returns (uint) {
         return 0;
+    }
+
+    function update(address) external returns (uint) {
+        return 0;
+    }
+
+    function _setRegistry(address _registry) public {
+        registry = _registry;
+    }
+
+    function searchPair(address) public view returns (address, uint112) {
+        return (address(this), uint112(1));
     }
 }

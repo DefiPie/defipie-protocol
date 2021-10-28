@@ -13,15 +13,16 @@ const {
 } = require('../../Utils/DeFiPie');
 
 async function enfranchise(pie, ppie, actor, amount) {
-    await send(pie, 'transfer', [actor, etherMantissa(amount)]);
-    await send(pie, 'approve', [ppie._address, etherMantissa(amount)], {from: actor});
-    await send(ppie, 'mint', [etherMantissa(amount)], {from: actor});
+    await send(pie, 'transfer', [actor, amount]);
+    await send(pie, 'approve', [ppie._address, amount], {from: actor});
+    await send(ppie, 'mint', [amount], {from: actor});
     await send(ppie, 'delegate', [actor], {from: actor});
 }
 
 describe("governor#castVote/2", () => {
     let pie, ppie, registryAddress, gov, root, a1, accounts;
     let targets, values, signatures, callDatas, proposalId;
+    let threshold = etherMantissa(15000001);
 
     beforeAll(async () => {
         [root, a1, ...accounts] = saddle.accounts;
@@ -34,8 +35,8 @@ describe("governor#castVote/2", () => {
         values = ["0"];
         signatures = ["getBalanceOf(address)"];
         callDatas = [encodeParameters(['address'], [a1])];
-        await send(pie, 'approve', [ppie._address, etherMantissa(400001)]);
-        await send(ppie, 'mint', [etherMantissa(400001)]);
+        await send(pie, 'approve', [ppie._address, threshold]);
+        await send(ppie, 'mint', [threshold]);
         await send(ppie, 'delegate', [root]);
         await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"]);
         proposalId = await call(gov, 'latestProposalIds', [root]);
@@ -71,7 +72,7 @@ describe("governor#castVote/2", () => {
 
             it("and we add that ForVotes", async () => {
                 actor = accounts[1];
-                await enfranchise(pie, ppie, actor, 400001);
+                await enfranchise(pie, ppie, actor, threshold);
 
                 await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"], { from: actor });
                 proposalId = await call(gov, 'latestProposalIds', [actor]);
@@ -81,22 +82,22 @@ describe("governor#castVote/2", () => {
                 await send(gov, 'castVote', [proposalId, true], { from: actor });
 
                 let afterFors = (await call(gov, 'proposals', [proposalId])).forVotes;
-                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(etherMantissa(400001)));
+                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(threshold));
             });
 
             it("or AgainstVotes corresponding to the caller's support flag.", async () => {
                 actor = accounts[3];
-                await enfranchise(pie, ppie, actor, 400001);
+                await enfranchise(pie, ppie, actor, threshold);
 
                 await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"], { from: actor });
-                proposalId = await call(gov, 'latestProposalIds', [actor]);;
+                proposalId = await call(gov, 'latestProposalIds', [actor]);
 
                 let beforeAgainsts = (await call(gov, 'proposals', [proposalId])).againstVotes;
                 await mineBlock();
                 await send(gov, 'castVote', [proposalId, false], { from: actor });
 
                 let afterAgainsts = (await call(gov, 'proposals', [proposalId])).againstVotes;
-                expect(new BigNumber(afterAgainsts)).toEqual(new BigNumber(beforeAgainsts).plus(etherMantissa(400001)));
+                expect(new BigNumber(afterAgainsts)).toEqual(new BigNumber(beforeAgainsts).plus(threshold));
             });
         });
 
@@ -118,7 +119,7 @@ describe("governor#castVote/2", () => {
             });
 
             it('casts vote on behalf of the signatory', async () => {
-                await enfranchise(pie, ppie, a1, 400001);
+                await enfranchise(pie, ppie, a1, threshold);
                 await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"], { from: a1 });
                 proposalId = await call(gov, 'latestProposalIds', [a1]);
 
@@ -130,15 +131,15 @@ describe("governor#castVote/2", () => {
                 expect(tx.gasUsed < 80000);
 
                 let afterFors = (await call(gov, 'proposals', [proposalId])).forVotes;
-                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(etherMantissa(400001)));
+                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(threshold));
             });
         });
 
         it("receipt uses one load", async () => {
             let actor = accounts[4];
             let actor2 = accounts[5];
-            await enfranchise(pie, ppie, actor, 400001);
-            await enfranchise(pie, ppie, actor2, 400001);
+            await enfranchise(pie, ppie, actor, threshold);
+            await enfranchise(pie, ppie, actor2, threshold);
             await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"], { from: actor });
             proposalId = await call(gov, 'latestProposalIds', [actor]);
 
@@ -158,7 +159,7 @@ describe("governor#castVote/2", () => {
                 postFilter: ({source}) => !source || source.includes('receipts'),
                 execLog: (log) => {
                     let [output] = log.outputs;
-                    let votes = "000000000000000000000000000000000000000054b419003bdf81640000";
+                    let votes = "000000000000000000000000000000000000000c685faefeb8a016640000";
                     let voted = "01";
                     let support = "01";
 
@@ -179,7 +180,7 @@ describe("governor#castVote/2", () => {
                 postFilter: ({source}) => !source || source.includes('receipts'),
                 execLog: (log) => {
                     let [output] = log.outputs;
-                    let votes = "000000000000000000000000000000000000000054b419003bdf81640000";
+                    let votes = "000000000000000000000000000000000000000c685faefeb8a016640000";
                     let voted = "01";
                     let support = "00";
 

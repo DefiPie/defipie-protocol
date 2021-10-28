@@ -122,7 +122,7 @@ describe.skip('PieWheelFuzzTest', () => {
       return totalCash
         .plus(totalBorrows)
         .minus(totalReserves)
-        .div(totalSupply);
+        .dividedBy(totalSupply);
     } else {
       return new bn(1);
     }
@@ -137,7 +137,7 @@ describe.skip('PieWheelFuzzTest', () => {
         `Borrow Rate failure cash:${cash} borrows:${borrows} reserves:${reserves}`
       );
     } else {
-      let util = borrows.div(denom);
+      let util = borrows.dividedBy(denom);
       return util.times(0.001);
     }
   };
@@ -186,7 +186,7 @@ describe.skip('PieWheelFuzzTest', () => {
           deltaBlocks
             .times(pieSupplySpeed)
             .times(balance)
-            .div(totalSupply)
+            .dividedBy(totalSupply)
         );
       }
     }
@@ -202,7 +202,7 @@ describe.skip('PieWheelFuzzTest', () => {
           deltaBlocks
             .times(pieBorrowSpeed)
             .times(truedUpBorrowBalance)
-            .div(totalBorrows)
+            .dividedBy(totalBorrows)
         );
       }
     }
@@ -229,9 +229,9 @@ describe.skip('PieWheelFuzzTest', () => {
 
     let deltaBlocks = globals.blockNumber.minus(pieBorrowIndexUpdatedBlock);
     if (isPositive(totalBorrows)) {
-      let scaledTotalBorrows = totalBorrows.div(borrowIndex);
+      let scaledTotalBorrows = totalBorrows.dividedBy(borrowIndex);
       pieBorrowIndex = pieBorrowIndex.plus(
-        pieBorrowSpeed.times(deltaBlocks).div(scaledTotalBorrows)
+        pieBorrowSpeed.times(deltaBlocks).dividedBy(scaledTotalBorrows)
       );
     }
 
@@ -245,10 +245,10 @@ describe.skip('PieWheelFuzzTest', () => {
       // to simulate borrowBalanceStored
       let borrowBalanceNew = borrowBalances[account]
         .times(borrowIndex)
-        .div(state.borrowIndexSnapshots[account]);
+        .dividedBy(state.borrowIndexSnapshots[account]);
       pieAccruedWithIndex[account] = get(pieAccruedWithIndex[account]).plus(
         borrowBalanceNew
-          .div(borrowIndex)
+          .dividedBy(borrowIndex)
           .times(pieBorrowIndex.minus(indexSnapshot))
       );
     }
@@ -280,7 +280,7 @@ describe.skip('PieWheelFuzzTest', () => {
 
     if (isPositive(totalSupply)) {
       pieSupplyIndex = pieSupplyIndex.plus(
-        pieSupplySpeed.times(deltaBlocks).div(totalSupply)
+        pieSupplySpeed.times(deltaBlocks).dividedBy(totalSupply)
       );
     }
 
@@ -335,7 +335,7 @@ describe.skip('PieWheelFuzzTest', () => {
     ) {
       return prevBorrowBalance
         .times(state.borrowIndex)
-        .div(checkpointBorrowIndex);
+        .dividedBy(checkpointBorrowIndex);
     } else {
       return new bn(0);
     }
@@ -512,7 +512,7 @@ describe.skip('PieWheelFuzzTest', () => {
 
       let balance = get(state.balances[account]);
       let exchangeRate = getExchangeRate(state);
-      let tokens = amount.div(exchangeRate);
+      let tokens = amount.dividedBy(exchangeRate);
       return {
         ...state,
         totalCash: state.totalCash.plus(amount), // ignores transfer fees

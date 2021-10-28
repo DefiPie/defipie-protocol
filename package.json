@@ -5,17 +5,18 @@
   "main": "index.js",
   "scripts": {
     "compile": "./script/compile",
-    "console": "if node -v | grep -E \"v(12|13|14)\" > /dev/null; then flags=\"-n --experimental-repl-await\"; fi; npx $flags saddle console",
+    "console": "if node -v | grep -E \"v(12|13)\" > /dev/null; then flags=\"-n --experimental-repl-await\"; fi; npx $flags saddle console",
     "coverage": "./script/coverage",
-    "deploy": "./scenario/script/repl -s ./scenario/scen/deploy.scen",
+    "deploy": "./scenario/script/repl -s ./script/scen/deploy.scen",
     "lint": "./script/lint",
     "repl": "./scenario/script/repl",
     "profile": "yarn test tests/gasProfiler.js",
     "report": "npx run ./script/saddle/gasReport.js",
     "test": "./script/test",
-    "test:prepare": "NO_RUN=true ./script/test"
+    "test:prepare": "NO_RUN=true ./script/test",
+    "checksize": "npx run ./script/saddle/comptrollerSize.js"
   },
-  "author": "DeFiPie",
+  "author": "DeFipie",
   "license": "MIT",
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.9",
@@ -33,11 +34,21 @@
     "ethers": "^5.3.0"
   },
   "dependencies": {
-    "eth-saddle": "0.1.17",
     "truffle-flattener": "^1.5.0",
-    "web3": "^1.2.1"
+    "web3": "^1.2.1",
+    "@openzeppelin/test-helpers": "^0.5.12",
+    "bignumber.js": "9.0.0",
+    "jest-diff": "^26.4.2",
+    "jest-junit": "^11.1.0",
+    "solium": "^1.2.5",
+    "solparse": "^2.2.8",
+    "eth-saddle": "0.1.25"
   },
   "engines": {
-    "node": "12.20.2"
+    "node" : "=0.12"
+  },
+  "resolutions": {
+    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz",
+    "**/ganache-core": "github:compound-finance/ganache-core.git#jflatow/unbreak-fork"
   }
 }

@@ -4,11 +4,11 @@ Macro DeployGov
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 10000000e18)
-    From Bank (PToken pPIE Mint 10000000e18)
+    From Bank (Pie Approve pPIE 150000002e18)
+    From Bank (PToken pPIE Mint 150000002e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
-    Enfranchise Root 100001e18
+    Enfranchise Root 150000001e18
 
 Macro Enfranchise user amount
     From Bank (PToken pPIE Transfer user amount)
@@ -23,14 +23,14 @@ Test "Propose 💍 [1 Action]"
     Assert Log ProposalCreated (targets [(Address Counter)])
     Assert Log ProposalCreated (values [1])
     Assert Log ProposalCreated (signatures ["increment(uint256)"])
-    Assert Log ProposalCreated (startBlock 40)
-    Assert Log ProposalCreated (endBlock 17320)
+    Assert Log ProposalCreated (startBlock 44)
+    Assert Log ProposalCreated (endBlock 19754)
     Assert Log ProposalCreated (calldatas ["0x0000000000000000000000000000000000000000000000000000000000000005"])
     Assert Log ProposalCreated (proposer (Address Root))
     Assert Equal (Governor LegitGov Proposal LastProposal Id) 1
     Assert Equal (Governor LegitGov Proposal LastProposal Proposer) (Address Root)
-    Assert Equal (Governor LegitGov Proposal LastProposal StartBlock) 40
-    Assert Equal (Governor LegitGov Proposal LastProposal EndBlock) 17320
+    Assert Equal (Governor LegitGov Proposal LastProposal StartBlock) 44
+    Assert Equal (Governor LegitGov Proposal LastProposal EndBlock) 19754
     Assert Equal (Governor LegitGov Proposal LastProposal ForVotes) 0
     Assert Equal (Governor LegitGov Proposal LastProposal AgainstVotes) 0
     Assert Equal (Governor LegitGov Proposal LastProposal Eta) 0

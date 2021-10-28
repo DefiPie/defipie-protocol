@@ -1,6 +1,7 @@
 const {
   etherMantissa,
-  etherUnsigned
+  etherUnsigned,
+  UInt256Max
 } = require('../Utils/Ethereum');
 
 const {
@@ -62,12 +63,12 @@ describe('PToken', () => {
 
     it('fails if new borrow interest index calculation fails', async () => {
       await pretendBlock(pToken);
-      await send(pToken, 'harnessSetBorrowIndex', [-1]);
+      await send(pToken, 'harnessSetBorrowIndex', [UInt256Max()]);
       expect(await send(pToken, 'accrueInterest')).toHaveTokenFailure('MATH_ERROR', 'ACCRUE_INTEREST_NEW_BORROW_INDEX_CALCULATION_FAILED');
     });
 
     it('fails if interest accumulated calculation fails', async () => {
-      await send(pToken, 'harnessExchangeRateDetails', [0, -1, 0]);
+      await send(pToken, 'harnessExchangeRateDetails', [0, UInt256Max(), 0]);
       await pretendBlock(pToken);
       expect(await send(pToken, 'accrueInterest')).toHaveTokenFailure('MATH_ERROR', 'ACCRUE_INTEREST_ACCUMULATED_INTEREST_CALCULATION_FAILED');
     });
@@ -75,13 +76,13 @@ describe('PToken', () => {
     it('fails if new total borrows calculation fails', async () => {
       await setBorrowRate(pToken, 1e-18);
       await pretendBlock(pToken);
-      await send(pToken, 'harnessExchangeRateDetails', [0, -1, 0]);
+      await send(pToken, 'harnessExchangeRateDetails', [0, UInt256Max(), 0]);
       expect(await send(pToken, 'accrueInterest')).toHaveTokenFailure('MATH_ERROR', 'ACCRUE_INTEREST_NEW_TOTAL_BORROWS_CALCULATION_FAILED');
     });
 
     it('fails if interest accumulated for reserves calculation fails', async () => {
       await setBorrowRate(pToken, .000001);
-      await send(pToken, 'harnessExchangeRateDetails', [0, etherUnsigned(1e30), -1]);
+      await send(pToken, 'harnessExchangeRateDetails', [0, etherUnsigned(1e30), UInt256Max()]);
       await send(pToken, 'harnessSetReserveFactorFresh', [etherUnsigned(1e10)]);
       await pretendBlock(pToken, blockNumber, 5e20);
       expect(await send(pToken, 'accrueInterest')).toHaveTokenFailure('MATH_ERROR', 'ACCRUE_INTEREST_NEW_TOTAL_RESERVES_CALCULATION_FAILED');
@@ -89,7 +90,7 @@ describe('PToken', () => {
 
     it('fails if new total reserves calculation fails', async () => {
       await setBorrowRate(pToken, 1e-18);
-      await send(pToken, 'harnessExchangeRateDetails', [0, etherUnsigned(1e56), -1]);
+      await send(pToken, 'harnessExchangeRateDetails', [0, etherUnsigned(1e56), UInt256Max()]);
       await send(pToken, 'harnessSetReserveFactorFresh', [etherUnsigned(1e17)]);
       await pretendBlock(pToken);
       expect(await send(pToken, 'accrueInterest')).toHaveTokenFailure('MATH_ERROR', 'ACCRUE_INTEREST_NEW_TOTAL_RESERVES_CALCULATION_FAILED');
@@ -114,10 +115,10 @@ describe('PToken', () => {
       expect(receipt).toSucceed();
       expect(receipt).toHaveLog('AccrueInterest', {
         cashPrior: 0,
-        interestAccumulated: etherUnsigned(expectedTotalBorrows).sub(etherUnsigned(startingTotalBorrows)),
-        borrowIndex: etherUnsigned(expectedBorrowIndex),
-        totalBorrows: etherUnsigned(expectedTotalBorrows),
-        totalReserves: etherUnsigned(expectedTotalReserves)
+        interestAccumulated: etherUnsigned(expectedTotalBorrows).minus(etherUnsigned(startingTotalBorrows)).toFixed(),
+        borrowIndex: etherUnsigned(expectedBorrowIndex).toFixed(),
+        totalBorrows: etherUnsigned(expectedTotalBorrows).toFixed(),
+        totalReserves: etherUnsigned(expectedTotalReserves).toFixed()
       });
       expect(await call(pToken, 'accrualBlockNumber')).toEqualNumber(expectedAccrualBlockNumber);
       expect(await call(pToken, 'borrowIndex')).toEqualNumber(expectedBorrowIndex);

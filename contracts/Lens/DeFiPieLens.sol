@@ -138,7 +138,7 @@ contract DeFiPieLens {
 
     function pTokenUnderlyingPrice(address pToken) public view returns (PTokenUnderlyingPrice memory) {
         address controller = address(PTokenInterface(pToken).controller());
-        PriceOracle priceOracle = Controller(controller).oracle();
+        PriceOracle priceOracle = Controller(controller).getOracle();
 
         return PTokenUnderlyingPrice({
             pToken: address(pToken),

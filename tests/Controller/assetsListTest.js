@@ -13,12 +13,12 @@ describe('assetListTest', () => {
     [root, customer, ...accounts] = saddle.accounts;
     controller = await makeController({maxAssets: 10});
 
-    OMG = await makePToken({controller, name: 'OMG', symbol: 'OMG', supportMarket: true, underlyingPrice: 0.5});
-    ZRX = await makePToken({controller, name: 'ZRX', symbol: 'ZRX', supportMarket: true, underlyingPrice: 0.5});
-    BAT = await makePToken({controller, name: 'BAT', symbol: 'BAT', supportMarket: true, underlyingPrice: 0.5});
-    REP = await makePToken({controller, name: 'REP', symbol: 'REP', supportMarket: true, underlyingPrice: 0.5});
-    DAI = await makePToken({controller, name: 'DAI', symbol: 'DAI', supportMarket: true, underlyingPrice: 0.5});
-    SKT = await makePToken({controller, name: 'SKT', symbol: 'SKT', supportMarket: true, underlyingPrice: 0.5});
+    OMG = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, name: 'OMG', symbol: 'OMG', supportMarket: true, underlyingPrice: 0.5});
+    ZRX = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: OMG.pTokenFactory, name: 'ZRX', symbol: 'ZRX', supportMarket: true, underlyingPrice: 0.5});
+    BAT = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: OMG.pTokenFactory, name: 'BAT', symbol: 'BAT', supportMarket: true, underlyingPrice: 0.5});
+    REP = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: OMG.pTokenFactory, name: 'REP', symbol: 'REP', supportMarket: true, underlyingPrice: 0.5});
+    DAI = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: OMG.pTokenFactory, name: 'DAI', symbol: 'DAI', supportMarket: true, underlyingPrice: 0.5});
+    SKT = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, pTokenFactory: OMG.pTokenFactory, name: 'SKT', symbol: 'SKT', supportMarket: true, underlyingPrice: 0.5});
 
     allTokens = [OMG, ZRX, BAT, REP, DAI, SKT];
 

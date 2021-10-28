@@ -10,11 +10,7 @@ export async function getUnitrollerAddress(world: World, unitroller: Unitroller)
 }
 
 async function getUnitrollerAdmin(world: World, unitroller: Unitroller): Promise<AddressV> {
-  return new AddressV(await unitroller.methods.admin().call());
-}
-
-async function getUnitrollerPendingAdmin(world: World, unitroller: Unitroller): Promise<AddressV> {
-  return new AddressV(await unitroller.methods.pendingAdmin().call());
+  return new AddressV(await unitroller.methods.getAdmin().call());
 }
 
 async function getControllerImplementation(world: World, unitroller: Unitroller): Promise<AddressV> {
@@ -47,17 +43,6 @@ export function unitrollerFetchers() {
       'Admin',
       [new Arg('unitroller', getUnitroller, { implicit: true })],
       (world, { unitroller }) => getUnitrollerAdmin(world, unitroller)
-    ),
-    new Fetcher<{ unitroller: Unitroller }, AddressV>(
-      `
-        #### PendingAdmin
-
-        * "Unitroller PendingAdmin" - Returns the pending admin of Unitroller contract
-          * E.g. "Unitroller PendingAdmin" - Returns address of pendingAdmin
-      `,
-      'PendingAdmin',
-      [new Arg('unitroller', getUnitroller, { implicit: true })],
-      (world, { unitroller }) => getUnitrollerPendingAdmin(world, unitroller)
     ),
     new Fetcher<{ unitroller: Unitroller }, AddressV>(
       `

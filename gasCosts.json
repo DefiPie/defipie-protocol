@@ -1,21 +1,11 @@
 {
+  "first mint": {
+    "fee": 129978,
+    "opcodes": {}
+  },
  "second mint": {
-  "fee": 86450,
+  "fee": 90506,
   "opcodes": {
-   "PUSH1 @ 3": 589,
-   "MSTORE @ 12": 9,
-   "CALLDATASIZE @ 2": 19,
-   "LT @ 3": 34,
-   "PUSH2 @ 3": 322,
-   "JUMPI @ 10": 182,
-   "CALLDATALOAD @ 3": 24,
-   "SHR @ 3": 9,
-   "DUP1 @ 3": 196,
-   "PUSH4 @ 3": 73,
-   "GT @ 3": 46,
-   "JUMPDEST @ 1": 273,
-   "EQ @ 3": 48,
-   "CALLVALUE @ 2": 9,
    "ISZERO @ 3": 91,
    "POP @ 2": 308,
    "SUB @ 3": 62,

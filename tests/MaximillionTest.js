@@ -31,7 +31,7 @@ describe('Maximillion', () => {
       const gasCost = await etherGasCost(result);
       const afterBalance = await etherBalance(root);
       expect(result).toSucceed();
-      expect(afterBalance).toEqualNumber(beforeBalance.sub(gasCost));
+      expect(afterBalance).toEqualNumber(beforeBalance.minus(gasCost));
     });
 
     it("repays part of a borrow", async () => {
@@ -42,7 +42,7 @@ describe('Maximillion', () => {
       const afterBalance = await etherBalance(root);
       const afterBorrowSnap = await borrowSnapshot(pEther, borrower);
       expect(result).toSucceed();
-      expect(afterBalance).toEqualNumber(beforeBalance.sub(gasCost).sub(100));
+      expect(afterBalance).toEqualNumber(beforeBalance.minus(gasCost).minus(100));
       expect(afterBorrowSnap.principal).toEqualNumber(50);
     });
 
@@ -54,7 +54,7 @@ describe('Maximillion', () => {
       const afterBalance = await etherBalance(root);
       const afterBorrowSnap = await borrowSnapshot(pEther, borrower);
       expect(result).toSucceed();
-      expect(afterBalance).toEqualNumber(beforeBalance.sub(gasCost).sub(90));
+      expect(afterBalance).toEqualNumber(beforeBalance.minus(gasCost).minus(90));
       expect(afterBorrowSnap.principal).toEqualNumber(0);
     });
   });

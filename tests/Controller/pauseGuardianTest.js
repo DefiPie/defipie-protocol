@@ -17,7 +17,7 @@ describe('Controller', () => {
     describe("failing", () => {
       it("emits a failure log if not sent by admin", async () => {
         let result = await send(controller, '_setPauseGuardian', [root], {from: accounts[1]});
-        expect(result).toHaveTrollFailure('UNAUTHORIZED', 'SET_PAUSE_GUARDIAN_OWNER_CHECK');
+        expect(result).toHaveTrollFailure('UNAUTHORIZED', 'SET_GUARDIAN_OWNER_CHECK');
       });
 
       it("does not change the pause guardian", async () => {

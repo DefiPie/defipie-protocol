@@ -1,6 +1,7 @@
 const {
   etherUnsigned,
-  etherMantissa
+  etherMantissa,
+  UInt256Max
 } = require('../Utils/Ethereum');
 
 const {
@@ -165,7 +166,7 @@ describe('PToken', function () {
     });
 
     it("reverts on overflow of principal", async () => {
-      await pretendBorrow(pToken, borrower, 1, 3, -1);
+      await pretendBorrow(pToken, borrower, 1, 3, UInt256Max());
       await expect(call(pToken, 'borrowBalanceStored', [borrower])).rejects.toRevert("revert borrowBalanceStored: borrowBalanceStoredInternal failed");
     });
 

@@ -7,7 +7,8 @@ Macro AllowFailures
     ClearInvariants Success
 
 Macro PricedController closeFactor=0.1 maxAssets=20
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Simple
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
@@ -24,7 +25,8 @@ Macro PricedController closeFactor=0.1 maxAssets=20
 
 Macro NewController price=1.0 closeFactor=0.1 maxAssets=20
     --g1
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed price
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
