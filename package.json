@@ -16,7 +16,7 @@
     "test:prepare": "NO_RUN=true ./script/test",
     "checksize": "npx run ./script/saddle/comptrollerSize.js"
   },
-  "author": "DeFipie",
+  "author": "DeFiPie",
   "license": "MIT",
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.12",
