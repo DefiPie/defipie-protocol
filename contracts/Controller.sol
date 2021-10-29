@@ -1092,7 +1092,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         Double memory supplierIndex = Double({mantissa: pieSupplierIndex[pToken][supplier]});
         pieSupplierIndex[pToken][supplier] = supplyIndex.mantissa;
 
-        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
+        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa >= 0) {
             supplierIndex.mantissa = pieInitialIndex;
         }
 
