@@ -7,7 +7,8 @@ const {
   makeController,
   makePriceOracle,
   makePToken,
-  makeToken
+  makeToken,
+  makePTokenFactory
 } = require('../Utils/DeFiPie');
 
 describe('Controller', () => {
@@ -18,12 +19,6 @@ describe('Controller', () => {
   });
 
   describe('constructor', () => {
-    it("on success it sets admin to creator and pendingAdmin is unset", async () => {
-      const controller = await makeController();
-      expect(await call(controller, 'admin')).toEqual(root);
-      expect(await call(controller, 'pendingAdmin')).toEqualNumber(0);
-    });
-
     it("on success it sets closeFactor and maxAssets as specified", async () => {
       const controller = await makeController();
       expect(await call(controller, 'closeFactorMantissa')).toEqualNumber(0.051e18);
@@ -89,18 +84,19 @@ describe('Controller', () => {
   });
 
   describe('_setPriceOracle', () => {
-    let controller, oldOracle, newOracle;
+    let controller, oldOracle, newOracle, factory;
     beforeEach(async () => {
       controller = await makeController();
       oldOracle = controller.priceOracle;
       newOracle = await makePriceOracle();
+      factory = await makePTokenFactory({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy});
     });
 
     it("fails if called by non-admin", async () => {
       expect(
-        await send(controller, '_setPriceOracle', [newOracle._address], {from: accounts[0]})
-      ).toHaveTrollFailure('UNAUTHORIZED', 'SET_PRICE_ORACLE_OWNER_CHECK');
-      expect(await controller.methods.oracle().call()).toEqual(oldOracle._address);
+        await send(factory, 'setOracle', [newOracle._address], {from: accounts[0]})
+      ).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
+      expect(await controller.methods.getOracle().call()).toEqual(oldOracle._address);
     });
 
     it.skip("reverts if passed a contract that doesn't implement isPriceOracle", async () => {
@@ -115,13 +111,9 @@ describe('Controller', () => {
     });
 
     it("accepts a valid price oracle and emits a NewPriceOracle event", async () => {
-      const result = await send(controller, '_setPriceOracle', [newOracle._address]);
+      const result = await send(factory, 'setOracle', [newOracle._address]);
       expect(result).toSucceed();
-      expect(result).toHaveLog('NewPriceOracle', {
-        oldPriceOracle: oldOracle._address,
-        newPriceOracle: newOracle._address
-      });
-      expect(await call(controller, 'oracle')).toEqual(newOracle._address);
+      expect(await call(controller, 'getOracle')).toEqual(newOracle._address);
     });
   });
 
@@ -200,14 +192,14 @@ describe('Controller', () => {
 
   describe('_supportMarket', () => {
     it("fails if not called by admin", async () => {
-      const pToken = await makePToken(root);
+      const pToken = await makePToken({root: root});
       expect(
         await send(pToken.controller, '_supportMarket', [pToken._address], {from: accounts[0]})
       ).toHaveTrollFailure('UNAUTHORIZED', 'SUPPORT_MARKET_OWNER_CHECK');
     });
 
     it("fails if asset is not a PToken", async () => {
-      const controller = await makeController()
+      const controller = await makeController();
       const asset = await makeToken(root);
       await expect(send(controller, '_supportMarket', [asset._address])).rejects.toRevert();
     });
@@ -226,7 +218,7 @@ describe('Controller', () => {
 
     it("can list two different markets", async () => {
       const pToken1 = await makePToken();
-      const pToken2 = await makePToken({controller: pToken1.controller});
+      const pToken2 = await makePToken({controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory});
       const result1 = await call(pToken1.controller, 'markets', [pToken1._address]);
       const result2 = await call(pToken1.controller, 'markets', [pToken2._address]);
       expect(result1.isListed).toEqual(true);
@@ -237,19 +229,19 @@ describe('Controller', () => {
   describe('redeemVerify', () => {
     it('should allow you to redeem 0 underlying for 0 tokens', async () => {
       const controller = await makeController();
-      const pToken = await makePToken({controller: controller});
+      const pToken = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy});
       await call(controller, 'redeemVerify', [pToken._address, accounts[0], 0, 0]);
     });
 
     it('should allow you to redeem 5 underlyig for 5 tokens', async () => {
       const controller = await makeController();
-      const pToken = await makePToken({controller: controller});
+      const pToken = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy});
       await call(controller, 'redeemVerify', [pToken._address, accounts[0], 5, 5]);
     });
 
     it('should not allow you to redeem 5 underlying for 0 tokens', async () => {
       const controller = await makeController();
-      const pToken = await makePToken({controller: controller});
+      const pToken = await makePToken({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy});
       await expect(call(controller, 'redeemVerify', [pToken._address, accounts[0], 5, 0])).rejects.toRevert("revert redeemTokens zero");
     });
   })

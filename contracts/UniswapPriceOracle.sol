@@ -87,7 +87,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
         address pair;
 
         if (!isNewAsset(asset)) {
-            address pair = assetPair[asset];
+            pair = assetPair[asset];
 
             address token0 = IUniswapV2Pair(pair).token0();
             address token1 = IUniswapV2Pair(pair).token1();

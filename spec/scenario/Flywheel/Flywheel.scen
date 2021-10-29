@@ -1,6 +1,7 @@
 -- NewController, but with markets listed so that we can make them pie markets in constructor
 Macro FlywheelController price=1.0 borrowRate=0.000005 pieInitAmount=5000000e18
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed price
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
     ----g4

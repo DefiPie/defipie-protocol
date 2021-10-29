@@ -9,7 +9,7 @@ out
 .tsbuilt
 .solcachecov
 junit.xml
-coverage
+coverage/
 tests/Scenarios
 networks/*.json
 package-lock.json

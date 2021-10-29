@@ -71,14 +71,17 @@ Test "Should be able to liquidate fee token borrow"
     EnterMarkets Torrey pZRX
     Borrow Torrey 1e18 pUSDT -- we only received 0.99 tether bc of fee
     Assert Equal (ERC20 USDT TokenBalance Torrey) 0.99e18
-    FastForward 196000 Blocks -- 1e18 * 196000 * 0.000005 = 0.98e18 interest accrued
-    Assert Equal (PToken pUSDT TotalBorrowsCurrent) 1.98e18
+    FastForward 1960 Blocks -- 1e18 * 1960 * 0.000005 = 0.0098e18 interest accrued
+    Assert Equal (PToken pUSDT TotalBorrowsCurrent) 1.0098e18
     -- OK! should be ready to liquidate, so lets do that
     Prep Coburn 2e18 USDT pUSDT
+    Assert Equal (Erc20 pZRX TokenBalance Coburn) 0
+    Assert Equal (PToken pUSDT BorrowBalance Torrey) 1.0098e18
+    Assert Equal (Erc20 USDT TokenBalance Coburn) 2e18
     Liquidate Coburn "->" Torrey 0.1e18 pUSDT "Seizing" pZRX
     -- 5.445e7 = 0.1 (amount liquidated) * 1.1 (liq discount) * .99 (fee) / 2e9 (exchange rate)
     Assert Equal (Erc20 pZRX TokenBalance Coburn) 5.445e7
-    Assert Equal (PToken pUSDT BorrowBalance Torrey) 1.881e18 -- 1.98 - (0.1 * .99) was liquidated
+    Assert Equal (PToken pUSDT BorrowBalance Torrey) 0.9108e18 -- 1.0098 - (0.1 * .99) was liquidated
     Assert Equal (Erc20 USDT TokenBalance Coburn) 1.9e18
 
 Test "Should be able to redeem a fee PToken, exchange Rate should not change"

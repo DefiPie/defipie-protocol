@@ -10,6 +10,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
 
     address public factory;
     address public pTokenImplementation;
+    address public oracle;
 
     mapping (address => address) public pTokens;
     address public pETH;
@@ -76,6 +77,16 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         factory = _factory;
 
         emit NewFactory(oldFactory, factory);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    function setOracle(address oracle_) public returns (uint) {
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_ORACLE);
+        }
+
+        oracle = oracle_;
 
         return uint(Error.NO_ERROR);
     }

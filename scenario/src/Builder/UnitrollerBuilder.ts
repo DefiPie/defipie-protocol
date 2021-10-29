@@ -2,7 +2,13 @@ import {Event} from '../Event';
 import {World} from '../World';
 import {Unitroller} from '../Contract/Unitroller';
 import {Invokation} from '../Invokation';
-import {Fetcher, getFetcherValue} from '../Command';
+import {
+    getAddressV,
+} from '../CoreValue';
+import {
+    AddressV,
+} from '../Value';
+import {Arg, Fetcher, getFetcherValue} from '../Command';
 import {storeAndSaveContract} from '../Networks';
 import {getContract} from '../Contract';
 
@@ -16,17 +22,26 @@ export interface UnitrollerData {
 
 export async function buildUnitroller(world: World, from: string, event: Event): Promise<{world: World, unitroller: Unitroller, unitrollerData: UnitrollerData}> {
   const fetchers = [
-    new Fetcher<{}, UnitrollerData>(`
+    new Fetcher<{
+        registryProxy: AddressV;
+    }, UnitrollerData>(`
         #### Unitroller
 
         * "" - The Upgradable Controller
-          * E.g. "Unitroller Deploy"
+        * " registryProxy:<String> " - The Unitroller contract
+          * E.g. "Unitroller Deploy (RegistryProxy Address)"
       `,
       "Unitroller",
-      [],
-      async (world, {}) => {
+      [
+          new Arg('registryProxy', getAddressV),
+      ],
+      async (world, {
+          registryProxy
+      }) => {
         return {
-          invokation: await UnitrollerContract.deploy<Unitroller>(world, from, []),
+          invokation: await UnitrollerContract.deploy<Unitroller>(world, from, [
+              registryProxy.val
+          ]),
           description: "Unitroller"
         };
       },

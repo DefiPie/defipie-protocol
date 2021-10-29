@@ -16,12 +16,13 @@ describe('PToken Factory tests', () => {
     beforeEach(async () => {
         [root, admin, ...accounts] = saddle.accounts;
 
-        controller = await makeController();
         interestRateModel = await makeInterestRateModel();
         exchangeRate = 1;
         reserveFactor = 0.1;
 
         registryProxy = await makeRegistryProxy();
+        controller = await makeController({registryProxy: registryProxy});
+
         mockPriceFeed = await deploy('MockPriceFeed');
         mockUniswapFactory = await deploy('MockUniswapFactory');
         mockUniswapPool = await deploy('MockUniswapPool');
@@ -49,6 +50,7 @@ describe('PToken Factory tests', () => {
         ]);
 
         pTokenFactory = await makePTokenFactory({
+            registryProxy: registryProxy,
             controller: controller,
             interestRateModel: interestRateModel,
             exchangeRate:exchangeRate,
@@ -95,6 +97,39 @@ describe('PToken Factory tests', () => {
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
+            let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
+
+            expect(result).toSucceed();
+            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress});
+        });
+
+        it("create token (black list usage)", async () => {
+            let underlying = await makeToken();
+            let tx = await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address]);
+            expect(tx).toSucceed();
+
+            let result = await send(pTokenFactory, 'addBlackList', [underlying._address], {from: accounts[1]});
+            expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'ADD_UNDERLYING_TO_BLACKLIST');
+
+            result = await send(pTokenFactory, 'addBlackList', [underlying._address]);
+            expect(result).toSucceed();
+
+            let blackListStatus = await call(pTokenFactory, "getBlackListStatus", [underlying._address]);
+            expect(blackListStatus).toEqual(true);
+
+            result = await send(pTokenFactory, 'createPToken', [underlying._address]);
+            expect(result).toHaveFactoryFailure('INVALID_POOL', 'UNDERLYING_IN_BLACKLIST');
+
+            result = await send(pTokenFactory, 'removeBlackList', [underlying._address], {from: accounts[1]});
+            expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'REMOVE_UNDERLYING_FROM_BLACKLIST');
+
+            result = await send(pTokenFactory, 'removeBlackList', [underlying._address]);
+            expect(result).toSucceed();
+
+            blackListStatus = await call(pTokenFactory, "getBlackListStatus", [underlying._address]);
+            expect(blackListStatus).toEqual(false);
+
+            result = await send(pTokenFactory, 'createPToken', [underlying._address]);
             let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
 
             expect(result).toSucceed();

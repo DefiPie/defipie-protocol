@@ -1,17 +1,13 @@
 pragma solidity ^0.7.6;
 
 import "./PriceOracle.sol";
+import './RegistryInterface.sol';
 
 contract UnitrollerAdminStorage {
     /**
-    * @notice Administrator for this contract
+    * @notice Administrator for this contract in registry
     */
-    address public admin;
-
-    /**
-    * @notice Pending administrator for this contract
-    */
-    address public pendingAdmin;
+    RegistryInterface public registry;
 
     /**
     * @notice Active brains of Unitroller
@@ -120,4 +116,7 @@ contract ControllerStorage is UnitrollerAdminStorage {
 
     /// @notice The PIE accrued but not yet transferred to each user
     mapping(address => uint) public pieAccrued;
+
+    /// @notice Only the Liquidate guardian can liquidate loans with collateral below the loan amount
+    address public liquidateGuardian;
 }

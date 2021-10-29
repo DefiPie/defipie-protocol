@@ -5,11 +5,11 @@ Macro GivenProposal
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 10000000e18)
-    From Bank (PToken pPIE Mint 10000000e18)
+    From Bank (Pie Approve pPIE 150000002e18)
+    From Bank (PToken pPIE Mint 150000002e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian
     Timelock SetAdmin (Address LegitGov)
-    Enfranchise Root 100001e18
+    Enfranchise Root 150000001e18
     Enfranchise Geoff 100
     Governor LegitGov Propose "Add 5" [(Address Counter)] [1] ["increment(uint256)"] [["0x5"]]
     MineBlock
@@ -50,7 +50,7 @@ Test "Fail to vote twice"
     Assert Revert "revert Governor::_castVote: voter already voted"
     Governor LegitGov Proposal LastProposal Vote Against
     Assert Revert "revert Governor::_castVote: voter already voted"
-    Assert Equal (Governor LegitGov Proposal LastProposal ForVotes) 100001e18
+    Assert Equal (Governor LegitGov Proposal LastProposal ForVotes) 150000001e18
     Assert Equal (Governor LegitGov Proposal LastProposal AgainstVotes) 0
     Assert False (Governor LegitGov Proposal LastProposal HasVoted Geoff)
 

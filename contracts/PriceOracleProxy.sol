@@ -107,8 +107,11 @@ contract PriceOracleProxy is PriceOracle {
         saiPrice = price;
     }
 
-    function updateUnderlyingPrice(address pToken) external override returns (uint) {
-        pToken; //shh
+    function updateUnderlyingPrice(address) external override returns (uint) {
+        return 0;
+    }
+
+    function update(address) external returns (uint) {
         return 0;
     }
 }

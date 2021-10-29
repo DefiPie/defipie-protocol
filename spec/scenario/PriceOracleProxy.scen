@@ -1,5 +1,6 @@
 Macro SetupPriceOracleProxy
-    Unitroller Deploy
+    NewRegistryProxy
+    Unitroller Deploy RegistryProxy
     PriceOracle Deploy Simple
     -- Update to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
