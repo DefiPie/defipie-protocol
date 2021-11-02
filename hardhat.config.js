@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-etherscan");
 const fs = require('fs');
 const privateKey = fs.readFileSync(".secretKey").toString().trim();
 
