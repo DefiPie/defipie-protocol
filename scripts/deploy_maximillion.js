@@ -1,4 +1,4 @@
-// >npx hardhat run scripts/deploy_protocol_in_matic.js --network mumbai
+// >npx hardhat run scripts/deploy_maximillion.js --network mumbai
 
 const hre = require("hardhat");
 const dotenv = require('dotenv');
