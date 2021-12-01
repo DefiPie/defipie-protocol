@@ -165,12 +165,6 @@ async function setPieAddress(world: World, from: string, controller: Controller,
 }
 
 async function setCollateralFactor(world: World, from: string, controller: Controller, pToken: PToken, collateralFactor: NumberV): Promise<World> {
-    // console.log('hello, i am here');
-    // console.log('controller', controller);
-    // console.log('pToken', pToken);
-    // console.log('collateralFactor', collateralFactor);
-
-
   let invokation = await invoke(world, controller.methods._setCollateralFactor(pToken._address, collateralFactor.encode()), from, ControllerErrorReporter);
 
   world = addAction(
