@@ -7,6 +7,7 @@ const {
 const {
     makeController,
     makePToken,
+    makePriceOracle,
     preApprove,
     preSupply,
     quickRedeem,
@@ -84,7 +85,7 @@ async function claimPie(controller, holder) {
 /// transiently fails, not sure why
 
 describe('Gas report', () => {
-    let root, minter, redeemer, accounts, pToken, controller;
+    let root, minter, redeemer, accounts, pToken, oracle, controller;
     const exchangeRate = 50e3;
     const preMintAmount = etherUnsigned(30e4);
     const mintAmount = etherUnsigned(10e4);
@@ -96,7 +97,9 @@ describe('Gas report', () => {
     describe('PToken', () => {
         beforeEach(async () => {
             [root, minter, redeemer, ...accounts] = saddle.accounts;
+            oracle = await makePriceOracle();
             pToken = await makePToken({
+                uniswapOracle: oracle,
                 controllerOpts: { kind: 'bool'},
                 interestRateModelOpts: { kind: 'harnessed'},
                 exchangeRate

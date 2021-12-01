@@ -85,7 +85,7 @@ contract PEther is ImplementationStorage, PToken {
      * @dev Reverts upon any failure
      */
     function repayBorrow() external payable {
-        (uint err,) = repayBorrowInternal(msg.value);
+        (uint err,,) = repayBorrowInternal(msg.value);
         requireNoError(err, "repayBorrow failed");
     }
 
@@ -95,7 +95,7 @@ contract PEther is ImplementationStorage, PToken {
      * @param borrower the account with the debt being payed off
      */
     function repayBorrowBehalf(address borrower) external payable {
-        (uint err,) = repayBorrowBehalfInternal(borrower, msg.value);
+        (uint err,,) = repayBorrowBehalfInternal(borrower, msg.value);
         requireNoError(err, "repayBorrowBehalf failed");
     }
 
@@ -178,11 +178,11 @@ contract PEther is ImplementationStorage, PToken {
             fullMessage[i] = bytes(message)[i];
         }
 
-        fullMessage[i+0] = byte(uint8(32));
-        fullMessage[i+1] = byte(uint8(40));
-        fullMessage[i+2] = byte(uint8(48 + ( errCode / 10 )));
-        fullMessage[i+3] = byte(uint8(48 + ( errCode % 10 )));
-        fullMessage[i+4] = byte(uint8(41));
+        fullMessage[i+0] = bytes1(uint8(32));
+        fullMessage[i+1] = bytes1(uint8(40));
+        fullMessage[i+2] = bytes1(uint8(48 + ( errCode / 10 )));
+        fullMessage[i+3] = bytes1(uint8(48 + ( errCode % 10 )));
+        fullMessage[i+4] = bytes1(uint8(41));
 
         require(errCode == uint(Error.NO_ERROR), string(fullMessage));
     }

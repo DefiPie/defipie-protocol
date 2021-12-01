@@ -79,8 +79,8 @@ Test "Should be able to liquidate fee token borrow"
     Assert Equal (PToken pUSDT BorrowBalance Torrey) 1.0098e18
     Assert Equal (Erc20 USDT TokenBalance Coburn) 2e18
     Liquidate Coburn "->" Torrey 0.1e18 pUSDT "Seizing" pZRX
-    -- 5.445e7 = 0.1 (amount liquidated) * 1.1 (liq discount) * .99 (fee) / 2e9 (exchange rate)
-    Assert Equal (Erc20 pZRX TokenBalance Coburn) 5.445e7
+    -- 5.445e7 = 0.1 (amount liquidated) * 1.1 (liq discount) * .99 (fee) / 2e9 (exchange rate) and div by (1 - 0.01)^2, where 0.01 is fee
+    Assert Equal (Erc20 pZRX TokenBalance Coburn) 55555555
     Assert Equal (PToken pUSDT BorrowBalance Torrey) 0.9108e18 -- 1.0098 - (0.1 * .99) was liquidated
     Assert Equal (Erc20 USDT TokenBalance Coburn) 1.9e18
 

@@ -43,7 +43,11 @@ export async function getHypotheticalLiquidity(world: World, controller: Control
 }
 
 async function getPriceOracle(world: World, controller: Controller): Promise<AddressV> {
-    return new AddressV(await controller.methods.oracle().call());
+    return new AddressV(await controller.methods.getOracle().call());
+}
+
+async function getRegistry(world: World, controller: Controller): Promise<AddressV> {
+    return new AddressV(await controller.methods.registry().call());
 }
 
 async function getLiquidateGuardian(world: World, controller: Controller): Promise<AddressV> {
@@ -185,16 +189,6 @@ export function controllerFetchers() {
       (world, {controller}) => getAdmin(world, controller)
     ),
       new Fetcher<{controller: Controller}, AddressV>(`
-        #### PriceOracle
-
-        * "Controller PriceOracle" - Returns the Controllers's price oracle
-          * E.g. "Controller PriceOracle"
-      `,
-          "PriceOracle",
-          [new Arg("controller", getController, {implicit: true})],
-          (world, {controller}) => getPriceOracle(world, controller)
-      ),
-      new Fetcher<{controller: Controller}, AddressV>(`
         #### LiquidateGuardian
 
         * "Controller LiquidateGuardian" - Returns the Controllers's liquidate guardian
@@ -217,7 +211,7 @@ export function controllerFetchers() {
     new Fetcher<{controller: Controller}, NumberV>(`
         #### CloseFactor
 
-        * "Controller CloseFactor" - Returns the Controllers's price oracle
+        * "Controller CloseFactor" - Returns the Controllers's close factor
           * E.g. "Controller CloseFactor"
       `,
       "CloseFactor",
@@ -227,7 +221,7 @@ export function controllerFetchers() {
     new Fetcher<{controller: Controller}, NumberV>(`
         #### MaxAssets
 
-        * "Controller MaxAssets" - Returns the Controllers's price oracle
+        * "Controller MaxAssets" - Returns the Controllers's max assets
           * E.g. "Controller MaxAssets"
       `,
       "MaxAssets",
@@ -355,6 +349,26 @@ export function controllerFetchers() {
         ],
         async (world, {controller}) => new AddressV(await controller.methods.pauseGuardian().call())
     ),
+      new Fetcher<{controller: Controller}, AddressV>(`
+      #### Oracle
+
+        * "Controller Oracle" - Returns the Controllers's Oracle
+        * E.g. "Controller Oracle"
+        `,
+          "Oracle",
+          [new Arg("controller", getController, {implicit: true})],
+          (world, {controller}) => getPriceOracle(world, controller)
+      ),
+      new Fetcher<{controller: Controller}, AddressV>(`
+      #### Registry
+
+        * "Controller Registry" - Returns the Controllers's Oracle
+        * E.g. "Controller Registry"
+        `,
+          "Registry",
+          [new Arg("controller", getController, {implicit: true})],
+          (world, {controller}) => getRegistry(world, controller)
+      ),
 
     new Fetcher<{controller: Controller}, BoolV>(`
         #### _MintGuardianPaused

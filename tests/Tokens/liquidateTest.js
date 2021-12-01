@@ -6,6 +6,7 @@ const {
 
 const {
   makePToken,
+  makePriceOracle,
   fastForward,
   setBalance,
   getBalances,
@@ -52,12 +53,13 @@ async function seize(pToken, liquidator, borrower, seizeAmount) {
 
 describe('PToken', function () {
   let root, liquidator, borrower, accounts;
-  let pToken, pTokenCollateral;
+  let pToken, pTokenCollateral, oracle;
 
   beforeEach(async () => {
     [root, liquidator, borrower, ...accounts] = saddle.accounts;
-    pToken = await makePToken({controllerOpts: {kind: 'bool'}});
-    pTokenCollateral = await makePToken({controller: pToken.controller});
+    oracle = await makePriceOracle();
+    pToken = await makePToken({uniswapOracle: oracle, controllerOpts: {kind: 'bool'}});
+    pTokenCollateral = await makePToken({uniswapOracle: oracle, controller: pToken.controller});
   });
 
   beforeEach(async () => {

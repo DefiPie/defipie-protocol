@@ -89,6 +89,18 @@ async function removePTokenFromRegistry(world: World, from: string, registry: Re
     return world;
 }
 
+async function setPriceOracle(world: World, from: string, registry: Registry, priceOracleAddr: string): Promise<World> {
+    let invokation = await invoke(world, registry.methods.setOracle(priceOracleAddr), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Set price oracle for to ${priceOracleAddr} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
+
 async function initialize(world: World, from: string, registry: Registry, pTokenImplementation: string): Promise<World> {
     let invokation = await invoke(world, registry.methods.initialize(pTokenImplementation), from, RegistryErrorReporter);
 
@@ -190,7 +202,20 @@ export function registryCommands() {
                 new Arg("pToken", getAddressV)
             ],
             (world, from, {registry, pToken}) => removePTokenFromRegistry(world, from, registry, pToken.val)
-        )
+        ),
+        new Command<{registry: Registry, priceOracle: AddressV}>(`
+        #### SetPriceOracle
+
+        * "Registry SetPriceOracle oracle:<Address>" - Sets the price oracle address
+          * E.g. "Registry SetPriceOracle 0x..."
+      `,
+            "SetPriceOracle",
+            [
+                new Arg("registry", getRegistry, {implicit: true}),
+                new Arg("priceOracle", getAddressV)
+            ],
+            (world, from, {registry, priceOracle}) => setPriceOracle(world, from, registry, priceOracle.val)
+        ),
     ];
 }
 

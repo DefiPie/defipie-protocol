@@ -8,6 +8,8 @@ const {
   makePToken,
 } = require('../Utils/DeFiPie');
 
+const BigNumber = require('bignumber.js');
+
 function cullTuple(tuple) {
   return Object.keys(tuple).reduce((acc, key) => {
     if (Number.isNaN(Number(key))) {
@@ -61,9 +63,9 @@ describe('DeFiPieLens', () => {
       ).toEqual({
         borrowRatePerBlock: "0",
         pToken: pEth._address,
-        pTokenDecimals: "18",
+        pTokenDecimals: "8",
         collateralFactorMantissa: "0",
-        exchangeRateCurrent: "1000000000000000000",
+        exchangeRateCurrent: "10000000000000000000000000000",
         isListed: true,
         reserveFactorMantissa: "100000000000000000",
         supplyRatePerBlock: "0",
@@ -103,9 +105,9 @@ describe('DeFiPieLens', () => {
         {
           borrowRatePerBlock: "0",
           pToken: pEth._address,
-          pTokenDecimals: "18",
+          pTokenDecimals: "8",
           collateralFactorMantissa: "0",
-          exchangeRateCurrent: "1000000000000000000",
+          exchangeRateCurrent: "10000000000000000000000000000",
           isListed: true,
           reserveFactorMantissa: "100000000000000000",
           supplyRatePerBlock: "0",
@@ -132,7 +134,6 @@ describe('DeFiPieLens', () => {
           borrowBalanceCurrent: "0",
           pToken: pErc20._address,
           tokenAllowance: "0",
-          tokenBalance: "10000000000000000000000000",
           tokenBalance: "10000000000000000000000000",
         }
       );
@@ -250,7 +251,7 @@ describe('DeFiPieLens', () => {
     let pie, ppie, registryAddress, gov;
     let targets, values, signatures, callDatas;
     let proposalBlock, proposalId;
-    let threshold = etherMantissa(15000001);
+    let threshold = new BigNumber(15000001e18); //15,000,000e18, 1e8 ppie = 1e18 pie
 
     beforeEach(async () => {
       pie = await deploy('Pie', [acct]);
@@ -325,7 +326,7 @@ describe('DeFiPieLens', () => {
         expect(
           cullTuple(await call(defipieLens, 'getPPieBalanceMetadata', [ppie._address, acct]))
         ).toEqual({
-          balance: "10000000000000000000000000",
+          balance: "1000000000000000",
           delegate: "0x0000000000000000000000000000000000000000",
           votes: "0",
         });
@@ -340,7 +341,7 @@ describe('DeFiPieLens', () => {
         expect(
           cullTuple(await call(defipieLens, 'getPPieBalanceMetadataExt', [ppie._address, controller._address, acct]))
         ).toEqual({
-          balance: "10000000000000000000000000",
+          balance: "1000000000000000",
           delegate: "0x0000000000000000000000000000000000000000",
           votes: "0",
           allocated: "5"

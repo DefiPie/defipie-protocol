@@ -6,7 +6,7 @@ Macro Successfully
 Macro AllowFailures
     ClearInvariants Success
 
-Macro PricedController closeFactor=0.1 maxAssets=20
+Macro PricedController closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Simple
@@ -15,15 +15,16 @@ Macro PricedController closeFactor=0.1 maxAssets=20
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
-    Controller SetPriceOracle (PriceOracleProxy Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor closeFactor
+    Controller SetFeeFactorMax feeFactorMax
     Controller SetMaxAssets maxAssets
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
     ControllerImpl ScenController Become
     Controller SetPieRate 1e18
 
-Macro NewController price=1.0 closeFactor=0.1 maxAssets=20
+Macro NewController price=1.0 closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     --g1
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
@@ -33,8 +34,9 @@ Macro NewController price=1.0 closeFactor=0.1 maxAssets=20
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
-    Controller SetPriceOracle (PriceOracleProxy Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor closeFactor
+    Controller SetFeeFactorMax feeFactorMax
     Controller SetMaxAssets maxAssets
     --g2
     ControllerImpl Deploy StandardG3 ControllerG2
@@ -63,16 +65,12 @@ Macro NewPToken erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initial
     Erc20 Deploy tokenType erc20 erc20
     InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
     PTokenDelegate Deploy pTokenType pErc20Delegate
-    Registry Deploy
-    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
     PToken Deploy delegatorType pToken pToken (Erc20 erc20 Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals (RegistryProxy Address)
 
 -- Same as NewPToken but does not deploy an ERC20. Used for special ERC20s that are initialized differently
 Macro NewPTokenBringERC20 erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=8 delegatorType=PErc20DelegatorScenario pTokenType=PErc20DelegateScenario
     InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
     PTokenDelegate Deploy pTokenType pErc20Delegate
-    Registry Deploy
-    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
     PToken Deploy delegatorType pToken pToken (Erc20 erc20 Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals (RegistryProxy Address)
 
 Macro NewPTokenImmutable erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=8 tokenType=Standard pTokenType=Scenario
@@ -86,9 +84,8 @@ Macro NewPTokenImmutable erc20 pToken borrowRate=0.000005 initialExchangeRate=2e
 Macro NewEtherToken pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=8
     InterestRateModel Deploy Fixed StdInterest borrowRate -- Note: interest rate model probably shouldn't be global
     PTokenDelegate Deploy PErc20DelegateScenario pErc20Delegate
-    Registry Deploy
-    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
     PToken Deploy PEtherScenario pToken pToken (RegistryProxy Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals
+    RegistryProxy AddPETH pToken
 
 Macro ListedPToken erc20 pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 tokenType=Standard delegatorType=PErc20DelegatorScenario pTokenType=PErc20DelegateScenario
     NewPToken erc20 pToken borrowRate initialExchangeRate initialReserveFactor decimals tokenType delegatorType pTokenType
@@ -102,22 +99,20 @@ Macro ListedEtherToken pToken borrowRate=0.000005 initialExchangeRate=2e9 initia
     NewEtherToken pToken borrowRate initialExchangeRate initialReserveFactor decimals
     Controller SupportMarket pToken
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address pETH) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
-    Controller SetPriceOracle (PriceOracleProxy Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
 
 Macro ListedEtherTokenMinted pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 admin=Admin
     NewEtherToken pToken borrowRate initialExchangeRate initialReserveFactor decimals
     Controller SupportMarket pToken
     CallMintEth Root 1e18 pToken
 
-Macro NewPPIEToken pToken underlying borrowRate=0.000005 initialExchangeRate=0.02 initialReserveFactor=1e17 decimals=18
+Macro NewPPIEToken pToken underlying borrowRate=0.000005 initialExchangeRate=0.02 initialReserveFactor=1e17 decimals=8
     InterestRateModel Deploy Fixed StdInterest borrowRate
     PTokenDelegate Deploy PErc20DelegateScenario pErc20Delegate
-    Registry Deploy
-    RegistryProxy Deploy (Registry Address) (PTokenDelegate pErc20Delegate Address)
     PToken Deploy PPIEScenario (underlying Address) pToken pToken (RegistryProxy Address) (Controller Address) (InterestRateModel StdInterest Address) initialExchangeRate initialReserveFactor decimals
     RegistryProxy AddPPIE pToken
 
-Macro ListedPPIEToken pToken underlying borrowRate=0.000005 initialExchangeRate=0.02 initialReserveFactor=1e17 decimals=18
+Macro ListedPPIEToken pToken underlying borrowRate=0.000005 initialExchangeRate=0.02 initialReserveFactor=1e17 decimals=8
     NewPPIEToken pToken underlying borrowRate initialExchangeRate initialReserveFactor decimals
     Controller SupportMarket pToken
 

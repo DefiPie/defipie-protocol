@@ -11,8 +11,7 @@ contract RegistryProxyHarness is RegistryProxy {
         pTokenImplementation_
     ) {}
 
-    function setPTokenImplementation(address newImplementation) external returns (uint) {
-        newImplementation; // Shh
+    function setPTokenImplementation(address) external returns (uint) {
         delegateAndReturn();
     }
 
@@ -20,19 +19,19 @@ contract RegistryProxyHarness is RegistryProxy {
         delegateAndReturn();
     }
 
-    function _setFactoryContract(address factory_) external returns (uint) {
-        factory_; // Shh
+    function _setFactoryContract(address) external returns (uint) {
         delegateAndReturn();
     }
 
-    function addPToken(address underlying_, address pToken_) public returns (uint) {
-        pToken_; // Shh
-        underlying_; // Shh
+    function setOracle(address) public returns (uint) {
         delegateAndReturn();
     }
 
-    function addPPIE(address pPIE_) public returns (uint) {
-        pPIE_; // Shh
+    function addPToken(address, address) public returns (uint) {
+        delegateAndReturn();
+    }
+
+    function addPPIE(address) public returns (uint) {
         delegateAndReturn();
     }
 
@@ -40,8 +39,7 @@ contract RegistryProxyHarness is RegistryProxy {
         delegateAndReturn();
     }
 
-    function addPETH(address pETH_) public returns (uint) {
-        pETH_; // Shh
+    function addPETH(address) public returns (uint) {
         delegateAndReturn();
     }
 
@@ -53,13 +51,15 @@ contract RegistryProxyHarness is RegistryProxy {
         delegateAndReturn();
     }
 
-    function pTokens(address underlying_) public returns (address) {
-        underlying_; // Shh
+    function oracle() public returns (address) {
         delegateAndReturn();
     }
 
-    function removePToken(address pToken_) public returns (uint) {
-        pToken_; // Shh
+    function pTokens(address) public returns (address) {
+        delegateAndReturn();
+    }
+
+    function removePToken(address) public returns (uint) {
         delegateAndReturn();
     }
 }

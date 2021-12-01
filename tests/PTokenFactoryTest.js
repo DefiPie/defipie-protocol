@@ -178,13 +178,13 @@ describe('PToken Factory tests', () => {
 
     describe("oracle address", () => {
         it("set oracle address", async () => {
-            await send(pTokenFactory, 'setOracle', [accounts[1]]);
-            expect(await call(pTokenFactory, 'oracle')).toEqual(accounts[1]);
+            await send(registryProxy, 'setOracle', [accounts[1]]);
+            expect(await call(pTokenFactory, 'getOracle')).toEqual(accounts[1]);
         });
 
         it("set oracle address, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, 'setOracle', [accounts[2]], {from: accounts[2]});
-            expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
+            let result = await send(registryProxy, 'setOracle', [accounts[2]], {from: accounts[2]});
+            expect(result).toHaveRegistryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
         });
     });
 

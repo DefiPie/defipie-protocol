@@ -18,6 +18,9 @@ interface RegistryMethods {
     addPToken(underlying: string, pToken: string): Sendable<number>
 
     removePToken(address: string): Sendable<number>
+
+    oracle(): Callable<string>
+    setOracle(string): Sendable<number>
 }
 
 export interface Registry extends Contract {

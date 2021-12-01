@@ -107,7 +107,7 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrow(uint repayAmount) external override returns (uint) {
-        (uint err,) = repayBorrowInternal(repayAmount);
+        (uint err,,) = repayBorrowInternal(repayAmount);
         return err;
     }
 
@@ -118,7 +118,7 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrowBehalf(address borrower, uint repayAmount) external override returns (uint) {
-        (uint err,) = repayBorrowBehalfInternal(borrower, repayAmount);
+        (uint err,,) = repayBorrowBehalfInternal(borrower, repayAmount);
         return err;
     }
 
@@ -404,7 +404,7 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
         return a - b;
     }
 
-   function getChainId() internal pure returns (uint) {
+   function getChainId() internal view returns (uint) {
        uint256 chainId;
        assembly { chainId := chainid() }
        return chainId;

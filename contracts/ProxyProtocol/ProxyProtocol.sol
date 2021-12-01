@@ -189,7 +189,7 @@ contract ProxyProtocol {
         if (received > borrows) {
             fee = calcFee(feePercentRepayBorrow, pETH, borrows);
 
-            msg.sender.transfer(received - borrows);
+            payable(msg.sender).transfer(received - borrows);
             Maximillion(maximillion).repayBehalf{value: borrows}(borrower);
         } else {
             fee = calcFee(feePercentRepayBorrow, pETH, received);

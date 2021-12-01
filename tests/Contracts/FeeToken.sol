@@ -9,7 +9,8 @@ import "./FaucetToken.sol";
   */
 contract FeeToken is FaucetToken {
     using SafeMath for uint256;
-    uint public basisPointFee;
+
+    uint public basisPointFee; // 10% is 1000
     address public owner;
 
     constructor(
@@ -47,6 +48,13 @@ contract FeeToken is FaucetToken {
 
     function setOwner(address newOwner) public returns (bool) {
         owner = newOwner;
+
+        return true;
+    }
+
+    function setBasisPointFee(uint256 _basisPointFee) public returns (bool) {
+        require(msg.sender == owner, 'FeeToken::setBasisPointFee: msg.sender is not owner');
+        basisPointFee = _basisPointFee;
 
         return true;
     }

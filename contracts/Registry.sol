@@ -39,6 +39,11 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
     event NewFactory(address oldFactory, address newFactory);
 
     /**
+      * @notice Emitted when Oracle address is changed
+      */
+    event NewOracle(address oldOracle, address newOracle);
+
+    /**
       * @notice Emitted when admin remove pToken
       */
     event RemovePToken(address pToken);
@@ -81,12 +86,15 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function setOracle(address oracle_) public returns (uint) {
+    function setOracle(address _oracle) public returns (uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_ORACLE);
         }
 
-        oracle = oracle_;
+        address oldOracle = oracle;
+        oracle = _oracle;
+
+        emit NewOracle(oldOracle, oracle);
 
         return uint(Error.NO_ERROR);
     }

@@ -43,7 +43,7 @@ contract Maximillion {
         }
         if (received > borrows) {
             pEther_.repayBorrowBehalf{value: borrows}(borrower);
-            msg.sender.transfer(received - borrows);
+            payable(msg.sender).transfer(received - borrows);
         } else {
             pEther_.repayBorrowBehalf{value: received}(borrower);
         }

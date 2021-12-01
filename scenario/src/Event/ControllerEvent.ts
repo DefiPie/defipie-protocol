@@ -140,18 +140,6 @@ async function exitMarket(world: World, from: string, controller: Controller, as
   return world;
 }
 
-async function setPriceOracle(world: World, from: string, controller: Controller, priceOracleAddr: string): Promise<World> {
-  let invokation = await invoke(world, controller.methods._setPriceOracle(priceOracleAddr), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Set price oracle for to ${priceOracleAddr} as ${describeUser(world, from)}`,
-    invokation
-  );
-
-  return world;
-}
-
 async function setLiquidateGuardian(world: World, from: string, controller: Controller, liquidateGuardianAddr: string): Promise<World> {
     let invokation = await invoke(world, controller.methods._setLiquidateGuardian(liquidateGuardianAddr), from, ControllerErrorReporter);
 
@@ -177,6 +165,12 @@ async function setPieAddress(world: World, from: string, controller: Controller,
 }
 
 async function setCollateralFactor(world: World, from: string, controller: Controller, pToken: PToken, collateralFactor: NumberV): Promise<World> {
+    // console.log('hello, i am here');
+    // console.log('controller', controller);
+    // console.log('pToken', pToken);
+    // console.log('collateralFactor', collateralFactor);
+
+
   let invokation = await invoke(world, controller.methods._setCollateralFactor(pToken._address, collateralFactor.encode()), from, ControllerErrorReporter);
 
   world = addAction(
@@ -198,6 +192,18 @@ async function setCloseFactor(world: World, from: string, controller: Controller
   );
 
   return world;
+}
+
+async function setFeeFactorMax(world: World, from: string, controller: Controller, feeFactorMax: NumberV): Promise<World> {
+    let invokation = await invoke(world, controller.methods.setFeeFactorMaxMantissa(feeFactorMax.encode()), from, ControllerErrorReporter);
+
+    world = addAction(
+        world,
+        `Set fee factor max to ${feeFactorMax.show()}`,
+        invokation
+    );
+
+    return world;
 }
 
 async function fastForward(world: World, from: string, controller: Controller, blocks: NumberV): Promise<World> {
@@ -472,19 +478,6 @@ export function controllerCommands() {
       ],
       (world, from, {controller, liquidationIncentive}) => setLiquidationIncentive(world, from, controller, liquidationIncentive)
     ),
-    new Command<{controller: Controller, priceOracle: AddressV}>(`
-        #### SetPriceOracle
-
-        * "Controller SetPriceOracle oracle:<Address>" - Sets the price oracle address
-          * E.g. "Controller SetPriceOracle 0x..."
-      `,
-      "SetPriceOracle",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("priceOracle", getAddressV)
-      ],
-      (world, from, {controller, priceOracle}) => setPriceOracle(world, from, controller, priceOracle.val)
-    ),
     new Command<{controller: Controller, liquidateGuardian: AddressV}>(`
         #### SetLiquidateGuardian
 
@@ -537,6 +530,19 @@ export function controllerCommands() {
         new Arg("closeFactor", getPercentV)
       ],
       (world, from, {controller, closeFactor}) => setCloseFactor(world, from, controller, closeFactor)
+    ),
+    new Command<{controller: Controller, feeFactorMax: NumberV}>(`
+        #### SetFeeFactorMax
+
+        * "Controller SetFeeFactorMax <Number>" - Sets the fee factor max
+          * E.g. "Controller SetFeeFactorMax 0.1"
+      `,
+      "SetFeeFactorMax",
+      [
+        new Arg("controller", getController, {implicit: true}),
+        new Arg("feeFactorMax", getExpNumberV)
+       ],
+      (world, from, {controller, feeFactorMax}) => setFeeFactorMax(world, from, controller, feeFactorMax)
     ),
     new Command<{controller: Controller, newPauseGuardian: AddressV}>(`
         #### SetPauseGuardian

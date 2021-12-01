@@ -25,6 +25,10 @@ export async function getRegistryProxyPPIE(world: World, registryProxy: Registry
     return new AddressV(await registryProxy.methods.pPIE().call());
 }
 
+export async function getPriceOracle(world: World, registryProxy: RegistryProxy): Promise<AddressV> {
+    return new AddressV(await registryProxy.methods.oracle().call());
+}
+
 export function registryProxyFetchers() {
   return [
     new Fetcher<{registryProxy: RegistryProxy}, AddressV>(`
@@ -75,7 +79,17 @@ export function registryProxyFetchers() {
           "pPIE",
           [new Arg("registryProxy", getRegistryProxy, {implicit: true})],
           (world, {registryProxy}) => getRegistryProxyPPIE(world, registryProxy)
-      )
+      ),
+      new Fetcher<{registryProxy: RegistryProxy}, AddressV>(`
+      #### PriceOracle
+
+      * "RegistryProxy PriceOracle" - Returns the Registry's price oracle
+        * E.g. "RegistryProxy PriceOracle"
+    `,
+          "PriceOracle",
+          [new Arg("registryProxy", getRegistryProxy, {implicit: true})],
+          (world, {registryProxy}) => getPriceOracle(world, registryProxy)
+      ),
   ];
 }
 

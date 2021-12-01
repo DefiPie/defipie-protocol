@@ -8,6 +8,7 @@ const {
   freezeTime,
   increaseTime
 } = require('../../Utils/Ethereum');
+const BigNumber = require('bignumber.js');
 
 const {
     makePToken
@@ -24,8 +25,8 @@ const states = Object.entries(statesInverted).reduce((obj, [key, value]) => ({ .
 
 describe('Governor#state/1', () => {
   let pie, ppie, registryAddress, gov, root, acct, delay, timelock, proposalId;
-  let threshold = etherMantissa(15000001);
-  let quorum = etherMantissa(150000001);
+  let threshold = new BigNumber(15000001e18); //15,000,000e18, 1e8 ppie = 1e18 pie
+  let quorum = new BigNumber(150000001e18); //150,000,000e18, 1e8 ppie = 1e18 pie
 
   beforeAll(async () => {
     await freezeTime(100);

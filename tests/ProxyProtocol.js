@@ -11,15 +11,17 @@ const {
     makeProxyProtocol,
     makePTokenFactory,
     makePToken,
-    makeToken
+    makePriceOracle,
+    makeToken,
+    makeRegistryProxy
 } = require('./Utils/DeFiPie');
 
 describe('Proxy Protocol tests', () => {
     let root, admin, feeRecipient, accounts;
     let controller, interestRateModel, exchangeRate, reserveFactor, uniswapOracle;
-    let pETH, feeToken, proxyProtocol, pTokenFactory, maximillion;
+    let pETH, feeToken, proxyProtocol, pTokenFactory, maximillion, registryProxy;
     let feeAmountCreatePool, feePercentMint, feePercentRepayBorrow;
-    let oracle, oracleAddr, factoryUniswapAddr, factoryUniswap, registryAddr, registry;
+    let oracle, oracleAddr, factoryUniswapAddr, factoryUniswap
     let underlying, pTokenAddress;
 
     beforeEach(async () => {
@@ -31,14 +33,18 @@ describe('Proxy Protocol tests', () => {
 
         feeToken = await makeToken();
 
-        controller = await makeController({kind: 'bool'});
+        registryProxy = await makeRegistryProxy();
+        uniswapOracle = await makePriceOracle({registryProxy: registryProxy, kind: 'uniswap'});
+        controller = await makeController({kind: 'bool', priceOracle: uniswapOracle, registryProxy: registryProxy});
         interestRateModel = await makeInterestRateModel();
         exchangeRate = 0.02;
         reserveFactor = 0.1;
 
         pTokenFactory = await makePTokenFactory({
+            registryProxy: registryProxy,
             controller: controller,
             interestRateModel: interestRateModel,
+            uniswapOracle: uniswapOracle,
             exchangeRate:exchangeRate,
             reserveFactor:reserveFactor
         });
@@ -60,12 +66,11 @@ describe('Proxy Protocol tests', () => {
             feePercentRepayBorrow: feePercentRepayBorrow
         });
 
-        oracleAddr = await call(pTokenFactory, "oracle");
-        oracle = await saddle.getContractAt('UniswapPriceOracleMock', oracleAddr);
-        factoryUniswapAddr = await call(oracle, "uniswapFactory");
+        //@todo
+        factoryUniswapAddr = await call(uniswapOracle, "poolFactories", [0]);
         factoryUniswap = await saddle.getContractAt('MockPriceFeed', factoryUniswapAddr);
-        registryAddr = await call(pTokenFactory, "registry");
-        registry = await saddle.getContractAt('Registry', registryAddr);
+
+        registryProxy = await saddle.getContractAt('Registry', registryAddr);
 
         // without proxy
         underlying = await makeToken();
@@ -82,13 +87,13 @@ describe('Proxy Protocol tests', () => {
         expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress});
 
         let priceInUSD = '12000000000000000000'; // $12
-        await send(oracle, 'setUnderlyingPrice', [pTokenAddress, priceInUSD]);
+        await send(uniswapOracle, 'setUnderlyingPrice', [pTokenAddress, priceInUSD]);
 
         priceInUSD = '400000000000000000000'; // $400
-        await send(oracle, 'setUnderlyingPrice', [pETH._address, priceInUSD]);
+        await send(uniswapOracle, 'setUnderlyingPrice', [pETH._address, priceInUSD]);
 
         priceInUSD = '600000000000000000'; // $0.60
-        await send(oracle, 'setPriceInUSD', [feeToken._address, priceInUSD]);
+        await send(uniswapOracle, 'setPriceInUSD', [feeToken._address, priceInUSD]);
     });
 
     describe("constructor", () => {
@@ -156,7 +161,7 @@ describe('Proxy Protocol tests', () => {
             let balanceFeeRecipientStart = new BigNumber(await call(feeToken, 'balanceOf', [feeRecipient]));
 
             let tx1 = await send(proxyProtocol, 'createPToken', [newUnderlying._address], {from: root});
-            let tx2 = await call(registry, 'pTokens', [newUnderlying._address]);
+            let tx2 = await call(registryProxy, 'pTokens', [newUnderlying._address]);
             expect(tx1.events[2].address).toEqual(pTokenFactory._address);
             expect((tx1.events[2].raw.data).slice(26)).toEqual(tx2.toLowerCase().slice(2));
 

@@ -9,7 +9,8 @@ interface ControllerMethods {
   checkMembership(user: string, pToken: string): Callable<string>
   getAssetsIn(string): Callable<string[]>
   getAdmin(): Callable<string>
-  oracle(): Callable<string>
+  getOracle(): Callable<string>
+  registry(): Callable<string>
   liquidateGuardian(): Callable<string>
   maxAssets(): Callable<number>
   liquidationIncentiveMantissa(): Callable<number>
@@ -21,10 +22,10 @@ interface ControllerMethods {
   _setMaxAssets(encodedNumber): Sendable<number>
   _setLiquidationIncentive(encodedNumber): Sendable<number>
   _supportMarket(string): Sendable<number>
-  _setPriceOracle(string): Sendable<number>
   _setLiquidateGuardian(string): Sendable<number>
   _setPieAddress(string): Sendable<number>
   _setCollateralFactor(string, encodedNumber): Sendable<number>
+  setFeeFactorMaxMantissa(encodedNumber): Sendable<number>
   _setCloseFactor(encodedNumber): Sendable<number>
   enterMarkets(markets: string[]): Sendable<number>
   exitMarket(market: string): Sendable<number>

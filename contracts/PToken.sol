@@ -93,7 +93,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* Get the allowance, infinite for the account owner */
         uint startingAllowance = 0;
         if (spender == src) {
-            startingAllowance = uint(-1);
+            startingAllowance = type(uint256).max;
         } else {
             startingAllowance = transferAllowances[src][spender];
         }
@@ -127,7 +127,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         accountTokens[dst] = dstTokensNew;
 
         /* Eat some of the allowance (if necessary) */
-        if (startingAllowance != uint(-1)) {
+        if (startingAllowance != type(uint256).max) {
             transferAllowances[src][spender] = allowanceNew;
         }
 
@@ -512,7 +512,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @param mintAmount The amount of the underlying asset to supply
      * @return (uint, uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the actual mint amount, and actual mint tokens.
      */
-    function mintFresh(address minter, uint mintAmount) internal returns (uint, uint, uint) {
+    function mintFresh(address minter, uint mintAmount) internal virtual returns (uint, uint, uint) {
         /* Fail if mint not allowed */
         uint allowed = controller.mintAllowed(address(this), minter, mintAmount);
         if (allowed != 0) {
@@ -587,7 +587,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
             return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0);
         }
         // redeemFresh emits redeem-specific logs on errors, so we don't need to
-        return redeemFresh(msg.sender, redeemTokens, 0);
+        return redeemFresh(payable(msg.sender), redeemTokens, 0);
     }
 
     /**
@@ -603,7 +603,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
             return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0);
         }
         // redeemFresh emits redeem-specific logs on errors, so we don't need to
-        return redeemFresh(msg.sender, 0, redeemAmount);
+        return redeemFresh(payable(msg.sender), 0, redeemAmount);
     }
 
     struct RedeemLocalVars {
@@ -732,7 +732,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error(error), FailureInfo.BORROW_ACCRUE_INTEREST_FAILED);
         }
         // borrowFresh emits borrow-specific logs on errors, so we don't need to
-        return borrowFresh(msg.sender, borrowAmount);
+        return borrowFresh(payable(msg.sender), borrowAmount);
     }
 
     struct BorrowLocalVars {
@@ -812,13 +812,13 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
     /**
      * @notice Sender repays their own borrow
      * @param repayAmount The amount to repay
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the actual repayment amount  and transfer amount from msg.sender
      */
-    function repayBorrowInternal(uint repayAmount) internal nonReentrant returns (uint, uint) {
+    function repayBorrowInternal(uint repayAmount) internal nonReentrant returns (uint, uint, uint) {
         uint error = accrueInterest();
         if (error != uint(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
-            return (fail(Error(error), FailureInfo.REPAY_BORROW_ACCRUE_INTEREST_FAILED), 0);
+            return (fail(Error(error), FailureInfo.REPAY_BORROW_ACCRUE_INTEREST_FAILED), 0, 0);
         }
         // repayBorrowFresh emits repay-borrow-specific logs on errors, so we don't need to
         return repayBorrowFresh(msg.sender, msg.sender, repayAmount);
@@ -828,13 +828,13 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @notice Sender repays a borrow belonging to borrower
      * @param borrower the account with the debt being payed off
      * @param repayAmount The amount to repay
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the actual repayment amount and transfer amount from msg.sender
      */
-    function repayBorrowBehalfInternal(address borrower, uint repayAmount) internal nonReentrant returns (uint, uint) {
+    function repayBorrowBehalfInternal(address borrower, uint repayAmount) internal nonReentrant returns (uint, uint, uint) {
         uint error = accrueInterest();
         if (error != uint(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
-            return (fail(Error(error), FailureInfo.REPAY_BEHALF_ACCRUE_INTEREST_FAILED), 0);
+            return (fail(Error(error), FailureInfo.REPAY_BEHALF_ACCRUE_INTEREST_FAILED), 0, 0);
         }
         // repayBorrowFresh emits repay-borrow-specific logs on errors, so we don't need to
         return repayBorrowFresh(msg.sender, borrower, repayAmount);
@@ -856,18 +856,18 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @param payer the account paying off the borrow
      * @param borrower the account with the debt being payed off
      * @param repayAmount the amount of undelrying tokens being returned
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
+     * @return (uint, uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the actual repayment amount and transfer amount from msg.sender
      */
-    function repayBorrowFresh(address payer, address borrower, uint repayAmount) internal returns (uint, uint) {
+    function repayBorrowFresh(address payer, address borrower, uint repayAmount) internal virtual returns (uint, uint, uint) {
         /* Fail if repayBorrow not allowed */
         uint allowed = controller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
         if (allowed != 0) {
-            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.REPAY_BORROW_CONTROLLER_REJECTION, allowed), 0);
+            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.REPAY_BORROW_CONTROLLER_REJECTION, allowed), 0, 0);
         }
 
         /* Verify market's block number equals current block number */
         if (accrualBlockNumber != getBlockNumber()) {
-            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REPAY_BORROW_FRESHNESS_CHECK), 0);
+            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REPAY_BORROW_FRESHNESS_CHECK), 0, 0);
         }
 
         RepayBorrowLocalVars memory vars;
@@ -878,7 +878,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We fetch the amount the borrower owes, with accumulated interest */
         (vars.mathErr, vars.accountBorrows) = borrowBalanceStoredInternal(borrower);
         if (vars.mathErr != MathError.NO_ERROR) {
-            return (failOpaque(Error.MATH_ERROR, FailureInfo.REPAY_BORROW_ACCUMULATED_BALANCE_CALCULATION_FAILED, uint(vars.mathErr)), 0);
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REPAY_BORROW_ACCUMULATED_BALANCE_CALCULATION_FAILED, uint(vars.mathErr)), 0, 0);
         }
 
         /*
@@ -927,7 +927,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We emit a RepayBorrow event */
         emit RepayBorrow(payer, borrower, vars.actualRepayAmount, vars.accountBorrowsNew, vars.totalBorrowsNew);
 
-        return (uint(Error.NO_ERROR), vars.actualRepayAmount);
+        return (uint(Error.NO_ERROR), vars.actualRepayAmount, vars.repayAmount);
     }
 
     /**
@@ -964,7 +964,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @param repayAmount The amount of the underlying borrowed asset to repay
      * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
      */
-    function liquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, PTokenInterface pTokenCollateral) internal returns (uint, uint) {
+    function liquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, PTokenInterface pTokenCollateral) internal virtual returns (uint, uint) {
         /* Fail if liquidate not allowed */
         uint allowed = controller.liquidateBorrowAllowed(address(this), address(pTokenCollateral), liquidator, borrower, repayAmount);
         if (allowed != 0) {
@@ -991,13 +991,13 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
             return (fail(Error.INVALID_CLOSE_AMOUNT_REQUESTED, FailureInfo.LIQUIDATE_CLOSE_AMOUNT_IS_ZERO), 0);
         }
 
-        /* Fail if repayAmount = -1 */
-        if (repayAmount == uint(-1)) {
+        /* Fail if repayAmount = type(uint256).max */
+        if (repayAmount == type(uint256).max) {
             return (fail(Error.INVALID_CLOSE_AMOUNT_REQUESTED, FailureInfo.LIQUIDATE_CLOSE_AMOUNT_IS_UINT_MAX), 0);
         }
 
         /* Fail if repayBorrow fails */
-        (uint repayBorrowError, uint actualRepayAmount) = repayBorrowFresh(liquidator, borrower, repayAmount);
+        (uint repayBorrowError, uint actualRepayAmount,) = repayBorrowFresh(liquidator, borrower, repayAmount);
         if (repayBorrowError != uint(Error.NO_ERROR)) {
             return (fail(Error(repayBorrowError), FailureInfo.LIQUIDATE_REPAY_BORROW_FRESH_FAILED), 0);
         }

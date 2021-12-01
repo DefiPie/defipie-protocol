@@ -86,7 +86,7 @@ contract ControllerScenarioG4 is Controller {
         for (uint i = 0; i < allMarkets_.length; i++) {
             address pToken = allMarkets_[i];
             if (pieSpeeds[address(pToken)] > 0) {
-                Exp memory assetPrice = Exp({mantissa: oracle.getUnderlyingPrice(pToken)});
+                Exp memory assetPrice = Exp({mantissa: getOracle().getUnderlyingPrice(pToken)});
                 Exp memory utility = mul_(assetPrice, PTokenInterface(pToken).totalBorrows());
                 utilities[i] = utility;
                 totalUtility = add_(totalUtility, utility);

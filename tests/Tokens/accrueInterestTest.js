@@ -6,6 +6,7 @@ const {
 
 const {
   makePToken,
+  makePriceOracle,
   setBorrowRate
 } = require('../Utils/DeFiPie');
 
@@ -27,10 +28,11 @@ async function preAccrue(pToken) {
 
 describe('PToken', () => {
   let root, accounts;
-  let pToken;
+  let pToken, oracle;
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
-    pToken = await makePToken({controllerOpts: {kind: 'bool'}});
+    oracle = await makePriceOracle();
+    pToken = await makePToken({uniswapOracle: oracle, controllerOpts: {kind: 'bool'}});
   });
 
   beforeEach(async () => {

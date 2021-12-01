@@ -6,6 +6,7 @@ const {
 
 const {
   makePToken,
+  makePriceOracle,
   balanceOf,
   borrowSnapshot,
   totalBorrows,
@@ -65,10 +66,11 @@ async function repayBorrowBehalf(pToken, payer, borrower, repayAmount) {
 }
 
 describe('PToken', function () {
-  let pToken, root, borrower, benefactor, accounts;
+  let pToken, oracle, root, borrower, benefactor, accounts;
   beforeEach(async () => {
     [root, borrower, benefactor, ...accounts] = saddle.accounts;
-    pToken = await makePToken({controllerOpts: {kind: 'bool'}});
+    oracle = await makePriceOracle();
+    pToken = await makePToken({uniswapOracle: oracle, controllerOpts: {kind: 'bool'}});
   });
 
   describe('borrowFresh', () => {
