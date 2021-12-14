@@ -670,8 +670,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
                 && asset != registry.pPIE()
                 && feeFactorMantissa[asset] > 0
             ) {
-                // vars.oraclePriceMantissa * (1e18 + feeFactorMantissa[asset] * 2) / 1e18
-                vars.oraclePrice = Exp({mantissa: div_(mul_(vars.oraclePriceMantissa, (add_(1e18, mul_(feeFactorMantissa[asset], 2)))), 1e18)});
+                // vars.oraclePriceMantissa * (1e18 + feeFactorMantissa[asset] * 3) / 1e18
+                vars.oraclePrice = Exp({mantissa: div_(mul_(vars.oraclePriceMantissa, (add_(1e18, mul_(feeFactorMantissa[asset], 3)))), 1e18)});
             }
 
             // sumBorrowPlusEffects += oraclePrice * borrowBalance

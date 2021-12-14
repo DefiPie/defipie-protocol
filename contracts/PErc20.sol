@@ -140,10 +140,13 @@ contract PErc20 is PToken, PErc20Interface {
          *  fee factor = 1e18 - receiveFromUser * 1e18 / userTransferAmount
          *  for example 1e18 - 85 * 1e18 / 100 = 1e18 - 0.85e18 = 0.15e18
          */
-        uint currentFeeFactorMantissa = sub_(1e18, div_(mul_(receiveFromUser, 1e18), userTransferAmount));
+        uint calcFeeFactorMantissa = sub_(1e18, div_(mul_(receiveFromUser, 1e18), userTransferAmount));
+        uint currentFeeFactor = controller.getFeeFactorMantissa(address(this));
 
-        if (currentFeeFactorMantissa != controller.getFeeFactorMantissa(address(this))) {
-            controller.setFeeFactor(address(this), currentFeeFactorMantissa);
+        if (calcFeeFactorMantissa != currentFeeFactor) {
+            if (currentFeeFactor == 0 || calcFeeFactorMantissa % 10000 == 0 || userTransferAmount > 10000) {
+                controller.setFeeFactor(address(this), calcFeeFactorMantissa);
+            }
         }
     }
 

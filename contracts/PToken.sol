@@ -889,10 +889,21 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         }
 
         /* If repayAmount > accountBorrows, repayAmount = accountBorrows */
+        /* for fee Token repayAmount max is accountBorrows / (1 - feeFactor) */
+        vars.repayAmount = repayAmount;
+
         if (repayAmount > vars.accountBorrows) {
-            vars.repayAmount = vars.accountBorrows;
-        } else {
-            vars.repayAmount = repayAmount;
+            uint feeFactor = controller.getFeeFactorMantissa(address(this));
+
+            if (feeFactor == 0) {
+                vars.repayAmount = vars.accountBorrows;
+            } else {
+                uint maxRepay = div_(mul_(vars.accountBorrows, 1e18), sub_(1e18, feeFactor));
+
+                if (repayAmount > maxRepay) {
+                    vars.repayAmount = maxRepay;
+                }
+            }
         }
 
         /////////////////////////

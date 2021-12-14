@@ -11,6 +11,8 @@ contract FeeToken is FaucetToken {
     using SafeMath for uint256;
 
     uint public basisPointFee; // 10% is 1000
+    uint public denom; // 10000 default value
+
     address public owner;
 
     constructor(
@@ -23,26 +25,34 @@ contract FeeToken is FaucetToken {
     ) FaucetToken(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
         basisPointFee = _basisPointFee;
         owner = _owner;
+
+        denom = 10000;
     }
 
     function transfer(address dst, uint amount) public override returns (bool) {
-        uint fee = amount.mul(basisPointFee).div(10000);
+        uint fee = amount.mul(basisPointFee).div(denom);
         uint net = amount.sub(fee);
         balances[owner] = balances[owner].add(fee);
         balances[msg.sender] = balances[msg.sender].sub(amount);
         balances[dst] = balances[dst].add(net);
-        emit Transfer(msg.sender, dst, amount);
+
+        emit Transfer(msg.sender, owner, fee);
+        emit Transfer(msg.sender, dst, net);
+
         return true;
     }
 
     function transferFrom(address src, address dst, uint amount) public override returns (bool) {
-        uint fee = amount.mul(basisPointFee).div(10000);
+        uint fee = amount.mul(basisPointFee).div(denom);
         uint net = amount.sub(fee);
         balances[owner] = balances[owner].add(fee);
         balances[src] = balances[src].sub(amount);
         balances[dst] = balances[dst].add(net);
         allowed[src][msg.sender] = allowed[src][msg.sender].sub(amount);
-        emit Transfer(src, dst, amount);
+
+        emit Transfer(src, dst, net);
+        emit Transfer(src, owner, fee);
+
         return true;
     }
 
@@ -55,6 +65,13 @@ contract FeeToken is FaucetToken {
     function setBasisPointFee(uint256 _basisPointFee) public returns (bool) {
         require(msg.sender == owner, 'FeeToken::setBasisPointFee: msg.sender is not owner');
         basisPointFee = _basisPointFee;
+
+        return true;
+    }
+
+    function setDenom(uint256 denom_) public returns (bool) {
+        require(msg.sender == owner, 'FeeToken::setDenom: msg.sender is not owner');
+        denom = denom_;
 
         return true;
     }
