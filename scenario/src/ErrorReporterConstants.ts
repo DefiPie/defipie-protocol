@@ -50,7 +50,6 @@ const ControllerErrorReporter = {
         'SET_GUARDIAN_OWNER_CHECK',
         'SET_PENDING_ADMIN_OWNER_CHECK',
         'SET_PENDING_IMPLEMENTATION_OWNER_CHECK',
-        'SET_PRICE_ORACLE_OWNER_CHECK',
         'SUPPORT_MARKET_EXISTS',
         'SUPPORT_MARKET_OWNER_CHECK'
     ]
@@ -197,7 +196,8 @@ const RegistryErrorReporter = {
         'ACCEPT_ADMIN_PENDING_ADMIN_CHECK',
         'SET_NEW_IMPLEMENTATION',
         'SET_PENDING_ADMIN_OWNER_CHECK',
-        'SET_NEW_FACTORY'
+        'SET_NEW_FACTORY',
+        'SET_NEW_ORACLE'
     ]
 };
 

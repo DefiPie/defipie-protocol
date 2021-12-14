@@ -13,12 +13,12 @@ Test "Check Decimals"
 
 Test "Check Total Supply"
     Pie Deploy Geoff
-    Assert Equal (Pie TotalSupply) 220000000e18
+    Assert Equal (Pie TotalSupply) 1000000000e18
 
 Test "Check account receives Total Supply after deploy and emits Transfer event"
     Pie Deploy Geoff
-    Assert Equal (Pie TokenBalance Geoff) 220000000e18
-    Assert Log Transfer (from (Address Zero)) (to (Address Geoff)) (amount "220000000000000000000000000")
+    Assert Equal (Pie TokenBalance Geoff) 1000000000e18
+    Assert Log Transfer (from (Address Zero)) (to (Address Geoff)) (amount "1000000000000000000000000000")
 
 Test "Check approve sets correct approval and emits Approval event"
     Pie Deploy Geoff
@@ -29,7 +29,7 @@ Test "Check approve sets correct approval and emits Approval event"
 Test "Check transfer updates balances correctly, emits Transfer event, and returns true"
     Pie Deploy Geoff
     From Geoff (Pie Transfer Jared 10)
-    Assert Equal (Pie TokenBalance Geoff) 219999999999999999999999990
+    Assert Equal (Pie TokenBalance Geoff) 999999999999999999999999990
     Assert Equal (Pie TokenBalance Jared) 10
     Assert Log Transfer (from (Address Geoff)) (to (Address Jared)) (amount "10")
 
@@ -37,7 +37,7 @@ Test "Check transferFrom with unlimited allowance updates balances correctly, em
     Pie Deploy Geoff
     From Geoff (Pie Approve Jared UInt256Max)
     From Jared (Pie TransferFrom Geoff Jared 10)
-    Assert Equal (Pie TokenBalance Geoff) 219999999999999999999999990
+    Assert Equal (Pie TokenBalance Geoff) 999999999999999999999999990
     Assert Equal (Pie TokenBalance Jared) 10
     Assert Equal (Pie Allowance Geoff Jared) UInt256Max
     Assert Log Transfer (from (Address Geoff)) (to (Address Jared)) (amount "10")
@@ -46,7 +46,7 @@ Test "Check transferFrom with unlimited allowance updates balances correctly, em
     Pie Deploy Geoff
     From Geoff (Pie Approve Jared UInt96Max)
     From Jared (Pie TransferFrom Geoff Jared 10)
-    Assert Equal (Pie TokenBalance Geoff) 219999999999999999999999990
+    Assert Equal (Pie TokenBalance Geoff) 999999999999999999999999990
     Assert Equal (Pie TokenBalance Jared) 10
     Assert Equal (Pie Allowance Geoff Jared) 79228162514264337593543950325
     Assert Log Transfer (from (Address Geoff)) (to (Address Jared)) (amount "10")
@@ -55,7 +55,7 @@ Test "Check transferFrom with allowance updates balances correctly, emits Transf
     Pie Deploy Geoff
     From Geoff (Pie Approve Jared 10)
     From Jared (Pie TransferFrom Geoff Jared 9)
-    Assert Equal (Pie TokenBalance Geoff) 219999999999999999999999991
+    Assert Equal (Pie TokenBalance Geoff) 999999999999999999999999991
     Assert Equal (Pie TokenBalance Jared) 9
     Assert Equal (Pie Allowance Geoff Jared) 1
     Assert Log Transfer (from (Address Geoff)) (to (Address Jared)) (amount "9")
@@ -71,11 +71,11 @@ Test "Check transferFrom reverts with not sufficient allowance"
 Test "Check transfer reverts when transferring too much"
     Pie Deploy Geoff
     AllowFailures
-    From Geoff (Pie Transfer Jared 220000001e18)
+    From Geoff (Pie Transfer Jared 1000000001e18)
     Assert Revert "revert Pie::_transferTokens: transfer amount exceeds balance"
 
 Test "Check transfer reverts when transferring to address 0"
     Pie Deploy Geoff
     AllowFailures
-    From Geoff (Pie Transfer (Address Zero) 220000000e18)
+    From Geoff (Pie Transfer (Address Zero) 1000000000e18)
     Assert Revert "revert Pie::_transferTokens: cannot transfer to the zero address"

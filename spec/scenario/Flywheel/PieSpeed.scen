@@ -10,7 +10,7 @@ Macro FlywheelController price=1.0 borrowRate=0.000005 pieInitAmount=5000000e18
     Unitroller SetPendingImpl ControllerScenG2
     ControllerImpl ControllerScenG2 Become
     --list some tokens
-    Controller SetPriceOracle (PriceOracleProxy Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetMaxAssets 20
     Controller SetCloseFactor 0.5
     Controller LiquidationIncentive 1.1

@@ -24,7 +24,7 @@ describe('Governor#propose/5', () => {
   let proposalBlock;
   let delay = 1;
   let period = 19710;
-  let threshold = etherMantissa(15000001);
+  let threshold = 15000001e8; //15,000,000e8
 
   beforeAll(async () => {
     targets = [root];
@@ -134,7 +134,7 @@ describe('Governor#propose/5', () => {
     it("This function returns the id of the newly created proposal. # proposalId(n) = succ(proposalId(n-1))", async () => {
       await send(pie, 'transfer', [accounts[2], threshold]);
       await send(pie, 'approve', [ppie._address, threshold], {from: accounts[2]});
-      await send(ppie, 'mint', [etherMantissa(400001)], {from: accounts[2]});
+      await send(ppie, 'mint', [threshold], {from: accounts[2]});
       await send(ppie, 'delegate', [accounts[2]], {from: accounts[2]});
 
       await mineBlock();
@@ -151,7 +151,7 @@ describe('Governor#propose/5', () => {
       await send(ppie, 'delegate', [accounts[3]], {from: accounts[3]});
       await mineBlock();
       let nextProposalId = await gov.methods['propose'](targets, values, signatures, callDatas, "yoot").call({ from: accounts[3] });
-      let startBlock = 48;
+      let startBlock = 50;
 
       expect(
         await send(gov, 'propose', [targets, values, signatures, callDatas, "second proposal"], { from: accounts[3] })

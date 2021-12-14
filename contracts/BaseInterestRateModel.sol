@@ -10,6 +10,9 @@ import "./SafeMath.sol";
 contract BaseInterestRateModel is InterestRateModel {
     using SafeMath for uint;
 
+    /**
+     * @notice Interest param event
+     */
     event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock);
 
     /**

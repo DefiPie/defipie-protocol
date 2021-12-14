@@ -117,7 +117,7 @@ contract PErc20Harness is PErc20 {
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,,) = repayBorrowFresh(payer, account, repayAmount);
         return err;
     }
 
@@ -503,7 +503,7 @@ contract PErc20DelegateHarness is PErc20Delegate {
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,,) = repayBorrowFresh(payer, account, repayAmount);
         return err;
     }
 

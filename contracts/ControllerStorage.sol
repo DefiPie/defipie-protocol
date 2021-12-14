@@ -119,4 +119,10 @@ contract ControllerStorage is UnitrollerAdminStorage {
 
     /// @notice Only the Liquidate guardian can liquidate loans with collateral below the loan amount
     address public liquidateGuardian;
+
+    /// @notice Multiplier representing the bonus on collateral that a liquidator receives for fee tokens
+    mapping(address => uint) public feeFactorMantissa;
+
+    // Max value of fee factor can be set for fee factor
+    uint public feeFactorMaxMantissa;
 }

@@ -52,7 +52,7 @@ describe('PPIE', function () {
     });
 
     it('should return correct decimals', async () => {
-        expect(await call(pToken, 'decimals')).toEqualNumber(18);
+        expect(await call(pToken, 'decimals')).toEqualNumber(8);
     });
   });
 
@@ -60,7 +60,7 @@ describe('PPIE', function () {
     it("has an underlying balance", async () => {
       const pToken = await makePToken({ kind: 'ppie', supportMarket: true, exchangeRate: 2 });
       await send(pToken, 'harnessSetBalance', [root, 100]);
-      expect(await call(pToken, 'balanceOfUnderlying', [root])).toEqualNumber(200);
+      expect(await call(pToken, 'balanceOfUnderlying', [root])).toEqualNumber(2e12); // 1e8 = 2e18, 100 = 2e12
     });
   });
 
@@ -179,7 +179,7 @@ describe('PPIE', function () {
 
     it("returns initial exchange rate with zero pTokenSupply", async () => {
       const result = await call(pToken, 'exchangeRateStored');
-      expect(result).toEqualNumber(etherMantissa(exchangeRate));
+      expect(result).toEqualNumber(2e28); // init exchangeRate = 1e18, pie decimals is 18, ppie decimals is 8, result 1e28
     });
 
     it("calculates with single pTokenSupply and single total borrow", async () => {

@@ -28,8 +28,10 @@ async function makeController(opts = {}) {
     const controller = await deploy('ControllerHarnessWithAdmin');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     await send(controller, '_setCloseFactor', [closeFactor]);
+    await send(controller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(controller, '_setMaxAssets', [maxAssets]);
     return Object.assign(controller, { priceOracle });
   }
@@ -40,6 +42,7 @@ async function makeController(opts = {}) {
     const controller = await deploy('ControllerScenarioG2');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
 
@@ -48,6 +51,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
 
     return Object.assign(unitroller, { priceOracle, registryProxy });
@@ -59,6 +63,7 @@ async function makeController(opts = {}) {
     const controller = await deploy('ControllerScenarioG3');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
 
@@ -67,6 +72,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
 
     return Object.assign(unitroller, { priceOracle, registryProxy });
@@ -78,6 +84,7 @@ async function makeController(opts = {}) {
     const controller = await deploy('ControllerScenarioG4');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const liquidationIncentive = etherMantissa(1);
     const pie = opts.pie || await deploy('Pie', [opts.pieOwner || root]);
     const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
@@ -87,6 +94,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, 'harnessSetPieRate', [pieRate]);
     await send(unitroller, 'setPieAddress', [pie._address]); // harness only
 
@@ -99,6 +107,7 @@ async function makeController(opts = {}) {
     const controller = await deploy('ControllerHarness');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
     const pie = opts.pie || await deploy('Pie', [opts.pieOwner || root]);
@@ -109,6 +118,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, 'setPieAddress', [pie._address]); // harness only
     await send(unitroller, '_setPieRate', [pieRate]);
@@ -280,6 +290,27 @@ async function makePriceOracle(opts = {}) {
 
   if (kind == 'simple') {
     return await deploy('SimplePriceOracle');
+  }
+
+  if (kind == 'uniswap') {
+      const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
+      const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
+      const mockUniswapFactory = opts.mockUniswapFactory || await deploy('MockUniswapFactory');
+      const mockUniswapPool = opts.mockUniswapPool || await deploy('MockUniswapPool');
+      const WETHToken = opts.WETHToken || await makeToken();
+
+      let tx = await send(mockUniswapFactory, 'setPair', [mockUniswapPool._address]);
+      let tx_ = await send(mockUniswapFactory, 'setPairExist', [true]);
+
+      const uniswapOracle = await deploy('UniswapPriceOracleMock', [
+          mockUniswapFactory._address,
+          WETHToken._address,
+          mockPriceFeed._address
+      ]);
+
+      let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
+
+      return uniswapOracle;
   }
 }
 

@@ -107,7 +107,7 @@ contract PPIEDelegateHarness is PPIEDelegate {
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,,) = repayBorrowFresh(payer, account, repayAmount);
         return err;
     }
 

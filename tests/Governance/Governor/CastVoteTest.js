@@ -22,7 +22,8 @@ async function enfranchise(pie, ppie, actor, amount) {
 describe("governor#castVote/2", () => {
     let pie, ppie, registryAddress, gov, root, a1, accounts;
     let targets, values, signatures, callDatas, proposalId;
-    let threshold = etherMantissa(15000001);
+    let threshold = new BigNumber(15000001e18); //15,000,000e18, 1e8 ppie = 1e18 pie
+    let thresholdInPPIE = new BigNumber(15000001e8); //15,000,000e8
 
     beforeAll(async () => {
         [root, a1, ...accounts] = saddle.accounts;
@@ -82,7 +83,7 @@ describe("governor#castVote/2", () => {
                 await send(gov, 'castVote', [proposalId, true], { from: actor });
 
                 let afterFors = (await call(gov, 'proposals', [proposalId])).forVotes;
-                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(threshold));
+                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(thresholdInPPIE));
             });
 
             it("or AgainstVotes corresponding to the caller's support flag.", async () => {
@@ -97,7 +98,7 @@ describe("governor#castVote/2", () => {
                 await send(gov, 'castVote', [proposalId, false], { from: actor });
 
                 let afterAgainsts = (await call(gov, 'proposals', [proposalId])).againstVotes;
-                expect(new BigNumber(afterAgainsts)).toEqual(new BigNumber(beforeAgainsts).plus(threshold));
+                expect(new BigNumber(afterAgainsts)).toEqual(new BigNumber(beforeAgainsts).plus(thresholdInPPIE));
             });
         });
 
@@ -131,7 +132,7 @@ describe("governor#castVote/2", () => {
                 expect(tx.gasUsed < 80000);
 
                 let afterFors = (await call(gov, 'proposals', [proposalId])).forVotes;
-                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(threshold));
+                expect(new BigNumber(afterFors)).toEqual(new BigNumber(beforeFors).plus(thresholdInPPIE));
             });
         });
 
@@ -159,7 +160,7 @@ describe("governor#castVote/2", () => {
                 postFilter: ({source}) => !source || source.includes('receipts'),
                 execLog: (log) => {
                     let [output] = log.outputs;
-                    let votes = "000000000000000000000000000000000000000c685faefeb8a016640000";
+                    let votes = "000000000000000000000000000000000000000000000005543dfd1fa100";
                     let voted = "01";
                     let support = "01";
 
@@ -180,7 +181,7 @@ describe("governor#castVote/2", () => {
                 postFilter: ({source}) => !source || source.includes('receipts'),
                 execLog: (log) => {
                     let [output] = log.outputs;
-                    let votes = "000000000000000000000000000000000000000c685faefeb8a016640000";
+                    let votes = "000000000000000000000000000000000000000000000005543dfd1fa100";
                     let voted = "01";
                     let support = "00";
 

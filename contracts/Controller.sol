@@ -30,6 +30,12 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     /// @notice Emitted when a collateral factor is changed by admin
     event NewCollateralFactor(address pToken, uint oldCollateralFactorMantissa, uint newCollateralFactorMantissa);
 
+    /// @notice Event emitted when the fee factor max is changed
+    event NewFeeFactorMaxMantissa(uint oldFeeFactorMaxMantissa, uint newFeeFactorMaxMantissa);
+
+    /// @notice Event emitted when the fee factor is changed
+    event NewFeeFactor(address pToken, uint oldFeeFactorMantissa, uint newFeeFactorMantissa);
+
     /// @notice Emitted when liquidation incentive is changed by admin
     event NewLiquidationIncentive(uint oldLiquidationIncentiveMantissa, uint newLiquidationIncentiveMantissa);
 
@@ -430,7 +436,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             return uint(Error.TOO_MUCH_REPAY);
         }
 
-        if ((sumBorrowPlusEffects * liquidationIncentiveMantissa / 1e18) > sumDeposit
+        // res = sumBorrowPlusEffects * liquidationIncentiveMantissa / 1e18
+        uint result = div_(mul_(sumBorrowPlusEffects, liquidationIncentiveMantissa), 1e18);
+        if (result > sumDeposit
             && liquidator != liquidateGuardian
         ) {
             return uint(Error.GUARDIAN_REJECTION);
@@ -632,6 +640,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             if (vars.oraclePriceMantissa == 0) {
                 return (Error.PRICE_ERROR, 0, 0, 0);
             }
+
             vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
 
             // Pre-compute a conversion factor from tokens -> ether (normalized price value)
@@ -654,6 +663,15 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             (mErr, vars.sumCollateral) = mulScalarTruncateAddUInt(vars.tokensToDenom, vars.pTokenBalance, vars.sumCollateral);
             if (mErr != MathError.NO_ERROR) {
                 return (Error.MATH_ERROR, 0, 0, 0);
+            }
+
+            // for feeToken
+            if (asset != registry.pETH()
+                && asset != registry.pPIE()
+                && feeFactorMantissa[asset] > 0
+            ) {
+                // vars.oraclePriceMantissa * (1e18 + feeFactorMantissa[asset] * 3) / 1e18
+                vars.oraclePrice = Exp({mantissa: div_(mul_(vars.oraclePriceMantissa, (add_(1e18, mul_(feeFactorMantissa[asset], 3)))), 1e18)});
             }
 
             // sumBorrowPlusEffects += oraclePrice * borrowBalance
@@ -709,7 +727,6 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
          *  seizeTokens = seizeAmount / exchangeRate
          *   = actualRepayAmount * (liquidationIncentive * priceBorrowed) / (priceCollateral * exchangeRate)
          */
-        uint exchangeRateMantissa = PTokenInterface(pTokenCollateral).exchangeRateStored(); // Note: reverts on error
         uint seizeTokens;
         Exp memory numerator;
         Exp memory denominator;
@@ -721,7 +738,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
             return (uint(Error.MATH_ERROR), 0);
         }
 
-        (mathErr, denominator) = mulExp(priceCollateralMantissa, exchangeRateMantissa);
+        // uint exchangeRateMantissa = PTokenInterface(pTokenCollateral).exchangeRateStored(); // Note: reverts on error
+        (mathErr, denominator) = mulExp(priceCollateralMantissa, PTokenInterface(pTokenCollateral).exchangeRateStored());
         if (mathErr != MathError.NO_ERROR) {
             return (uint(Error.MATH_ERROR), 0);
         }
@@ -734,6 +752,13 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         (mathErr, seizeTokens) = mulScalarTruncate(ratio, actualRepayAmount);
         if (mathErr != MathError.NO_ERROR) {
             return (uint(Error.MATH_ERROR), 0);
+        }
+
+        uint feeFactor = feeFactorMantissa[pTokenBorrowed];
+        if (feeFactor > 0) {
+            // seizeTokens * 1e36 / ((1e18 - feeFactorMantissa[pTokenBorrowed]) ** 2)
+            uint res = sub_(1e18, feeFactor);
+            seizeTokens = div_(mul_(seizeTokens, 1e36), mul_(res, res));
         }
 
         return (uint(Error.NO_ERROR), seizeTokens);
@@ -822,6 +847,70 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
         // Emit event with asset, old collateral factor, and new collateral factor
         emit NewCollateralFactor(pToken, oldCollateralFactorMantissa, newCollateralFactorMantissa);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    /**
+      * @notice Sets the max fee factor for a markets
+      * @dev Admin function to set max fee factor
+      * @param newFeeFactorMaxMantissa The new max fee factor, scaled by 1e18
+      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
+      */
+    function setFeeFactorMaxMantissa(uint newFeeFactorMaxMantissa) external returns (uint) {
+        if (msg.sender != getAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_MAX_FEE_FACTOR);
+        }
+
+        uint oldFeeFactorMaxMantissa = feeFactorMaxMantissa;
+        feeFactorMaxMantissa = newFeeFactorMaxMantissa;
+
+        emit NewFeeFactorMaxMantissa(oldFeeFactorMaxMantissa, newFeeFactorMaxMantissa);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    /**
+      * @notice Sets the feeFactor for a market
+      * @dev Admin function to set per-market fee factor (also market can set fee factor after calc)
+      * @param pToken The market to set the factor on
+      * @param newFeeFactorMantissa The new fee factor, scaled by 1e18
+      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
+      */
+    function setFeeFactor(address pToken, uint newFeeFactorMantissa) public override returns (uint) {
+        if (msg.sender != getAdmin() && !markets[msg.sender].isListed) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_FEE_FACTOR);
+        }
+
+        require(newFeeFactorMantissa <= feeFactorMaxMantissa, 'SET_FEE_FACTOR_FAILED');
+        require(markets[pToken].isListed, 'market is not listed');
+
+        uint oldFeeFactorMantissa = feeFactorMantissa[pToken];
+        feeFactorMantissa[pToken] = newFeeFactorMantissa;
+
+        emit NewFeeFactor(pToken, oldFeeFactorMantissa, newFeeFactorMantissa);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    /**
+      * @notice Sets the feeFactors for a markets
+      * @dev Admin function to set per-market fee factors (also market can set fee factor after calc)
+      * @param pTokens Markets to set the factor on
+      * @param newFeeFactors The new fee factors for markets, scaled by 1e18
+      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
+      */
+    function setFeeFactors(address[] calldata pTokens, uint[] calldata newFeeFactors) external returns (uint) {
+        require(pTokens.length != 0 && newFeeFactors.length == pTokens.length, "invalid input");
+
+        uint result;
+        for(uint i = 0; i < pTokens.length; i++ ) {
+            result = setFeeFactor(pTokens[i], newFeeFactors[i]);
+
+            if (result != uint(Error.NO_ERROR)) {
+                return fail(Error.REJECTION, FailureInfo.SET_FEE_FACTOR);
+            }
+        }
 
         return uint(Error.NO_ERROR);
     }
@@ -935,6 +1024,11 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return uint(Error.NO_ERROR);
     }
 
+    /**
+     * @notice Admin function to change the Liquidate Guardian
+     * @param newLiquidateGuardian The address of the new Liquidate Guardian
+     * @return uint 0=success, otherwise a failure. (See enum Error for details)
+     */
     function _setLiquidateGuardian(address newLiquidateGuardian) public returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_GUARDIAN_OWNER_CHECK);
@@ -952,41 +1046,71 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return uint(Error.NO_ERROR);
     }
 
+    /**
+     * @notice Admin function to change the mint status for market
+     * @param pToken The address of the market
+     * @param state The flag of the mint status for market
+     * @return uint 0=success, otherwise a failure. (See enum Error for details)
+     */
     function _setMintPaused(address pToken, bool state) public returns (bool) {
         require(markets[pToken].isListed, "cannot pause a market that is not listed");
         require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
         require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         mintGuardianPaused[pToken] = state;
+
         emit ActionPaused(pToken, "Mint", state);
+
         return state;
     }
 
+    /**
+     * @notice Admin function to change the borrow status for market
+     * @param pToken The address of the market
+     * @param state The flag of the borrow status for market
+     * @return uint 0=success, otherwise a failure. (See enum Error for details)
+     */
     function _setBorrowPaused(address pToken, bool state) public returns (bool) {
         require(markets[pToken].isListed, "cannot pause a market that is not listed");
         require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
         require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         borrowGuardianPaused[pToken] = state;
+
         emit ActionPaused(pToken, "Borrow", state);
+
         return state;
     }
 
+    /**
+     * @notice Admin function to change the transfer status for markets
+     * @param state The flag of the transfer status
+     * @return uint 0=success, otherwise a failure. (See enum Error for details)
+     */
     function _setTransferPaused(bool state) public returns (bool) {
         require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
         require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         transferGuardianPaused = state;
+
         emit ActionPaused("Transfer", state);
+
         return state;
     }
 
+    /**
+     * @notice Admin function to change the seize status for markets
+     * @param state The flag of the transfer status
+     * @return uint 0=success, otherwise a failure. (See enum Error for details)
+     */
     function _setSeizePaused(bool state) public returns (bool) {
         require(msg.sender == pauseGuardian || msg.sender == getAdmin(), "only pause guardian and admin can pause");
         require(msg.sender == getAdmin() || state == true, "only admin can unpause");
 
         seizeGuardianPaused = state;
+
         emit ActionPaused("Seize", state);
+
         return state;
     }
 
@@ -1217,6 +1341,10 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return allMarkets;
     }
 
+    /**
+     * @notice Return the number of current block
+     * @return The block number
+     */
     function getBlockNumber() public view virtual returns (uint) {
         return block.number;
     }
@@ -1229,11 +1357,28 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         return pieAddress;
     }
 
+    /**
+     * @notice Return the address of the oracle
+     * @return The interface (address) of oracle
+     */
     function getOracle() public view override returns (PriceOracle) {
         return PriceOracle(registry.oracle());
     }
 
+    /**
+     * @notice Return the address of the admin
+     * @return The address of admin
+     */
     function getAdmin() public view virtual returns (address payable) {
         return registry.admin();
+    }
+
+    /**
+     * @notice Return the fee factor of the pToken
+     * @param pToken PToken address
+     * @return The address of admin
+     */
+    function getFeeFactorMantissa(address pToken) public view override returns (uint) {
+        return feeFactorMantissa[pToken];
     }
 }

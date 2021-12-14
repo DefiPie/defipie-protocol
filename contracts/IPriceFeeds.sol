@@ -1,7 +1,5 @@
 pragma solidity ^0.7.6;
 
-import "./SafeMath.sol";
-
 interface AggregatorInterface {
     function latestAnswer() external view returns (int256);
 }

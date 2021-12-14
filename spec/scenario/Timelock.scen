@@ -69,6 +69,8 @@ Test "Reduce reserves for PErc20 from Timelock and send reserves to external add
     InterestRateModel Deploy Fixed Std 0.000001
     PToken pZRX SetInterestRateModel (InterestRateModel Std Address)
     PToken pZRX SetReserveFactor 0.2
+    ListedPToken COLLAT pCOLLAT
+    Controller SetCollateralFactor pCOLLAT 0.9
     Timelock Deploy Jared 604800
     From Root (RegistryProxy SetPendingAdmin (Timelock Address))
     -- Queue Transactions
@@ -76,8 +78,6 @@ Test "Reduce reserves for PErc20 from Timelock and send reserves to external add
     From Jared (Timelock QueueTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
     FreezeTime 604900
     From Jared (Timelock ExecuteTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
-    ListedPToken COLLAT pCOLLAT
-    Controller SetCollateralFactor pCOLLAT 0.9
     Prep Torrey 1e30 COLLAT pCOLLAT
     Mint Torrey 1e30 pCOLLAT
     EnterMarkets Torrey pCOLLAT pZRX
@@ -136,13 +136,13 @@ Test "Reduce reserves for PEther from Timelock and send reserves to external add
     PToken pETH SetReserveFactor 0.2
     Timelock Deploy Jared 604800
     From Root (RegistryProxy SetPendingAdmin (Timelock Address))
+    ListedPToken COLLAT pCOLLAT
+    Controller SetCollateralFactor pCOLLAT 0.9
     -- Queue Transactions
     FreezeTime 90
     From Jared (Timelock QueueTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
     FreezeTime 604900
     From Jared (Timelock ExecuteTransaction (RegistryProxy Address) 0 604900 "_acceptAdmin()" "")
-    ListedPToken COLLAT pCOLLAT
-    Controller SetCollateralFactor pCOLLAT 0.9
     Prep Torrey 1e30 COLLAT pCOLLAT
     Mint Torrey 1e30 pCOLLAT
     EnterMarkets Torrey pCOLLAT pETH
@@ -189,7 +189,7 @@ Test "Set Pending Controller implementation on Unitroller from Timelock"
     Assert Equal (Unitroller PendingImplementation) (ControllerImpl ScenControllerG1 Address)
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
     ControllerImpl ScenControllerG1 Become
-    Controller SetPriceOracle (PriceOracleProxy Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.1
     Controller SetMaxAssets 20
     Assert Equal (Unitroller PendingImplementation) (Address Zero)

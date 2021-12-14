@@ -6,6 +6,7 @@ const {
 
 const {
   makePToken,
+  makePriceOracle,
   balanceOf,
   fastForward,
   setBalance,
@@ -58,10 +59,11 @@ async function redeemFreshAmount(pToken, redeemer, redeemTokens, redeemAmount) {
 
 describe('PToken', function () {
   let root, minter, redeemer, accounts;
-  let pToken;
+  let pToken, oracle;
   beforeEach(async () => {
     [root, minter, redeemer, ...accounts] = saddle.accounts;
-    pToken = await makePToken({controllerOpts: {kind: 'bool'}, exchangeRate});
+    oracle = await makePriceOracle();
+    pToken = await makePToken({uniswapOracle: oracle, controllerOpts: {kind: 'bool'}, exchangeRate});
   });
 
   describe('mintFresh', () => {

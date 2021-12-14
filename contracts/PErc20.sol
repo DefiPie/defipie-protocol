@@ -54,6 +54,17 @@ contract PErc20 is PToken, PErc20Interface {
         return err;
     }
 
+    function mintFresh(address minter, uint mintAmount) internal override returns (uint, uint, uint) {
+        (uint error, uint actualMintAmount, uint mintTokens) = super.mintFresh(minter, mintAmount);
+
+        // for fee token only
+        if (error == uint(Error.NO_ERROR) && mintAmount != actualMintAmount) {
+            updateFeeFactor(mintAmount, actualMintAmount);
+        }
+
+        return (error, actualMintAmount, mintTokens);
+    }
+
     /**
      * @notice Sender redeems pTokens in exchange for the underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
@@ -91,7 +102,7 @@ contract PErc20 is PToken, PErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrow(uint repayAmount) external override returns (uint) {
-        (uint err,) = repayBorrowInternal(repayAmount);
+        (uint err,,) = repayBorrowInternal(repayAmount);
         return err;
     }
 
@@ -102,8 +113,41 @@ contract PErc20 is PToken, PErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrowBehalf(address borrower, uint repayAmount) external override returns (uint) {
-        (uint err,) = repayBorrowBehalfInternal(borrower, repayAmount);
+        (uint err,,) = repayBorrowBehalfInternal(borrower, repayAmount);
         return err;
+    }
+
+    /**
+     * @notice Borrows are repaid by another user (possibly the borrower).
+     * @param payer the account paying off the borrow
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount the amount of undelrying tokens being returned
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the actual repayment amount and transfer amount from msg.sender
+     */
+    function repayBorrowFresh(address payer, address borrower, uint repayAmount) internal override returns (uint, uint, uint) {
+        (uint error, uint actualRepayAmount, uint transferRepayAmount) = super.repayBorrowFresh(payer, borrower, repayAmount);
+
+        // for fee token only
+        if (error == uint(Error.NO_ERROR) && transferRepayAmount != actualRepayAmount) {
+            updateFeeFactor(transferRepayAmount, actualRepayAmount);
+        }
+
+        return (error, actualRepayAmount, transferRepayAmount);
+    }
+
+    function updateFeeFactor(uint userTransferAmount, uint receiveFromUser) internal {
+        /* Calculate fee factor:
+         *  fee factor = 1e18 - receiveFromUser * 1e18 / userTransferAmount
+         *  for example 1e18 - 85 * 1e18 / 100 = 1e18 - 0.85e18 = 0.15e18
+         */
+        uint calcFeeFactorMantissa = sub_(1e18, div_(mul_(receiveFromUser, 1e18), userTransferAmount));
+        uint currentFeeFactor = controller.getFeeFactorMantissa(address(this));
+
+        if (calcFeeFactorMantissa != currentFeeFactor) {
+            if (currentFeeFactor == 0 || calcFeeFactorMantissa % 10000 == 0 || userTransferAmount > 10000) {
+                controller.setFeeFactor(address(this), calcFeeFactorMantissa);
+            }
+        }
     }
 
     /**

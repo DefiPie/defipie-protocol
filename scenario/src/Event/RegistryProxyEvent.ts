@@ -113,6 +113,18 @@ async function setAddPETH(world: World, from: string, registryProxy: RegistryPro
     return world;
 }
 
+async function setPriceOracle(world: World, from: string, registryProxy: RegistryProxy, priceOracleAddr: string): Promise<World> {
+    let invokation = await invoke(world, registryProxy.methods.setOracle(priceOracleAddr), from, RegistryErrorReporter);
+
+    world = addAction(
+        world,
+        `Set price oracle for to ${priceOracleAddr} as ${describeUser(world, from)}`,
+        invokation
+    );
+
+    return world;
+}
+
 async function removePTokenFromRegistry(world: World, from: string, registryProxy: RegistryProxy, pToken: string): Promise<World> {
     let invokation = await invoke(world, registryProxy.methods.removePToken(pToken), from, RegistryErrorReporter);
 
@@ -239,7 +251,20 @@ export function registryProxyCommands() {
                 new Arg("newPToken", getAddressV)
             ],
             (world, from, {registryProxy, newUnderlying, newPToken}) => setAddPToken(world, from, registryProxy, newUnderlying.val, newPToken.val)
-        )
+        ),
+        new Command<{registryProxy: RegistryProxy, priceOracle: AddressV}>(`
+        #### SetPriceOracle
+
+        * "Registry SetPriceOracle oracle:<Address>" - Sets the price oracle address
+          * E.g. "RegistryProxy SetPriceOracle 0x..."
+      `,
+            "SetPriceOracle",
+            [
+                new Arg("registryProxy", getRegistryProxy, {implicit: true}),
+                new Arg("priceOracle", getAddressV)
+            ],
+            (world, from, {registryProxy, priceOracle}) => setPriceOracle(world, from, registryProxy, priceOracle.val)
+        ),
     ];
 }
 

@@ -3,7 +3,8 @@ import {World} from '../World';
 import {Registry} from '../Contract/Registry';
 import {AddressV, Value} from '../Value';
 import {Arg, Fetcher, getFetcherValue} from '../Command';
-import {getRegistry} from '../ContractLookup';
+import {getController, getRegistry} from '../ContractLookup';
+import {Controller} from "../Contract/Controller";
 
 export async function getRegistryAddress(world: World, registry: Registry): Promise<AddressV> {
   return new AddressV(registry._address);
@@ -15,6 +16,10 @@ export async function getRegistryAdmin(world: World, registry: Registry): Promis
 
 export async function getRegistryPPIE(world: World, registry: Registry): Promise<AddressV> {
     return new AddressV(await registry.methods.pPIE().call());
+}
+
+async function getPriceOracle(world: World, registry: Registry): Promise<AddressV> {
+    return new AddressV(await registry.methods.oracle().call());
 }
 
 export function registryFetchers() {
@@ -47,7 +52,17 @@ export function registryFetchers() {
           "pPIE",
           [new Arg("registry", getRegistry, {implicit: true})],
           (world, {registry}) => getRegistryPPIE(world, registry)
-    )
+    ),
+    new Fetcher<{registry: Registry}, AddressV>(`
+      #### PriceOracle
+
+      * "Registry PriceOracle" - Returns the Registry's price oracle
+        * E.g. "Registry PriceOracle"
+    `,
+        "PriceOracle",
+        [new Arg("registry", getRegistry, {implicit: true})],
+        (world, {registry}) => getPriceOracle(world, registry)
+      ),
   ];
 }
 

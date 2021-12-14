@@ -152,6 +152,7 @@ contract NonStandardToken is ERC20NS {
 
 contract ERC20Harness is StandardToken {
     using SafeMath for uint256;
+
     // To support testing, we can specify addresses for which transferFrom should fail and return false
     mapping (address => bool) public failTransferFromAddresses;
 

@@ -9,18 +9,15 @@ contract FixedPriceOracle is PriceOracle {
         price = _price;
     }
 
-    function getUnderlyingPrice(address pToken) public view override returns (uint) {
-        pToken;
+    function getUnderlyingPrice(address) public view override returns (uint) {
         return price;
     }
 
-    function assetPrices(address asset) public view returns (uint) {
-        asset;
+    function assetPrices(address) public view returns (uint) {
         return price;
     }
 
-    function updateUnderlyingPrice(address pToken) external override returns (uint) {
-        pToken; //shh
+    function updateUnderlyingPrice(address) external override returns (uint) {
         return 0;
     }
 }

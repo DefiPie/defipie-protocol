@@ -29,4 +29,8 @@ contract ProxyProtocolHarness is ProxyProtocol {
 
     }
 
+    receive() external payable {
+
+    }
+
 }

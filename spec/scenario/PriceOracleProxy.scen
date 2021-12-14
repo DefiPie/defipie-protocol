@@ -8,7 +8,7 @@ Macro SetupPriceOracleProxy
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
-    Controller SetPriceOracle (PriceOracleProxy Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.1
     Controller SetMaxAssets 20
     -- Update to G2
@@ -34,7 +34,7 @@ Macro SetupPriceOracleProxy
     Controller SupportMarket pDAI
     Controller SupportMarket pUSDT
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address pETH) (Address pUSDC) (Address pSAI) (Address pDAI) (Address pUSDT)
-    Controller SetPriceOracle (PriceOracleProxy Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
 
 Test "uses address(2) for dai and address(1) for usdc"
     SetupPriceOracleProxy

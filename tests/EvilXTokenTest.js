@@ -9,7 +9,7 @@ const {
 describe('EvilX Token tests', () => {
     let root, admin, accounts;
     let pTokenFactory, oracle, registryProxy;
-    let controller, interestRateModel, exchangeRate, reserveFactor;
+    let controller, interestRateModel;
     let initialAmount, name, symbol, decimals;
 
     beforeEach(async () => {
@@ -19,8 +19,6 @@ describe('EvilX Token tests', () => {
         registryProxy = await makeRegistryProxy();
         controller = await makeController({priceOracle: oracle, registryProxy: registryProxy});
         interestRateModel = await makeInterestRateModel();
-        exchangeRate = 1;
-        reserveFactor = 0.1;
 
         pTokenFactory = await makePTokenFactory({
             registryProxy: registryProxy,
@@ -37,7 +35,7 @@ describe('EvilX Token tests', () => {
         });
 
         it("gets address of oracle from factory", async () => {
-            let oracleAddress = await call(pTokenFactory, "oracle");
+            let oracleAddress = await call(pTokenFactory, "getOracle");
             expect(oracleAddress).toEqual(oracle._address);
         });
     });
@@ -80,7 +78,7 @@ describe('EvilX Token tests', () => {
             let tx9 = await send(oracle, 'setUnderlyingPrice', [pTokenEvilAddress, '10000000000000000000']);
 
             // Attack steps (Attack acc = evilXToken address)
-            // 1. User approve simple token to simple
+            // 1. User approve simple token to pToken
             // 2. User mint simple pToken
             // 3. evil user allocate XTokens to evilXToken address and simple token to evilXToken address
             // 4. evilXToken address approve XTokens to pXToken and simple tokens to pToken

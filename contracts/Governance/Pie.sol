@@ -11,7 +11,7 @@ contract Pie {
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public constant totalSupply = 220_000_000e18; // 220 million Pie
+    uint public constant totalSupply = 220_000_000e18;
 
     /// @dev Allowance amounts on behalf of others
     mapping (address => mapping (address => uint)) internal allowances;
@@ -90,7 +90,7 @@ contract Pie {
         address spender = msg.sender;
         uint spenderAllowance = allowances[src][spender];
 
-        if (spender != src && spenderAllowance != uint(-1)) {
+        if (spender != src && spenderAllowance != type(uint256).max) {
             uint newAllowance = sub(spenderAllowance, amount, "Pie::transferFrom: transfer amount exceeds spender allowance");
             allowances[src][spender] = newAllowance;
 

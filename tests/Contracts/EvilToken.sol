@@ -9,6 +9,7 @@ import "./FaucetToken.sol";
   */
 contract EvilToken is FaucetToken {
     using SafeMath for uint256;
+
     bool public fail;
 
     constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol)

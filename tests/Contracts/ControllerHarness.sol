@@ -309,6 +309,10 @@ contract BoolController is ControllerInterface {
         return failCalculateSeizeTokens ? (opaqueError, 0) : (noError, calculatedSeizeTokens);
     }
 
+    function setFeeFactor(address, uint) external override returns (uint) {
+        return 0;
+    }
+
     /**** Mock Settors ****/
 
     /*** Policy Hooks ***/
@@ -373,6 +377,10 @@ contract BoolController is ControllerInterface {
 
     function setFactoryAnswer(uint factoryAnswer_) public {
         supportAnswer = factoryAnswer_;
+    }
+
+    function getFeeFactorMantissa(address pToken) public view override returns (uint) {
+        return 0;
     }
 }
 
