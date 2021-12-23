@@ -38,12 +38,12 @@ describe('Registry coverage tests', () => {
 
     describe("implementation address", () => {
         it("set implementation address", async () => {
-            await send(registryProxy, 'setPTokenImplementation', [accounts[1]]);
+            await send(registryProxy, '_setPTokenImplementation', [accounts[1]]);
             expect(await call(registryProxy, 'pTokenImplementation')).toEqual(accounts[1]);
         });
 
         it("set implementation address, not UNAUTHORIZED", async () => {
-            let result = await send(registryProxy, 'setPTokenImplementation', [accounts[2]], {from: accounts[2]});
+            let result = await send(registryProxy, '_setPTokenImplementation', [accounts[2]], {from: accounts[2]});
             expect(result).toHaveRegistryFailure('UNAUTHORIZED', 'SET_NEW_IMPLEMENTATION');
         });
     });

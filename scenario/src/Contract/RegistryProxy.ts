@@ -2,8 +2,8 @@ import {Contract} from '../Contract';
 import {Callable, Sendable} from '../Invokation';
 
 interface RegistryProxyMethods {
-    setPTokenImplementation(address: string): Sendable<number>
-    setImplementation(address: string): Sendable<number>
+    _setPTokenImplementation(address: string): Sendable<number>
+    _setImplementation(address: string): Sendable<number>
 
     _setPendingAdmin(string): Sendable<number>
     _acceptAdmin(): Sendable<void>
@@ -22,10 +22,10 @@ interface RegistryProxyMethods {
     pTokens(address: string): Callable<string>
     addPToken(underlying: string, pToken: string): Sendable<number>
 
-    removePToken(address: string): Sendable<number>
+    _removePToken(address: string): Sendable<number>
 
     oracle(): Callable<string>
-    setOracle(string): Sendable<number>
+    _setOracle(string): Sendable<number>
 }
 
 export interface RegistryProxy extends Contract {

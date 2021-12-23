@@ -25,28 +25,29 @@ export async function buildGovernor(
 ): Promise<{ world: World; governor: Governor; govData: GovernorData }> {
   const fetchers = [
     new Fetcher<
-      { name: StringV, timelock: AddressV, registryProxy: AddressV, guardian: AddressV },
+      { name: StringV, timelock: AddressV, registryProxy: AddressV, guardian: AddressV, period: NumberV },
       GovernorData
     >(
       `
       #### Governor
 
-      * "Governor Deploy name:<String> timelock:<Address> registryProxy:<Address> guardian:<Address>" - Deploys DeFiPie Governor
-        * E.g. "Governor Deploy Governor (Address Timelock) (Address RegistryProxy) Guardian"
+      * "Governor Deploy name:<String> timelock:<Address> registryProxy:<Address> guardian:<Address> period:<Number>" - Deploys DeFiPie Governor
+        * E.g. "Governor Deploy Governor (Address Timelock) (Address RegistryProxy) Guardian Period"
     `,
       "Governor",
       [
         new Arg("name", getStringV),
         new Arg("timelock", getAddressV),
         new Arg("registryProxy", getAddressV),
-        new Arg("guardian", getAddressV)
+        new Arg("guardian", getAddressV),
+        new Arg("period", getNumberV)
       ],
-      async (world, { name, timelock, registryProxy, guardian }) => {
+      async (world, { name, timelock, registryProxy, guardian, period }) => {
         return {
           invokation: await GovernorContract.deploy<Governor>(
             world,
             from,
-            [timelock.val, registryProxy.val, guardian.val]
+            [timelock.val, registryProxy.val, guardian.val, period.val]
           ),
           name: name.val,
           contract: "Governor"
@@ -54,28 +55,29 @@ export async function buildGovernor(
       }
     ),
     new Fetcher<
-      { name: StringV, timelock: AddressV, registryProxy: AddressV, guardian: AddressV},
+      { name: StringV, timelock: AddressV, registryProxy: AddressV, guardian: AddressV, period: NumberV},
       GovernorData
     >(
       `
       #### GovernorHarness
 
-      * "Governor Deploy GovernorHarness name:<String> timelock:<Address> registryProxy:<Address> guardian:<Address>" - Deploys DeFiPie Governor with a mocked voting period
-        * E.g. "Governor Deploy Harness GovernorHarness (Address Timelock) (Address RegistryProxy) Guardian"
+      * "Governor Deploy GovernorHarness name:<String> timelock:<Address> registryProxy:<Address> guardian:<Address> period:<Number>" - Deploys DeFiPie Governor with a mocked voting period
+        * E.g. "Governor Deploy Harness GovernorHarness (Address Timelock) (Address RegistryProxy) Guardian Period"
     `,
       "GovernorHarness",
       [
         new Arg("name", getStringV),
         new Arg("timelock", getAddressV),
         new Arg("registryProxy", getAddressV),
-        new Arg("guardian", getAddressV)
+        new Arg("guardian", getAddressV),
+        new Arg("period", getNumberV)
       ],
-      async (world, { name, timelock, registryProxy, guardian }) => {
+      async (world, { name, timelock, registryProxy, guardian, period }) => {
         return {
           invokation: await GovernorHarnessContract.deploy<Governor>(
             world,
             from,
-            [timelock.val, registryProxy.val, guardian.val]
+            [timelock.val, registryProxy.val, guardian.val, period.val]
           ),
           name: name.val,
           contract: "GovernorHarness"

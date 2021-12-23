@@ -24,7 +24,7 @@ const statesInverted = [
 const states = Object.entries(statesInverted).reduce((obj, [key, value]) => ({ ...obj, [value]: key }), {});
 
 describe('Governor#state/1', () => {
-  let pie, ppie, registryAddress, gov, root, acct, delay, timelock, proposalId;
+  let pie, ppie, registryAddress, gov, root, acct, delay, timelock, proposalId, period;
   let threshold = new BigNumber(15000001e18); //15,000,000e18, 1e8 ppie = 1e18 pie
   let quorum = new BigNumber(150000001e18); //150,000,000e18, 1e8 ppie = 1e18 pie
 
@@ -36,7 +36,8 @@ describe('Governor#state/1', () => {
     timelock = await deploy('TimelockHarness', [root, delay]);
     ppie = await makePToken({ kind: 'ppie', underlying: pie, exchangeRate: 1});
     registryAddress = await call(ppie, 'registry');
-    gov = await deploy('Governor', [timelock._address, registryAddress, root]);
+    period = '19710';
+    gov = await deploy('Governor', [timelock._address, registryAddress, root, period]);
     await send(timelock, "harnessSetAdmin", [gov._address]);
 
     await send(pie, 'transfer', [acct, quorum]);

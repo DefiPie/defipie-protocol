@@ -857,7 +857,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       * @param newFeeFactorMaxMantissa The new max fee factor, scaled by 1e18
       * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
       */
-    function setFeeFactorMaxMantissa(uint newFeeFactorMaxMantissa) external returns (uint) {
+    function _setFeeFactorMaxMantissa(uint newFeeFactorMaxMantissa) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_MAX_FEE_FACTOR);
         }
@@ -877,7 +877,7 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       * @param newFeeFactorMantissa The new fee factor, scaled by 1e18
       * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
       */
-    function setFeeFactor(address pToken, uint newFeeFactorMantissa) public override returns (uint) {
+    function _setFeeFactor(address pToken, uint newFeeFactorMantissa) public override returns (uint) {
         if (msg.sender != getAdmin() && !markets[msg.sender].isListed) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_FEE_FACTOR);
         }
@@ -900,12 +900,12 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
       * @param newFeeFactors The new fee factors for markets, scaled by 1e18
       * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
       */
-    function setFeeFactors(address[] calldata pTokens, uint[] calldata newFeeFactors) external returns (uint) {
+    function _setFeeFactors(address[] calldata pTokens, uint[] calldata newFeeFactors) external returns (uint) {
         require(pTokens.length != 0 && newFeeFactors.length == pTokens.length, "invalid input");
 
         uint result;
         for(uint i = 0; i < pTokens.length; i++ ) {
-            result = setFeeFactor(pTokens[i], newFeeFactors[i]);
+            result = _setFeeFactor(pTokens[i], newFeeFactors[i]);
 
             if (result != uint(Error.NO_ERROR)) {
                 return fail(Error.REJECTION, FailureInfo.SET_FEE_FACTOR);

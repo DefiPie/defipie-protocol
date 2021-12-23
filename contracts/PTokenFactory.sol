@@ -88,13 +88,13 @@ contract PTokenFactory is FactoryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function createPETH(address pETHImplementation_) external virtual returns (uint) {
+    function _createPETH(address pETHImplementation_, string memory symbol) external virtual returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PETH_POOL);
         }
 
-        string memory name = "DeFiPie ETH";
-        string memory symbol = "pETH";
+        string memory name = string(abi.encodePacked("DeFiPie ", symbol));
+        string memory symbol = string(abi.encodePacked("p", symbol));
 
         uint power = 18;
         uint exchangeRateMantissa = calcExchangeRate(power);
@@ -113,7 +113,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function createPPIE(address underlying_, address pPIEImplementation_) external virtual returns (uint) {
+    function _createPPIE(address underlying_, address pPIEImplementation_) external virtual returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PPIE_POOL);
         }
@@ -146,7 +146,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return bool(pair != address(0) && ethEquivalentReserves >= minUniswapLiquidity);
     }
 
-    function setMinUniswapLiquidity(uint minUniswapLiquidity_) public returns (uint) {
+    function _setMinUniswapLiquidity(uint minUniswapLiquidity_) public returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_MIN_LIQUIDITY_OWNER_CHECK);
         }
@@ -160,7 +160,7 @@ contract PTokenFactory is FactoryErrorReporter {
      *  Sets address of actual controller contract
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setController(address newController) external returns (uint) {
+    function _setController(address newController) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_CONTROLLER);
         }
@@ -173,7 +173,7 @@ contract PTokenFactory is FactoryErrorReporter {
      *  Sets address of actual interestRateModel contract
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setInterestRateModel(address newInterestRateModel) external returns (uint) {
+    function _setInterestRateModel(address newInterestRateModel) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_INTEREST_RATE_MODEL);
         }
@@ -187,7 +187,7 @@ contract PTokenFactory is FactoryErrorReporter {
      *  Sets initial exchange rate
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setInitialExchangeRateMantissa(uint _initialExchangeRateMantissa) external returns (uint) {
+    function _setInitialExchangeRateMantissa(uint _initialExchangeRateMantissa) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_EXCHANGE_RATE);
         }
@@ -197,7 +197,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function setInitialReserveFactorMantissa(uint _initialReserveFactorMantissa) external returns (uint) {
+    function _setInitialReserveFactorMantissa(uint _initialReserveFactorMantissa) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_RESERVE_FACTOR);
         }
@@ -207,7 +207,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function setPTokenDecimals(uint _decimals) external returns (uint) {
+    function _setPTokenDecimals(uint _decimals) external returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_DECIMALS);
         }
@@ -217,7 +217,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function addBlackList(address _underlying) public returns (uint) {
+    function _addBlackList(address _underlying) public returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ADD_UNDERLYING_TO_BLACKLIST);
         }
@@ -229,7 +229,7 @@ contract PTokenFactory is FactoryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function removeBlackList(address _underlying) public returns (uint) {
+    function _removeBlackList(address _underlying) public returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.REMOVE_UNDERLYING_FROM_BLACKLIST);
         }

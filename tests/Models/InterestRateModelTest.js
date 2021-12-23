@@ -57,7 +57,7 @@ function makeUtilization(util) {
   }
 }
 
-const blocksPerYear = 2102400;
+const blocksPerYear = '2102400';
 
 describe('InterestRateModel', () => {
   let root, accounts;
@@ -75,7 +75,7 @@ describe('InterestRateModel', () => {
   Object.entries(expectedRates).forEach(async ([kind, info]) => {
     let model;
     beforeAll(async () => {
-      model = await makeInterestRateModel({ kind: info.model, baseRate: info.base, multiplier: info.slope });
+      model = await makeInterestRateModel({ kind: info.model, baseRate: info.base, multiplier: info.slope, blocksPerYear: blocksPerYear });
     });
 
     describe(kind, () => {
@@ -123,7 +123,7 @@ describe('InterestRateModel', () => {
         });
 
         it('handles overflow utilization rate times slope + base', async () => {
-          const badModel = await makeInterestRateModel({ kind, baseRate: -1, multiplier: 1e48, jump: 1e48 });
+          const badModel = await makeInterestRateModel({ kind, baseRate: -1, multiplier: 1e48, jump: 5e48 });
           await expect(getBorrowRate(badModel, 0, 1, 0)).rejects.toRevert("revert SafeMath: multiplication overflow");
         });
       }
@@ -201,6 +201,7 @@ describe('InterestRateModel', () => {
                 multiplier: slope / 100,
                 jump: jump / 100,
                 kink: kink / 100,
+                blocksPerYear: blocksPerYear
               });
             });
 

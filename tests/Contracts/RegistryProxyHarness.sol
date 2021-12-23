@@ -11,7 +11,7 @@ contract RegistryProxyHarness is RegistryProxy {
         pTokenImplementation_
     ) {}
 
-    function setPTokenImplementation(address) external returns (uint) {
+    function _setPTokenImplementation(address) external returns (uint) {
         delegateAndReturn();
     }
 
@@ -23,7 +23,7 @@ contract RegistryProxyHarness is RegistryProxy {
         delegateAndReturn();
     }
 
-    function setOracle(address) public returns (uint) {
+    function _setOracle(address) public returns (uint) {
         delegateAndReturn();
     }
 
@@ -59,7 +59,7 @@ contract RegistryProxyHarness is RegistryProxy {
         delegateAndReturn();
     }
 
-    function removePToken(address) public returns (uint) {
+    function _removePToken(address) public returns (uint) {
         delegateAndReturn();
     }
 }

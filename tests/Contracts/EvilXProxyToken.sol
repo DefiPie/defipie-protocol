@@ -11,7 +11,7 @@ contract EvilXProxyToken is ImplementationStorage {
         string memory _tokenSymbol,
         uint8 _decimalUnits
     ) {
-        _setImplementation(implementation_);
+        _setImplementationInternal(implementation_);
 
         // First delegate gets to initialize the delegator (i.e. storage contract)
         delegateTo(implementation_, abi.encodeWithSignature("initialize(uint256,string,string,uint8)",
@@ -22,7 +22,7 @@ contract EvilXProxyToken is ImplementationStorage {
     }
 
     function setImplementation(address newImplementation) external returns (uint) {
-        _setImplementation(newImplementation);
+        _setImplementationInternal(newImplementation);
 
         return 0;
     }

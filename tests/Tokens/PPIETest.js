@@ -11,6 +11,8 @@ const {
   pretendBorrow
 } = require('../Utils/DeFiPie');
 
+const blocksPerYear = 2102400;
+
 describe('PPIE', function () {
   let root, admin, accounts;
   beforeEach(async () => {
@@ -68,7 +70,7 @@ describe('PPIE', function () {
     it("has a borrow rate", async () => {
       const pToken = await makePToken({ kind: 'ppie', supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate: .05, multiplier: 0.45, kink: 0.95, jump: 5 } });
       const perBlock = await call(pToken, 'borrowRatePerBlock');
-      expect(Math.abs(perBlock * 2102400 - 5e16)).toBeLessThanOrEqual(1e8);
+      expect(Math.abs(perBlock * blocksPerYear - 5e16)).toBeLessThanOrEqual(1e8);
     });
   });
 
@@ -93,7 +95,7 @@ describe('PPIE', function () {
       const expectedSuplyRate = borrowRate * .99;
 
       const perBlock = await call(pToken, 'supplyRatePerBlock');
-      expect(Math.abs(perBlock * 2102400 - expectedSuplyRate * 1e18)).toBeLessThanOrEqual(1e8);
+      expect(Math.abs(perBlock * blocksPerYear - expectedSuplyRate * 1e18)).toBeLessThanOrEqual(1e8);
     });
   });
 
@@ -233,7 +235,7 @@ describe('PPIE', function () {
         pToken = await saddle.getContractAt('PPIEDelegator', pToken._address);
         let admin = await call(registryProxy, "admin");
 
-        await send(pToken, 'setImplementation', [accounts[1]], {from: admin});
+        await send(pToken, '_setImplementation', [accounts[1]], {from: admin});
         expect(await call(pToken, 'implementation')).toEqual(accounts[1]);
     });
 
@@ -242,7 +244,7 @@ describe('PPIE', function () {
 
         pToken = await saddle.getContractAt('PPIEDelegator', pToken._address);
 
-        let result = await send(pToken, 'setImplementation', [accounts[2]], {from: accounts[2]});
+        let result = await send(pToken, '_setImplementation', [accounts[2]], {from: accounts[2]});
         expect(result).toHaveTokenFailure('UNAUTHORIZED', 'SET_NEW_IMPLEMENTATION');
     });
   });

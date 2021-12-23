@@ -11,19 +11,19 @@ const {
 
 describe('Governor#propose/5', () => {
   let gov, root, acct, pie, ppie, registryAddress, proposalId;
+  let period = 19710;
 
   beforeAll(async () => {
     [root, acct, ...accounts] = accounts;
     pie = await deploy('Pie', [root]);
     ppie = await makePToken({ kind: 'ppie', underlying: pie});
     registryAddress = await call(ppie, 'registry');
-    gov = await deploy('Governor', [address(0), registryAddress, address(0)]);
+    gov = await deploy('Governor', [address(0), registryAddress, address(0), period]);
   });
 
   let trivialProposal, targets, values, signatures, callDatas;
   let proposalBlock;
   let delay = 1;
-  let period = 19710;
   let threshold = 15000001e8; //15,000,000e8
 
   beforeAll(async () => {

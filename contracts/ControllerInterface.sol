@@ -48,6 +48,6 @@ abstract contract ControllerInterface {
         uint repayAmount) external view virtual returns (uint, uint);
 
     function getOracle() external view virtual returns (PriceOracle);
-    function setFeeFactor(address pToken, uint newFeeFactorMantissa) external virtual returns (uint);
+    function _setFeeFactor(address pToken, uint newFeeFactorMantissa) external virtual returns (uint);
     function getFeeFactorMantissa(address pToken) public view virtual returns (uint);
 }

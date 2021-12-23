@@ -31,7 +31,7 @@ async function makeController(opts = {}) {
     const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     await send(controller, '_setCloseFactor', [closeFactor]);
-    await send(controller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
+    await send(controller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(controller, '_setMaxAssets', [maxAssets]);
     return Object.assign(controller, { priceOracle });
   }
@@ -51,7 +51,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
+    await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
 
     return Object.assign(unitroller, { priceOracle, registryProxy });
@@ -72,7 +72,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
+    await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
 
     return Object.assign(unitroller, { priceOracle, registryProxy });
@@ -94,7 +94,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
+    await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, 'harnessSetPieRate', [pieRate]);
     await send(unitroller, 'setPieAddress', [pie._address]); // harness only
 
@@ -118,7 +118,7 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
+    await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, 'setPieAddress', [pie._address]); // harness only
     await send(unitroller, '_setPieRate', [pieRate]);
@@ -180,7 +180,7 @@ async function makePToken(opts = {}) {
   ]);
 
   tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
-  let tx2_ = await send(registryProxy, 'setOracle', [uniswapOracle._address]);
+  let tx2_ = await send(registryProxy, '_setOracle', [uniswapOracle._address]);
 
   let token0, token1;
 
@@ -188,7 +188,7 @@ async function makePToken(opts = {}) {
     case 'pether':
       let pETHImplementation = await deploy('PEtherDelegateHarness');
 
-      tx3 = await send(pTokenFactory, 'createPETH', [pETHImplementation._address]);
+      tx3 = await send(pTokenFactory, '_createPETH', [pETHImplementation._address, 'ETH']);
       tokenAddress = tx3.events['PTokenCreated'].returnValues['newPToken'];
 
       pToken = await saddle.getContractAt('PEtherDelegateHarness', tokenAddress);
@@ -205,7 +205,7 @@ async function makePToken(opts = {}) {
 
       let pPIEImplementation = await deploy('PPIEDelegateHarness');
 
-      tx3 = await send(pTokenFactory, 'createPPIE', [underlying._address, pPIEImplementation._address]);
+      tx3 = await send(pTokenFactory, '_createPPIE', [underlying._address, pPIEImplementation._address]);
 
       tokenAddress = tx3.events['PTokenCreated'].returnValues['newPToken'];
 
@@ -254,7 +254,8 @@ async function makePToken(opts = {}) {
 async function makeInterestRateModel(opts = {}) {
   const {
     root = saddle.account,
-    kind = 'harnessed'
+    kind = 'harnessed',
+    blocksPerYear = '2102400'
   } = opts || {};
 
   if (kind == 'harnessed') {
@@ -270,7 +271,7 @@ async function makeInterestRateModel(opts = {}) {
   if (kind == 'base-model') {
     const baseRate = etherMantissa(dfn(opts.baseRate, 0));
     const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
-    return await deploy('BaseInterestRateModel', [baseRate, multiplier]);
+    return await deploy('BaseInterestRateModel', [blocksPerYear, baseRate, multiplier]);
   }
 
   if (kind == 'jump-rate') {
@@ -278,7 +279,7 @@ async function makeInterestRateModel(opts = {}) {
     const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
     const jump = etherMantissa(dfn(opts.jump, 0));
     const kink = etherMantissa(dfn(opts.kink, 0));
-    return await deploy('JumpRateModel', [baseRate, multiplier, jump, kink]);
+    return await deploy('JumpRateModel', [blocksPerYear, baseRate, multiplier, jump, kink]);
   }
 }
 
@@ -382,7 +383,7 @@ async function makePTokenFactory(opts = {}) {
     ]);
 
     let tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
-    let tx2_ = await send(registryProxy, 'setOracle', [uniswapOracle._address]);
+    let tx2_ = await send(registryProxy, '_setOracle', [uniswapOracle._address]);
 
     pTokenFactory = await saddle.getContractAt('PTokenFactoryHarness', pTokenFactory._address);
 
