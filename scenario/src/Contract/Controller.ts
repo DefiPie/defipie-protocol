@@ -25,7 +25,8 @@ interface ControllerMethods {
   _setLiquidateGuardian(string): Sendable<number>
   _setPieAddress(string): Sendable<number>
   _setCollateralFactor(string, encodedNumber): Sendable<number>
-  setFeeFactorMaxMantissa(encodedNumber): Sendable<number>
+  _setFeeFactor(string, encodedNumber): Sendable<number>
+  _setFeeFactorMaxMantissa(encodedNumber): Sendable<number>
   _setCloseFactor(encodedNumber): Sendable<number>
   enterMarkets(markets: string[]): Sendable<number>
   exitMarket(market: string): Sendable<number>
@@ -61,6 +62,7 @@ interface ControllerMethods {
   _setPieRate(encodedNumber): Sendable<void>
   _setPieSpeed(pToken: string, encodedNumber): Sendable<void>
   getPieAddress(): Callable<string>
+  getFeeFactorMantissa(string): Callable<number>
 }
 
 export interface Controller extends Contract {

@@ -94,7 +94,7 @@ describe('Controller', () => {
 
     it("fails if called by non-admin", async () => {
       expect(
-        await send(controller.registryProxy, 'setOracle', [newOracle._address], {from: accounts[0]})
+        await send(controller.registryProxy, '_setOracle', [newOracle._address], {from: accounts[0]})
       ).toHaveRegistryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
       expect(await controller.methods.getOracle().call()).toEqual(oldOracle._address);
     });
@@ -111,7 +111,7 @@ describe('Controller', () => {
     });
 
     it("accepts a valid price oracle and emits a NewPriceOracle event", async () => {
-      const result = await send(controller.registryProxy, 'setOracle', [newOracle._address]);
+      const result = await send(controller.registryProxy, '_setOracle', [newOracle._address]);
       expect(result).toSucceed();
       expect(await call(controller, 'getOracle')).toEqual(newOracle._address);
     });

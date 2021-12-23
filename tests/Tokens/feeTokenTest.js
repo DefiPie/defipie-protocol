@@ -550,21 +550,21 @@ describe('Fee Token tests', () => {
             let pTokenFeeFactor2 = await call(controller, "feeFactorMantissa", [pFeeToken2._address]);
             expect(pTokenFeeFactor2).toEqual('100000000000000000');
 
-            let tx6 = await send(controller, 'setFeeFactor', [pFeeTokenAddress0, "1"], { from: accounts[1] });
+            let tx6 = await send(controller, '_setFeeFactor', [pFeeTokenAddress0, "1"], { from: accounts[1] });
             expect(tx6).toHaveLog('Failure', {
                 error: 1,
                 info: 18,
                 detail: 0
             });
 
-            let tx7 = await send(controller, 'setFeeFactor', [accounts[0], "1"], { from: accounts[0] });
+            let tx7 = await send(controller, '_setFeeFactor', [accounts[0], "1"], { from: accounts[0] });
             expect(tx7).toHaveLog('Failure', {
                 error: 1,
                 info: 18,
                 detail: 0
             });
 
-            let tx8 = await send(controller, 'setFeeFactor', [pFeeTokenAddress0, "1"]);
+            let tx8 = await send(controller, '_setFeeFactor', [pFeeTokenAddress0, "1"]);
             expect(tx8).toSucceed();
             pTokenFeeFactor0 = await call(controller, "feeFactorMantissa", [pFeeToken0._address]);
             expect(pTokenFeeFactor0).toEqual('1');
@@ -579,26 +579,26 @@ describe('Fee Token tests', () => {
             feeFactorArray[1] = 3;
             feeFactorArray[2] = 3;
 
-            let tx9 = await send(controller, 'setFeeFactors', [tokenArray, feeFactorArray], { from: accounts[1] });
+            let tx9 = await send(controller, '_setFeeFactors', [tokenArray, feeFactorArray], { from: accounts[1] });
             expect(tx9).toHaveLog('Failure', {
                 error: 13,
                 info: 18,
                 detail: 0
             });
 
-            let tx10 = await send(controller, 'setFeeFactors', [tokenArray, feeFactorArray]);
+            let tx10 = await send(controller, '_setFeeFactors', [tokenArray, feeFactorArray]);
             expect(tx10).toSucceed();
 
             await expect(
-                send(controller, 'setFeeFactors', [tokenArray, ['1','100000000000000001','1']])
+                send(controller, '_setFeeFactors', [tokenArray, ['1','100000000000000001','1']])
             ).rejects.toRevert('revert SET_FEE_FACTOR_FAILED');
 
             await expect(
-                send(controller, 'setFeeFactors', [[pFeeTokenAddress1, pFeeTokenAddress2], ['1']])
+                send(controller, '_setFeeFactors', [[pFeeTokenAddress1, pFeeTokenAddress2], ['1']])
             ).rejects.toRevert('revert invalid input');
 
             await expect(
-                send(controller, 'setFeeFactors', [[pFeeTokenAddress0, accounts[0], pFeeTokenAddress2], ['1','1','1']])
+                send(controller, '_setFeeFactors', [[pFeeTokenAddress0, accounts[0], pFeeTokenAddress2], ['1','1','1']])
             ).rejects.toRevert('revert market is not listed');
         });
     });
@@ -607,7 +607,7 @@ describe('Fee Token tests', () => {
         it("Fee factor", async () => {
             let feeToken18 = await makeToken({decimals: '18', kind: 'fee', basisPointFee: '0'});  // fee = 0%
             let feeFactorMax = '30000000000000000000';
-            await send(controller, 'setFeeFactorMaxMantissa', [feeFactorMax]);
+            await send(controller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
 
             let tx1 = await send(oracle, 'setPrice', [feeToken18._address, '1000000000000000000']);
             let tx2 = await send(oracle, 'setSearchPair', [feeToken18._address, '1000']);

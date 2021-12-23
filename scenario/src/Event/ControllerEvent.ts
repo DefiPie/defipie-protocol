@@ -189,11 +189,23 @@ async function setCloseFactor(world: World, from: string, controller: Controller
 }
 
 async function setFeeFactorMax(world: World, from: string, controller: Controller, feeFactorMax: NumberV): Promise<World> {
-    let invokation = await invoke(world, controller.methods.setFeeFactorMaxMantissa(feeFactorMax.encode()), from, ControllerErrorReporter);
+    let invokation = await invoke(world, controller.methods._setFeeFactorMaxMantissa(feeFactorMax.encode()), from, ControllerErrorReporter);
 
     world = addAction(
         world,
         `Set fee factor max to ${feeFactorMax.show()}`,
+        invokation
+    );
+
+    return world;
+}
+
+async function setFeeFactor(world: World, from: string, controller: Controller, pToken: PToken, feeFactor: NumberV): Promise<World> {
+    let invokation = await invoke(world, controller.methods._setFeeFactor(pToken._address, feeFactor.encode()), from, ControllerErrorReporter);
+
+    world = addAction(
+        world,
+        `Set fee factor for ${pToken.name} to ${feeFactor.show()}`,
         invokation
     );
 
@@ -511,6 +523,20 @@ export function controllerCommands() {
         new Arg("collateralFactor", getExpNumberV)
       ],
       (world, from, {controller, pToken, collateralFactor}) => setCollateralFactor(world, from, controller, pToken, collateralFactor)
+    ),
+    new Command<{controller: Controller, pToken: PToken, feeFactor: NumberV}>(`
+      #### SetFeeFactor
+
+        * "Controller SetFeeFactor <PToken> <Number>" - Sets the fee factor for given pToken to number
+        * E.g. "Controller SetFeeFactor pZRX 0.01"
+    `,
+      "SetFeeFactor",
+      [
+          new Arg("controller", getController, {implicit: true}),
+          new Arg("pToken", getPTokenV),
+          new Arg("feeFactor", getExpNumberV)
+      ],
+      (world, from, {controller, pToken, feeFactor}) => setFeeFactor(world, from, controller, pToken, feeFactor)
     ),
     new Command<{controller: Controller, closeFactor: NumberV}>(`
         #### SetCloseFactor

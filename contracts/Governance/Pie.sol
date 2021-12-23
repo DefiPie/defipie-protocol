@@ -11,7 +11,7 @@ contract Pie {
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public constant totalSupply = 220_000_000e18;
+    uint public totalSupply = 1_000_000_000e18; // 1,000 billion Pie (for test only)
 
     /// @dev Allowance amounts on behalf of others
     mapping (address => mapping (address => uint)) internal allowances;
@@ -31,6 +31,7 @@ contract Pie {
      */
     constructor(address account) {
         balances[account] = totalSupply;
+
         emit Transfer(address(0), account, totalSupply);
     }
 
@@ -119,5 +120,88 @@ contract Pie {
     function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
         require(b <= a, errorMessage);
         return a - b;
+    }
+
+}
+
+contract PieExt is Pie {
+    event NewAdmin(address indexed newAdmin);
+    event NewPendingAdmin(address indexed newPendingAdmin);
+
+    /// @notice depositer address
+    address public childChainManager;
+
+    address public admin;
+    address public pendingAdmin;
+
+    /**
+     * @notice Construct a new PieExt token
+     * @param account The initial account to grant all the tokens
+     */
+    constructor(address account) Pie(account) {
+        totalSupply = 0;
+        admin = account;
+
+        emit NewAdmin(account);
+    }
+
+    function acceptAdmin() public {
+        require(msg.sender == pendingAdmin, "Pie::acceptAdmin: Call must come from pendingAdmin");
+        admin = msg.sender;
+        pendingAdmin = address(0);
+
+        emit NewAdmin(admin);
+    }
+
+    function setPendingAdmin(address _pendingAdmin) public {
+        require(msg.sender == admin, "Pie::setPendingAdmin: Call must come from admin");
+        pendingAdmin = _pendingAdmin;
+
+        emit NewPendingAdmin(pendingAdmin);
+    }
+
+    function setChildChainManager(address _childChainManager) external {
+        require(msg.sender == admin, "Pie:: caller is not the owner");
+
+        childChainManager = _childChainManager;
+    }
+
+    /**
+     * @notice called when token is deposited on root chain
+     * @dev Should be callable only by ChildChainManager
+     * Should handle deposit by minting the required amount for user
+     * Make sure minting is done only by this function
+     * @param user user address for whom deposit is being done
+     * @param depositData abi encoded amount
+     */
+    function deposit(address user, bytes calldata depositData) external {
+        require(msg.sender == childChainManager, "Pie:: deposit: Only childChainManager can call deposit function");
+        uint amount = abi.decode(depositData, (uint));
+        _mint(user, amount);
+    }
+
+    /**
+     * @notice called when user wants to withdraw tokens back to root chain
+     * @dev Should burn user's tokens. This transaction will be verified when exiting on root chain
+     * @param amount amount of tokens to withdraw
+     */
+    function withdraw(uint amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    function _mint(address dst, uint amount) internal {
+        require(dst != address(0), "Pie::_mint to the zero address");
+
+        totalSupply = add(totalSupply, amount, "Pie::_mint: totalSupply overflows");
+        balances[dst] = add(balances[dst], amount, "Pie::_mint: amount overflows");
+        emit Transfer(address(0), dst, amount);
+    }
+
+    function _burn(address src, uint amount) internal {
+        require(src != address(0), "Pie::_burn from the zero address");
+
+        balances[src] = sub(balances[src], amount, "Pie::_burn: amount exceeds balance");
+        totalSupply = sub(totalSupply, amount, "Pie::_burn: totalSupply overflows");
+        emit Transfer(src, address(0), amount);
     }
 }

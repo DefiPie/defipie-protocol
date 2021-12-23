@@ -29,7 +29,7 @@ contract RegistryProxy is RegistryStorage, RegistryErrorReporter {
         delegateTo(implementation, abi.encodeWithSignature("initialize(address)", pTokenImplementation));
     }
 
-    function setImplementation(address newImplementation) external returns(uint) {
+    function _setImplementation(address newImplementation) external returns(uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
         }

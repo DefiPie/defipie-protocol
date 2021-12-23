@@ -3,7 +3,7 @@ import {Callable, Sendable} from '../Invokation';
 
 interface RegistryMethods {
     initialize(address: string): Sendable<void>
-    setPTokenImplementation(address: string): Sendable<number>
+    _setPTokenImplementation(address: string): Sendable<number>
     implementaion(): Callable<string>
     admin(): Callable<string>
     pendingAdmin(): Callable<string>
@@ -17,10 +17,10 @@ interface RegistryMethods {
     pTokens(address: string): Callable<string>
     addPToken(underlying: string, pToken: string): Sendable<number>
 
-    removePToken(address: string): Sendable<number>
+    _removePToken(address: string): Sendable<number>
 
     oracle(): Callable<string>
-    setOracle(string): Sendable<number>
+    _setOracle(string): Sendable<number>
 }
 
 export interface Registry extends Contract {

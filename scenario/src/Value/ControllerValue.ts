@@ -78,6 +78,10 @@ async function getBlockNumber(world: World, controller: Controller): Promise<Num
   return new NumberV(await controller.methods.getBlockNumber().call());
 }
 
+async function getFeeFactorMantissa(world: World, controller: Controller, pToken: PToken): Promise<NumberV> {
+  return new NumberV(await controller.methods.getFeeFactorMantissa(pToken._address).call());
+}
+
 async function getAdmin(world: World, controller: Controller): Promise<AddressV> {
   return new AddressV(await controller.methods.getAdmin().call());
 }
@@ -257,6 +261,19 @@ export function controllerFetchers() {
       "BlockNumber",
       [new Arg("controller", getController, {implicit: true})],
       (world, {controller}) => getBlockNumber(world, controller)
+    ),
+    new Fetcher<{controller: Controller, pToken: PToken}, NumberV>(`
+      #### FeeFactorMantissa
+
+        * "Controller FeeFactorMantissa <PToken>" - Returns the feeFactorMantissa associated with a given asset
+        * E.g. "Controller FeeFactorMantissa pZRX"
+      `,
+      "FeeFactorMantissa",
+      [
+          new Arg("controller", getController, {implicit: true}),
+          new Arg("pToken", getPTokenV)
+      ],
+      (world, {controller, pToken}) => getFeeFactorMantissa(world, controller, pToken)
     ),
     new Fetcher<{controller: Controller, pToken: PToken}, NumberV>(`
         #### CollateralFactor

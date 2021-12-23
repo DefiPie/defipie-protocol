@@ -54,7 +54,7 @@ async function acceptAdmin(world: World, from: string, registryProxy: RegistryPr
 }
 
 async function setPTokenImplementation(world: World, from: string, registryProxy: RegistryProxy, newImplementation: string): Promise<World> {
-    let invokation = await invoke(world, registryProxy.methods.setPTokenImplementation(newImplementation), from, RegistryErrorReporter);
+    let invokation = await invoke(world, registryProxy.methods._setPTokenImplementation(newImplementation), from, RegistryErrorReporter);
 
     world = addAction(
         world,
@@ -66,7 +66,7 @@ async function setPTokenImplementation(world: World, from: string, registryProxy
 }
 
 async function setImplementation(world: World, from: string, registryProxy: RegistryProxy, newImplementation: string): Promise<World> {
-    let invokation = await invoke(world, registryProxy.methods.setImplementation(newImplementation), from, RegistryErrorReporter);
+    let invokation = await invoke(world, registryProxy.methods._setImplementation(newImplementation), from, RegistryErrorReporter);
 
     world = addAction(
         world,
@@ -114,7 +114,7 @@ async function setAddPETH(world: World, from: string, registryProxy: RegistryPro
 }
 
 async function setPriceOracle(world: World, from: string, registryProxy: RegistryProxy, priceOracleAddr: string): Promise<World> {
-    let invokation = await invoke(world, registryProxy.methods.setOracle(priceOracleAddr), from, RegistryErrorReporter);
+    let invokation = await invoke(world, registryProxy.methods._setOracle(priceOracleAddr), from, RegistryErrorReporter);
 
     world = addAction(
         world,
@@ -126,7 +126,7 @@ async function setPriceOracle(world: World, from: string, registryProxy: Registr
 }
 
 async function removePTokenFromRegistry(world: World, from: string, registryProxy: RegistryProxy, pToken: string): Promise<World> {
-    let invokation = await invoke(world, registryProxy.methods.removePToken(pToken), from, RegistryErrorReporter);
+    let invokation = await invoke(world, registryProxy.methods._removePToken(pToken), from, RegistryErrorReporter);
 
     world = addAction(
         world,

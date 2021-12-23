@@ -10,7 +10,8 @@ contract Governor {
     uint public threshold = 15_000_000e8; // 15M pPIE or ~300K PIE
     uint public quorum = 150_000_000e8; // 150M pPIE or ~3M PIE
     uint public delay = 1; // 1 block
-    uint public period = 19710; // ~3 days in blocks (assuming 15s blocks)
+
+    uint public period;
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     function quorumVotes() public view returns (uint) { return quorum; }
@@ -136,10 +137,11 @@ contract Governor {
     event NewVotingDelay(uint indexed newVotingDelay);
     event NewVotingPeriod(uint indexed newVotingPeriod);
 
-    constructor(address timelock_, address registry_, address guardian_) {
+    constructor(address timelock_, address registry_, address guardian_, uint period_) {
         timelock = TimelockInterface(timelock_);
         registry = Registry(registry_);
         guardian = guardian_;
+        period = period_;
     }
 
     function propose(

@@ -30,7 +30,7 @@ async function genToken(world: World, from: string, params: Event): Promise<Worl
 }
 
 async function setPTokenImplementation(world: World, from: string, registry: Registry, newImplementation: string): Promise<World> {
-    let invokation = await invoke(world, registry.methods.setPTokenImplementation(newImplementation), from, RegistryErrorReporter);
+    let invokation = await invoke(world, registry.methods._setPTokenImplementation(newImplementation), from, RegistryErrorReporter);
 
     world = addAction(
         world,
@@ -78,7 +78,7 @@ async function setAddPETH(world: World, from: string, registry: Registry, newPET
 }
 
 async function removePTokenFromRegistry(world: World, from: string, registry: Registry, pToken: string): Promise<World> {
-    let invokation = await invoke(world, registry.methods.removePToken(pToken), from, RegistryErrorReporter);
+    let invokation = await invoke(world, registry.methods._removePToken(pToken), from, RegistryErrorReporter);
 
     world = addAction(
         world,
@@ -90,7 +90,7 @@ async function removePTokenFromRegistry(world: World, from: string, registry: Re
 }
 
 async function setPriceOracle(world: World, from: string, registry: Registry, priceOracleAddr: string): Promise<World> {
-    let invokation = await invoke(world, registry.methods.setOracle(priceOracleAddr), from, RegistryErrorReporter);
+    let invokation = await invoke(world, registry.methods._setOracle(priceOracleAddr), from, RegistryErrorReporter);
 
     world = addAction(
         world,

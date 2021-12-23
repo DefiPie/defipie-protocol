@@ -60,7 +60,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
      *  Sets address of actual pToken implementation contract
      *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setPTokenImplementation(address newImplementation) external returns (uint) {
+    function _setPTokenImplementation(address newImplementation) external returns (uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
         }
@@ -86,7 +86,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function setOracle(address _oracle) public returns (uint) {
+    function _setOracle(address _oracle) public returns (uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_ORACLE);
         }
@@ -135,7 +135,7 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
         return uint(Error.NO_ERROR);
     }
 
-    function removePToken(address pToken) public returns (uint) {
+    function _removePToken(address pToken) public returns (uint) {
         require(msg.sender == admin, "Only admin can remove PTokens");
 
         PTokenInterface(pToken).isPToken(); // Sanity check to make sure its really a PToken

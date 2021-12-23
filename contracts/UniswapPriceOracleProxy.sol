@@ -30,7 +30,7 @@ contract UniswapPriceOracleProxy is UniswapPriceOracleProxyStorage, OracleErrorR
                                                             ETHUSDPriceFeed_));
     }
 
-    function setOracleImplementation(address newImplementation) external returns(uint256) {
+    function _setOracleImplementation(address newImplementation) external returns(uint256) {
         if (msg.sender != RegistryInterface(registry).admin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
         }

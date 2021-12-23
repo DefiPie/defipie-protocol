@@ -145,7 +145,7 @@ contract PErc20 is PToken, PErc20Interface {
 
         if (calcFeeFactorMantissa != currentFeeFactor) {
             if (currentFeeFactor == 0 || calcFeeFactorMantissa % 10000 == 0 || userTransferAmount > 10000) {
-                controller.setFeeFactor(address(this), calcFeeFactorMantissa);
+                controller._setFeeFactor(address(this), calcFeeFactorMantissa);
             }
         }
     }

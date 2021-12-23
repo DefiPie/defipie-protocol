@@ -309,7 +309,7 @@ contract BoolController is ControllerInterface {
         return failCalculateSeizeTokens ? (opaqueError, 0) : (noError, calculatedSeizeTokens);
     }
 
-    function setFeeFactor(address, uint) external override returns (uint) {
+    function _setFeeFactor(address, uint) external override returns (uint) {
         return 0;
     }
 

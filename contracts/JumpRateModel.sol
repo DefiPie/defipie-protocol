@@ -15,11 +15,6 @@ contract JumpRateModel is InterestRateModel {
     event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock, uint jumpMultiplierPerBlock, uint kink);
 
     /**
-     * @notice The approximate number of blocks per year that is assumed by the interest rate model
-     */
-    uint public constant blocksPerYear = 2102400;
-
-    /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate
      */
     uint public multiplierPerBlock;
@@ -41,12 +36,13 @@ contract JumpRateModel is InterestRateModel {
 
     /**
      * @notice Construct an interest rate model
+     * @param blocksPerYear The approximate number of blocks per year that is assumed by the interest rate model
      * @param baseRatePerYear The approximate target base APR, as a mantissa (scaled by 1e18)
      * @param multiplierPerYear The rate of increase in interest rate wrt utilization (scaled by 1e18)
      * @param jumpMultiplierPerYear The multiplierPerBlock after hitting a specified utilization point
      * @param kink_ The utilization point at which the jump multiplier is applied
      */
-    constructor(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink_) {
+    constructor(uint blocksPerYear, uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink_) {
         baseRatePerBlock = baseRatePerYear.div(blocksPerYear);
         multiplierPerBlock = multiplierPerYear.div(blocksPerYear);
         jumpMultiplierPerBlock = jumpMultiplierPerYear.div(blocksPerYear);

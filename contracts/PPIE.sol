@@ -122,6 +122,78 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
         return err;
     }
 
+    function repayBorrowFresh(address payer, address borrower, uint repayAmount) internal override returns (uint, uint, uint) {
+        /* Fail if repayBorrow not allowed */
+        uint allowed = controller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
+        if (allowed != 0) {
+            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.REPAY_BORROW_CONTROLLER_REJECTION, allowed), 0, 0);
+        }
+
+        /* Verify market's block number equals current block number */
+        if (accrualBlockNumber != getBlockNumber()) {
+            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REPAY_BORROW_FRESHNESS_CHECK), 0, 0);
+        }
+
+        RepayBorrowLocalVars memory vars;
+
+        /* We remember the original borrowerIndex for verification purposes */
+        vars.borrowerIndex = accountBorrows[borrower].interestIndex;
+
+        /* We fetch the amount the borrower owes, with accumulated interest */
+        (vars.mathErr, vars.accountBorrows) = borrowBalanceStoredInternal(borrower);
+        if (vars.mathErr != MathError.NO_ERROR) {
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REPAY_BORROW_ACCUMULATED_BALANCE_CALCULATION_FAILED, uint(vars.mathErr)), 0, 0);
+        }
+
+        /*
+         *  If totalBorrows < accountBorrows (result of rounding 1e-18), use totalBorrows
+         */
+        if (vars.accountBorrows > totalBorrows) {
+            vars.accountBorrows = totalBorrows;
+        }
+
+        /* If repayAmount > accountBorrows, repayAmount = accountBorrows */
+        if (repayAmount > vars.accountBorrows) {
+            vars.repayAmount = vars.accountBorrows;
+        } else {
+            vars.repayAmount = repayAmount;
+        }
+
+        /////////////////////////
+        // EFFECTS & INTERACTIONS
+        // (No safe failures beyond this point)
+
+        /*
+         * We call doTransferIn for the payer and the repayAmount
+         *  Note: The pToken must handle variations between ERC-20 and ETH underlying.
+         *  On success, the pToken holds an additional repayAmount of cash.
+         *  doTransferIn reverts if anything goes wrong, since we can't be sure if side effects occurred.
+         *   it returns the amount actually transferred, in case of a fee.
+         */
+        vars.actualRepayAmount = doTransferIn(payer, vars.repayAmount);
+
+        /*
+         * We calculate the new borrower and total borrow balances, failing on underflow:
+         *  accountBorrowsNew = accountBorrows - actualRepayAmount
+         *  totalBorrowsNew = totalBorrows - actualRepayAmount
+         */
+        (vars.mathErr, vars.accountBorrowsNew) = subUInt(vars.accountBorrows, vars.actualRepayAmount);
+        require(vars.mathErr == MathError.NO_ERROR, "REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED");
+
+        (vars.mathErr, vars.totalBorrowsNew) = subUInt(totalBorrows, vars.actualRepayAmount);
+        require(vars.mathErr == MathError.NO_ERROR, "REPAY_BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED");
+
+        /* We write the previously calculated values into storage */
+        accountBorrows[borrower].principal = vars.accountBorrowsNew;
+        accountBorrows[borrower].interestIndex = borrowIndex;
+        totalBorrows = vars.totalBorrowsNew;
+
+        /* We emit a RepayBorrow event */
+        emit RepayBorrow(payer, borrower, vars.actualRepayAmount, vars.accountBorrowsNew, vars.totalBorrowsNew);
+
+        return (uint(Error.NO_ERROR), vars.actualRepayAmount, vars.repayAmount);
+    }
+
     /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.

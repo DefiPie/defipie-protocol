@@ -33,7 +33,7 @@ contract ImplementationStorage {
 
     address public implementation;
 
-    function _setImplementation(address implementation_) internal {
+    function _setImplementationInternal(address implementation_) internal {
         implementation = implementation_;
     }
 }

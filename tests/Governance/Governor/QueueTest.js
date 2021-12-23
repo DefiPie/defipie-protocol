@@ -30,8 +30,8 @@ describe('Governor#queue/1', () => {
       const pie = await deploy('Pie', [root]);
       const ppie = await makePToken({ kind: 'ppie', underlying: pie});
       const registryAddress = await call(ppie, 'registry');
-
-      const gov = await deploy('Governor', [timelock._address, registryAddress, root]);
+      const period = '19710';
+      const gov = await deploy('Governor', [timelock._address, registryAddress, root, period]);
       const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
 
       await enfranchise(pie, ppie, a1, 3e6);
@@ -57,7 +57,8 @@ describe('Governor#queue/1', () => {
       const pie = await deploy('Pie', [root]);
       const ppie = await makePToken({ kind: 'ppie', underlying: pie});
       const registryAddress = await call(ppie, 'registry');
-      const gov = await deploy('Governor', [timelock._address, registryAddress, root]);
+      const period = '19710';
+      const gov = await deploy('Governor', [timelock._address, registryAddress, root, period]);
       const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
 
       await enfranchise(pie, ppie, a1, 3e6);

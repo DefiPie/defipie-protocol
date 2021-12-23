@@ -108,10 +108,10 @@ describe('PToken Factory tests', () => {
             let tx = await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address]);
             expect(tx).toSucceed();
 
-            let result = await send(pTokenFactory, 'addBlackList', [underlying._address], {from: accounts[1]});
+            let result = await send(pTokenFactory, '_addBlackList', [underlying._address], {from: accounts[1]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'ADD_UNDERLYING_TO_BLACKLIST');
 
-            result = await send(pTokenFactory, 'addBlackList', [underlying._address]);
+            result = await send(pTokenFactory, '_addBlackList', [underlying._address]);
             expect(result).toSucceed();
 
             let blackListStatus = await call(pTokenFactory, "getBlackListStatus", [underlying._address]);
@@ -120,10 +120,10 @@ describe('PToken Factory tests', () => {
             result = await send(pTokenFactory, 'createPToken', [underlying._address]);
             expect(result).toHaveFactoryFailure('INVALID_POOL', 'UNDERLYING_IN_BLACKLIST');
 
-            result = await send(pTokenFactory, 'removeBlackList', [underlying._address], {from: accounts[1]});
+            result = await send(pTokenFactory, '_removeBlackList', [underlying._address], {from: accounts[1]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'REMOVE_UNDERLYING_FROM_BLACKLIST');
 
-            result = await send(pTokenFactory, 'removeBlackList', [underlying._address]);
+            result = await send(pTokenFactory, '_removeBlackList', [underlying._address]);
             expect(result).toSucceed();
 
             blackListStatus = await call(pTokenFactory, "getBlackListStatus", [underlying._address]);
@@ -139,12 +139,12 @@ describe('PToken Factory tests', () => {
 
     describe("check minUniswapLiquidity", () => {
         it("set minUniswapLiquidity", async () => {
-            await send(pTokenFactory, 'setMinUniswapLiquidity', [1]);
+            await send(pTokenFactory, '_setMinUniswapLiquidity', [1]);
             expect(await call(pTokenFactory, 'minUniswapLiquidity')).toEqual('1');
         });
 
         it("set minUniswapLiquidity, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, 'setMinUniswapLiquidity', [1], {from: accounts[1]});
+            let result = await send(pTokenFactory, '_setMinUniswapLiquidity', [1], {from: accounts[1]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_MIN_LIQUIDITY_OWNER_CHECK');
         });
     });
@@ -158,7 +158,7 @@ describe('PToken Factory tests', () => {
             let reserve1 = new BigNumber(reserves[1]);
 
             await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address, reserve0.minus(1), reserve1.minus(1)]);
-            await send(pTokenFactory, 'setMinUniswapLiquidity', [reserve1]);
+            await send(pTokenFactory, '_setMinUniswapLiquidity', [reserve1]);
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
@@ -178,72 +178,72 @@ describe('PToken Factory tests', () => {
 
     describe("oracle address", () => {
         it("set oracle address", async () => {
-            await send(registryProxy, 'setOracle', [accounts[1]]);
+            await send(registryProxy, '_setOracle', [accounts[1]]);
             expect(await call(pTokenFactory, 'getOracle')).toEqual(accounts[1]);
         });
 
         it("set oracle address, not UNAUTHORIZED", async () => {
-            let result = await send(registryProxy, 'setOracle', [accounts[2]], {from: accounts[2]});
+            let result = await send(registryProxy, '_setOracle', [accounts[2]], {from: accounts[2]});
             expect(result).toHaveRegistryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
         });
     });
 
     describe("controller address", () => {
         it("set controller address", async () => {
-            await send(pTokenFactory, 'setController', [accounts[1]]);
+            await send(pTokenFactory, '_setController', [accounts[1]]);
             expect(await call(pTokenFactory, 'controller')).toEqual(accounts[1]);
         });
 
         it("set controller address, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, 'setController', [accounts[2]], {from: accounts[2]});
+            let result = await send(pTokenFactory, '_setController', [accounts[2]], {from: accounts[2]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_CONTROLLER');
         });
     });
 
     describe("interestRateModel address", () => {
         it("set interestRateModel address", async () => {
-            await send(pTokenFactory, 'setInterestRateModel', [accounts[1]]);
+            await send(pTokenFactory, '_setInterestRateModel', [accounts[1]]);
             expect(await call(pTokenFactory, 'interestRateModel')).toEqual(accounts[1]);
         });
 
         it("set interestRateModel address, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, 'setInterestRateModel', [accounts[2]], {from: accounts[2]});
+            let result = await send(pTokenFactory, '_setInterestRateModel', [accounts[2]], {from: accounts[2]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_INTEREST_RATE_MODEL');
         });
     });
 
     describe("set exchange rate value", () => {
         it("set exchange rate value", async () => {
-            await send(pTokenFactory, 'setInitialExchangeRateMantissa', ['11']);
+            await send(pTokenFactory, '_setInitialExchangeRateMantissa', ['11']);
             expect(await call(pTokenFactory, 'initialExchangeRateMantissa')).toEqual('11');
         });
 
         it("set ExchangeRateMantissa value, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, 'setInitialExchangeRateMantissa', ['12'], {from: accounts[2]});
+            let result = await send(pTokenFactory, '_setInitialExchangeRateMantissa', ['12'], {from: accounts[2]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_EXCHANGE_RATE');
         });
     });
 
     describe("set reserve factor value", () => {
         it("set reserve factor value", async () => {
-            await send(pTokenFactory, 'setInitialReserveFactorMantissa', ['11']);
+            await send(pTokenFactory, '_setInitialReserveFactorMantissa', ['11']);
             expect(await call(pTokenFactory, 'initialReserveFactorMantissa')).toEqual('11');
         });
 
         it("set reserveFactorMantissa value, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, 'setInitialReserveFactorMantissa', ['12'], {from: accounts[2]});
+            let result = await send(pTokenFactory, '_setInitialReserveFactorMantissa', ['12'], {from: accounts[2]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_RESERVE_FACTOR');
         });
     });
 
     describe("set decimals value", () => {
         it("set decimals value", async () => {
-            await send(pTokenFactory, 'setPTokenDecimals', ['11']);
+            await send(pTokenFactory, '_setPTokenDecimals', ['11']);
             expect(await call(pTokenFactory, 'decimals')).toEqual('11');
         });
 
         it("set decimals value, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, 'setPTokenDecimals', ['12'], {from: accounts[2]});
+            let result = await send(pTokenFactory, '_setPTokenDecimals', ['12'], {from: accounts[2]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_NEW_DECIMALS');
         });
     });

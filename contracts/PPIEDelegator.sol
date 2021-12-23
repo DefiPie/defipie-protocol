@@ -43,7 +43,7 @@ contract PPIEDelegator is ImplementationStorage, ProxyWithRegistry, TokenErrorRe
     ) {
         // Set registry
         _setRegistry(registry_);
-        _setImplementation(pPIEImplementation_);
+        _setImplementationInternal(pPIEImplementation_);
 
         // First delegate gets to initialize the delegator (i.e. storage contract)
         delegateTo(implementation, abi.encodeWithSignature("initialize(address,address,address,address,uint256,uint256,string,string,uint8)",
@@ -97,13 +97,13 @@ contract PPIEDelegator is ImplementationStorage, ProxyWithRegistry, TokenErrorRe
         delegateAndReturn();
     }
 
-    function setImplementation(address newImplementation) external returns(uint) {
+    function _setImplementation(address newImplementation) external returns (uint) {
         if (msg.sender != RegistryInterface(registry).admin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
         }
 
         address oldImplementation = implementation;
-        _setImplementation(newImplementation);
+        _setImplementationInternal(newImplementation);
 
         emit NewImplementation(oldImplementation, implementation);
 
