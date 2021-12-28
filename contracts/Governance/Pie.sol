@@ -12,7 +12,7 @@ contract Pie {
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public constant totalSupply = 220_000_000e18;
+    uint public totalSupply = 220_000_000e18;
 
     /// @dev Allowance amounts on behalf of others
     mapping (address => mapping (address => uint)) internal allowances;
