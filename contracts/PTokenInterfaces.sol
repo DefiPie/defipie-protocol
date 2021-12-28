@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 import "./ControllerInterface.sol";
@@ -235,6 +236,18 @@ abstract contract PErc20Interface is PErc20Storage {
 
     function _addReserves(uint addAmount) external virtual returns (uint);
 }
+
+contract PEer20ExtStorage {
+    /**
+     * @notice start borrow timestamp
+     */
+    uint public startBorrowTimestamp;
+}
+
+abstract contract PErc20ExtInterface is PEer20ExtStorage {
+
+}
+
 
 contract PPIEStorage {
     /// @notice A record of each accounts delegate

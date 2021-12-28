@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 import "./PriceOracle.sol";
@@ -50,4 +51,5 @@ abstract contract ControllerInterface {
     function getOracle() external view virtual returns (PriceOracle);
     function _setFeeFactor(address pToken, uint newFeeFactorMantissa) external virtual returns (uint);
     function getFeeFactorMantissa(address pToken) public view virtual returns (uint);
+    function getBorrowDelay() public view virtual returns (uint);
 }

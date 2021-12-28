@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 import "./ErrorReporter.sol";
@@ -35,6 +36,9 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
     /// @notice Event emitted when the fee factor is changed
     event NewFeeFactor(address pToken, uint oldFeeFactorMantissa, uint newFeeFactorMantissa);
+
+    /// @notice Event emitted when the borrow delay is changed
+    event NewBorrowDelay(uint oldBorrowDelay, uint newBorrowDelay);
 
     /// @notice Emitted when liquidation incentive is changed by admin
     event NewLiquidationIncentive(uint oldLiquidationIncentiveMantissa, uint newLiquidationIncentiveMantissa);
@@ -1083,6 +1087,28 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
     }
 
     /**
+     * @notice Admin function to change the Borrow Delay
+     * @param newBorrowDelay The value of the new Borrow Delay in seconds
+     * @return uint 0=success, otherwise a failure. (See enum Error for details)
+     */
+    function _setBorrowDelay(uint newBorrowDelay) public returns (uint) {
+        if (msg.sender != getAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_BORROW_DELAY_OWNER_CHECK);
+        }
+
+        // Save current value for inclusion in log
+        uint oldBorrowDelay = borrowDelay;
+
+        // Store dorrowDelay with value newBorrowDelay
+        borrowDelay = newBorrowDelay;
+
+        // Emit newBorrowDelay(OldBorrowDelay, NewBorrowDelay)
+        emit NewBorrowDelay(oldBorrowDelay, borrowDelay);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    /**
      * @notice Admin function to change the transfer status for markets
      * @param state The flag of the transfer status
      * @return uint 0=success, otherwise a failure. (See enum Error for details)
@@ -1380,5 +1406,13 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
      */
     function getFeeFactorMantissa(address pToken) public view override returns (uint) {
         return feeFactorMantissa[pToken];
+    }
+
+    /**
+     * @notice Return the borrow delay for markets
+     * @return The borrow delay
+     */
+    function getBorrowDelay() public view override returns (uint) {
+        return borrowDelay;
     }
 }

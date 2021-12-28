@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 import './PErc20Delegator.sol';
@@ -10,6 +11,7 @@ import "./PEtherDelegator.sol";
 import "./PPIEDelegator.sol";
 import "./Controller.sol";
 import "./UniswapPriceOracle.sol";
+import "./PTokenInterfaces.sol";
 
 contract PTokenFactory is FactoryErrorReporter {
     using SafeMath for uint;
@@ -30,8 +32,9 @@ contract PTokenFactory is FactoryErrorReporter {
     /**
      * Fired on creation new pToken proxy
      * @param newPToken Address of new PToken proxy contract
+     * @param startBorrowTimestamp Timestamp for borrow start
      */
-    event PTokenCreated(address newPToken);
+    event PTokenCreated(address newPToken, uint startBorrowTimestamp);
 
     event AddedBlackList(address _underlying);
     event RemovedBlackList(address _underlying);
@@ -81,20 +84,21 @@ contract PTokenFactory is FactoryErrorReporter {
 
         registry.addPToken(underlying_, address(newPToken));
 
-        emit PTokenCreated(address(newPToken));
+        uint startBorrowTimestamp = PErc20ExtInterface(address(newPToken)).startBorrowTimestamp();
+        emit PTokenCreated(address(newPToken), startBorrowTimestamp);
 
         getOracle().update(underlying_);
 
         return uint(Error.NO_ERROR);
     }
 
-    function _createPETH(address pETHImplementation_, string memory symbol) external virtual returns (uint) {
+    function _createPETH(address pETHImplementation_, string memory symbol_) external virtual returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PETH_POOL);
         }
 
-        string memory name = string(abi.encodePacked("DeFiPie ", symbol));
-        string memory symbol = string(abi.encodePacked("p", symbol));
+        string memory name = string(abi.encodePacked("DeFiPie ", symbol_));
+        string memory symbol = string(abi.encodePacked("p", symbol_));
 
         uint power = 18;
         uint exchangeRateMantissa = calcExchangeRate(power);
@@ -108,7 +112,7 @@ contract PTokenFactory is FactoryErrorReporter {
 
         registry.addPETH(address(newPETH));
 
-        emit PTokenCreated(address(newPETH));
+        emit PTokenCreated(address(newPETH), block.timestamp);
 
         return uint(Error.NO_ERROR);
     }
@@ -133,7 +137,7 @@ contract PTokenFactory is FactoryErrorReporter {
 
         registry.addPPIE(address(newPPIE));
 
-        emit PTokenCreated(address(newPPIE));
+        emit PTokenCreated(address(newPPIE), block.timestamp);
 
         getOracle().update(underlying_);
 

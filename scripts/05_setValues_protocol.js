@@ -27,55 +27,57 @@ async function main() {
     const UnitrollerInterface = await hre.ethers.getContractFactory("Unitroller");
     const unitrollerInterface = await UnitrollerInterface.attach(data.unitroller);
 
-    let tx1 = await unitrollerInterface._setPendingImplementation(data.controller);
-    console.log("Tx1 hash: ", tx1.hash);
-    await tx1.wait();
+    let tx = await unitrollerInterface._setPendingImplementation(data.controller);
+    console.log("Tx1 hash: ", tx.hash);
+    await tx.wait();
 
     const ControllerInterface = await hre.ethers.getContractFactory("Controller");
     const controllerInterface = await ControllerInterface.attach(data.controller);
 
-    let tx2 = await controllerInterface._become(data.unitroller);
-    console.log("Tx2 hash: ", tx2.hash);
-    await tx2.wait();
+    tx = await controllerInterface._become(data.unitroller);
+    console.log("Tx2 hash: ", tx.hash);
+    await tx.wait();
 
     // Settings transactions
     const unitrollerWithControllerInterface = await ControllerInterface.attach(data.unitroller);
-    let tx3 = await unitrollerWithControllerInterface._setLiquidationIncentive(process.env.CONTROLLER_LIQUIDATION_INCENTIVE);
-    console.log("Tx3 hash: ", tx3.hash);
-    let tx4 = await unitrollerWithControllerInterface._setMaxAssets(process.env.CONTROLLER_MAX_ASSETS);
-    console.log("Tx4 hash: ", tx4.hash);
-    let tx5 = await unitrollerWithControllerInterface._setCloseFactor(process.env.CONTROLLER_CLOSE_FACTOR);
-    console.log("Tx5 hash: ", tx5.hash);
-    let tx6 = await unitrollerWithControllerInterface._setFeeFactorMaxMantissa(process.env.CONTROLLER_FEE_FACTOR_MAX_MANTISSA);
-    console.log("Tx6 hash: ", tx6.hash);
-    let tx7 = await unitrollerWithControllerInterface._setLiquidateGuardian(process.env.CONTROLLER_LIQUIDATE_GUARDIAN);
-    console.log("Tx7 hash: ", tx7.hash);
-    let tx8 = await unitrollerWithControllerInterface._setPauseGuardian(process.env.CONTROLLER_PAUSE_GUARDIAN);
-    console.log("Tx8 hash: ", tx8.hash);
+    tx = await unitrollerWithControllerInterface._setLiquidationIncentive(process.env.CONTROLLER_LIQUIDATION_INCENTIVE);
+    console.log("Tx3 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setMaxAssets(process.env.CONTROLLER_MAX_ASSETS);
+    console.log("Tx4 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setCloseFactor(process.env.CONTROLLER_CLOSE_FACTOR);
+    console.log("Tx5 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setFeeFactorMaxMantissa(process.env.CONTROLLER_FEE_FACTOR_MAX_MANTISSA);
+    console.log("Tx6 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setLiquidateGuardian(process.env.CONTROLLER_LIQUIDATE_GUARDIAN);
+    console.log("Tx7 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setPauseGuardian(process.env.CONTROLLER_PAUSE_GUARDIAN);
+    console.log("Tx8 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setBorrowDelay(process.env.CONTROLLER_BORROW_DELAY);
+    console.log("Tx9 hash: ", tx.hash);
 
     // 2. Registry transactions
     const RegistryInterface = await hre.ethers.getContractFactory("Registry");
     const registryInterface = await RegistryInterface.attach(data.registryProxy);
 
-    let tx9 = await registryInterface._setFactoryContract(data.pTokenFactory);
-    console.log("Tx9 hash", tx9.hash);
-    await tx9.wait();
+    tx = await registryInterface._setFactoryContract(data.pTokenFactory);
+    console.log("Tx10 hash", tx.hash);
+    await tx.wait();
 
-    let tx10 = await registryInterface._setOracle(data.uniswapPriceOracleProxy);
-    console.log("Tx10 hash", tx10.hash);
-    await tx10.wait();
+    tx = await registryInterface._setOracle(data.uniswapPriceOracleProxy);
+    console.log("Tx11 hash", tx.hash);
+    await tx.wait();
 
     // 3. Factory transactions
     const PTokenFactoryInterface = await hre.ethers.getContractFactory("PTokenFactory");
     const pTokenFactoryInterface = await PTokenFactoryInterface.attach(data.pTokenFactory);
 
-    let tx11 = await pTokenFactoryInterface._createPETH(data.pEtherDelegate, "ETH");
-    console.log("Tx11 hash", tx11.hash);
-    await tx11.wait();
+    tx = await pTokenFactoryInterface._createPETH(data.pEtherDelegate, "ETH");
+    console.log("Tx12 hash", tx.hash);
+    await tx.wait();
 
-    let tx12 = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
-    console.log("Tx12 hash", tx12.hash);
-    await tx12.wait();
+    tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
+    console.log("Tx13 hash", tx.hash);
+    await tx.wait();
 
     console.log('Finish!');
 }

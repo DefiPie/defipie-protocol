@@ -44,6 +44,7 @@ async function makeController(opts = {}) {
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
+    const borrowDelay = etherUnsigned(dfn(opts.borrowDelay, 86400));
     const liquidationIncentive = etherMantissa(1);
 
     await send(unitroller, '_setPendingImplementation', [controller._address]);
@@ -53,6 +54,7 @@ async function makeController(opts = {}) {
     await send(unitroller, '_setCloseFactor', [closeFactor]);
     await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
+    await send(unitroller, '_setBorrowDelay', [borrowDelay]);
 
     return Object.assign(unitroller, { priceOracle, registryProxy });
   }
@@ -65,6 +67,7 @@ async function makeController(opts = {}) {
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
+    const borrowDelay = etherUnsigned(dfn(opts.borrowDelay, 86400));
     const liquidationIncentive = etherMantissa(1);
 
     await send(unitroller, '_setPendingImplementation', [controller._address]);
@@ -74,6 +77,7 @@ async function makeController(opts = {}) {
     await send(unitroller, '_setCloseFactor', [closeFactor]);
     await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
+    await send(unitroller, '_setBorrowDelay', [borrowDelay]);
 
     return Object.assign(unitroller, { priceOracle, registryProxy });
   }
@@ -84,6 +88,8 @@ async function makeController(opts = {}) {
     const controller = await deploy('ControllerScenarioG4');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
+    const borrowDelay = etherUnsigned(dfn(opts.borrowDelay, 86400));
     const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const liquidationIncentive = etherMantissa(1);
     const pie = opts.pie || await deploy('Pie', [opts.pieOwner || root]);
@@ -94,6 +100,8 @@ async function makeController(opts = {}) {
     mergeInterface(unitroller, controller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, '_setMaxAssets', [maxAssets]);
+    await send(unitroller, '_setBorrowDelay', [borrowDelay]);
     await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, 'harnessSetPieRate', [pieRate]);
     await send(unitroller, 'setPieAddress', [pie._address]); // harness only
@@ -109,6 +117,7 @@ async function makeController(opts = {}) {
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const feeFactorMax = etherMantissa(dfn(opts.feeFactorMax, 0.1));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
+    const borrowDelay = etherUnsigned(dfn(opts.borrowDelay, 86400));
     const liquidationIncentive = etherMantissa(1);
     const pie = opts.pie || await deploy('Pie', [opts.pieOwner || root]);
     const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
@@ -120,6 +129,7 @@ async function makeController(opts = {}) {
     await send(unitroller, '_setCloseFactor', [closeFactor]);
     await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
+    await send(unitroller, '_setBorrowDelay', [borrowDelay]);
     await send(unitroller, 'setPieAddress', [pie._address]); // harness only
     await send(unitroller, '_setPieRate', [pieRate]);
 

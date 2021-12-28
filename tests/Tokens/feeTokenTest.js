@@ -1,4 +1,9 @@
 const {
+    increaseTime,
+    blockNumber
+} = require('../Utils/Ethereum');
+
+const {
     makeToken,
     makeInterestRateModel,
     makeController,
@@ -11,6 +16,7 @@ describe('Fee Token tests', () => {
     let root, admin, accounts;
     let pTokenFactory, oracle, registryProxy;
     let controller, interestRateModel, closeFactor, liquidationIncentive;
+    let borrowDelay = 86400;
 
     beforeEach(async () => {
         [root, admin, ...accounts] = saddle.accounts;
@@ -39,6 +45,7 @@ describe('Fee Token tests', () => {
 
     describe("Liquidation", () => {
         it("simple liquidation", async () => {
+            let borrowDelay = 86400;
             let simpleToken = await makeToken(); // BUSD
             let feeToken = await makeToken({kind: 'fee', basisPointFee: '1000'});  // fee = 10%
 
@@ -55,12 +62,18 @@ describe('Fee Token tests', () => {
             let tx5 = await send(pTokenFactory, 'createPToken', [simpleToken._address]);
             let pTokenAddress = tx5.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx5).toSucceed();
-            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress});
+
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx6 = await send(pTokenFactory, 'createPToken', [feeToken._address]);
             let pFeeTokenAddress = tx6.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx6).toSucceed();
-            expect(tx6).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress});
+
+            block = await web3.eth.getBlock(await blockNumber());
+            startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx6).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx7 = await send(oracle, 'setUnderlyingPrice', [pTokenAddress, '1000000000000000000']); // $1
             expect(tx7).toSucceed();
@@ -126,6 +139,7 @@ describe('Fee Token tests', () => {
 
             // 3. User0 borrow pFeeToken token (collateral simple pToken)
             // try borrow with under max amount
+            await increaseTime(borrowDelay);
             let borrowAmount = '576923076923076923078'; // max amount is $576,92 (750 / 1.3)
             let tx17 = await send(pFeeToken, 'borrow', [borrowAmount], { from: accounts[0] });
             expect(tx17).toHaveLog('Failure', {
@@ -235,12 +249,18 @@ describe('Fee Token tests', () => {
             let tx5 = await send(pTokenFactory, 'createPToken', [simpleToken._address]);
             let pTokenAddress = tx5.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx5).toSucceed();
-            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress});
+
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx6 = await send(pTokenFactory, 'createPToken', [feeToken._address]);
             let pFeeTokenAddress = tx6.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx6).toSucceed();
-            expect(tx6).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress});
+
+            block = await web3.eth.getBlock(await blockNumber());
+            startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx6).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx7 = await send(oracle, 'setUnderlyingPrice', [pTokenAddress, '1000000000000000000']); // $1
             expect(tx7).toSucceed();
@@ -307,6 +327,7 @@ describe('Fee Token tests', () => {
 
             // 3. User0 borrow pFeeToken token (collateral simple pToken)
             // try borrow with under max amount
+            await increaseTime(borrowDelay);
             let borrowAmount = '707547169811320754718'; // max amount + 1
             let tx17 = await send(pFeeToken, 'borrow', [borrowAmount], { from: accounts[0] });
             expect(tx17).toHaveLog('Failure', {
@@ -459,6 +480,7 @@ describe('Fee Token tests', () => {
 
     describe("Other functions", () => {
         it("revert for token with big % fee ", async () => {
+            let borrowDelay = 86400;
             let feeToken = await makeToken({kind: 'fee', basisPointFee: '9000'}); // 90% fee
 
             let tx1 = await send(oracle, 'setPrice', [feeToken._address, '25000000000000000000']); // $25
@@ -469,7 +491,10 @@ describe('Fee Token tests', () => {
             let tx3 = await send(pTokenFactory, 'createPToken', [feeToken._address]);
             let pFeeTokenAddress = tx3.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx3).toSucceed();
-            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress});
+
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx4 = await send(oracle, 'setUnderlyingPrice', [pFeeTokenAddress, '1000000000000000000']); // $1
             expect(tx4).toSucceed();
@@ -489,6 +514,7 @@ describe('Fee Token tests', () => {
         });
 
         it("set fee factor in controller", async () => {
+            let borrowDelay = 86400;
             let feeToken0 = await makeToken({kind: 'fee', basisPointFee: '0'}); // 0% fee
             let feeToken1 = await makeToken({kind: 'fee', basisPointFee: '500'}); // 5% fee
             let feeToken2 = await makeToken({kind: 'fee', basisPointFee: '1000'}); // 10% fee
@@ -503,17 +529,26 @@ describe('Fee Token tests', () => {
             let tx0 = await send(pTokenFactory, 'createPToken', [feeToken0._address]);
             let pFeeTokenAddress0 = tx0.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx0).toSucceed();
-            expect(tx0).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress0});
+
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx0).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress0, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx1 = await send(pTokenFactory, 'createPToken', [feeToken1._address]);
             let pFeeTokenAddress1 = tx1.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx1).toSucceed();
-            expect(tx1).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress1});
+
+            block = await web3.eth.getBlock(await blockNumber());
+            startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx1).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress1, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx2 = await send(pTokenFactory, 'createPToken', [feeToken2._address]);
             let pFeeTokenAddress2 = tx2.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx2).toSucceed();
-            expect(tx2).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress2});
+
+            block = await web3.eth.getBlock(await blockNumber());
+            startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx2).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress2, startBorrowTimestamp: startBorrowTimestamp});
 
             await send(oracle, 'setUnderlyingPrice', [pFeeTokenAddress0, '1000000000000000000']); // $1
             await send(oracle, 'setUnderlyingPrice', [pFeeTokenAddress1, '1000000000000000000']); // $1
@@ -617,7 +652,10 @@ describe('Fee Token tests', () => {
             let tx3 = await send(pTokenFactory, 'createPToken', [feeToken18._address]);
             let pFeeTokenAddress = tx3.events['PTokenCreated'].returnValues['newPToken'];
             expect(tx3).toSucceed();
-            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress});
+
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +borrowDelay;
+            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pFeeTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx4 = await send(oracle, 'setUnderlyingPrice', [pFeeTokenAddress, '1000000000000000000']);
             expect(tx4).toSucceed();

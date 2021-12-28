@@ -1,4 +1,8 @@
 const {
+    blockNumber
+} = require('./Utils/Ethereum');
+
+const {
     makeToken,
     makePTokenFactory,
     makeRegistryProxy
@@ -58,6 +62,7 @@ describe('PToken Factory tests', () => {
 
     describe("Create tokens with different decimals ", () => {
         it("create token with diff decimals", async () => {
+            let borrowDelay = 86400;
 
             let decimals18 = await makeToken({decimals: 18});
             let decimals8 = await makeToken({decimals: 8});
@@ -73,14 +78,28 @@ describe('PToken Factory tests', () => {
 
             await send(mockUniswapPool, 'setData', [decimals18._address, WETHToken._address]);
             let tx1 = await send(pTokenFactory, 'createPToken', [decimals18._address]);
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp1 = +block.timestamp + +borrowDelay;
+
             await send(mockUniswapPool, 'setData', [decimals8._address, WETHToken._address]);
             let tx2 = await send(pTokenFactory, 'createPToken', [decimals8._address]);
+            block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp2 = +block.timestamp + +borrowDelay;
+
             await send(mockUniswapPool, 'setData', [decimals6._address, WETHToken._address]);
             let tx3 = await send(pTokenFactory, 'createPToken', [decimals6._address]);
+            block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp3 = +block.timestamp + +borrowDelay;
+
             await send(mockUniswapPool, 'setData', [decimals22._address, WETHToken._address]);
             let tx4 = await send(pTokenFactory, 'createPToken', [decimals22._address]);
+            block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp4 = +block.timestamp + +borrowDelay;
+
             await send(mockUniswapPool, 'setData', [decimals0._address, WETHToken._address]);
             let tx5 = await send(pTokenFactory, 'createPToken', [decimals0._address]);
+            block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp5 = +block.timestamp + +borrowDelay;
 
             let pTokenAddress1 = tx1.events['PTokenCreated'].returnValues['newPToken'];
             let pTokenAddress2 = tx2.events['PTokenCreated'].returnValues['newPToken'];
@@ -89,15 +108,15 @@ describe('PToken Factory tests', () => {
             let pTokenAddress5 = tx5.events['PTokenCreated'].returnValues['newPToken'];
 
             expect(tx1).toSucceed();
-            expect(tx1).toHaveLog('PTokenCreated', {newPToken: pTokenAddress1});
+            expect(tx1).toHaveLog('PTokenCreated', {newPToken: pTokenAddress1, startBorrowTimestamp: startBorrowTimestamp1});
             expect(tx2).toSucceed();
-            expect(tx2).toHaveLog('PTokenCreated', {newPToken: pTokenAddress2});
+            expect(tx2).toHaveLog('PTokenCreated', {newPToken: pTokenAddress2, startBorrowTimestamp: startBorrowTimestamp2});
             expect(tx3).toSucceed();
-            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress3});
+            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress3, startBorrowTimestamp: startBorrowTimestamp3});
             expect(tx4).toSucceed();
-            expect(tx4).toHaveLog('PTokenCreated', {newPToken: pTokenAddress4});
+            expect(tx4).toHaveLog('PTokenCreated', {newPToken: pTokenAddress4, startBorrowTimestamp: startBorrowTimestamp4});
             expect(tx5).toSucceed();
-            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress5});
+            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress5, startBorrowTimestamp: startBorrowTimestamp5});
 
             let pToken1 = await saddle.getContractAt('PToken', pTokenAddress1);
             let pToken2 = await saddle.getContractAt('PToken', pTokenAddress2);

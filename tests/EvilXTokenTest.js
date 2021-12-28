@@ -1,4 +1,9 @@
 const {
+    increaseTime,
+    blockNumber
+} = require('./Utils/Ethereum');
+
+const {
     makeToken,
     makeInterestRateModel,
     makeController,
@@ -42,6 +47,7 @@ describe('EvilX Token tests', () => {
 
     describe("Create simple and evil token", () => {
         it("create token with default data", async () => {
+            let borrowDelay = 86400;
             let underlying = await makeToken();
             let tx1 = await send(oracle, 'setPrice', [underlying._address, '10000000000000000000']);
             let tx2 = await send(oracle, 'setSearchPair', [underlying._address, 1000]);
@@ -53,7 +59,10 @@ describe('EvilX Token tests', () => {
             let pTokenAddress = tx3.events['PTokenCreated'].returnValues['newPToken'];
 
             expect(tx3).toSucceed();
-            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress});
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +borrowDelay;
+
+            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx4 = await send(oracle, 'setUnderlyingPrice', [pTokenAddress, '10000000000000000000']);
             let tx4_ = await send(controller, '_setCollateralFactor', [pTokenAddress, '500000000000000000']);
@@ -73,7 +82,10 @@ describe('EvilX Token tests', () => {
             let pTokenEvilAddress = tx8.events['PTokenCreated'].returnValues['newPToken'];
 
             expect(tx8).toSucceed();
-            expect(tx8).toHaveLog('PTokenCreated', {newPToken: pTokenEvilAddress});
+            block = await web3.eth.getBlock(await blockNumber());
+            startBorrowTimestamp = +block.timestamp + +borrowDelay;
+
+            expect(tx8).toHaveLog('PTokenCreated', {newPToken: pTokenEvilAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx9 = await send(oracle, 'setUnderlyingPrice', [pTokenEvilAddress, '10000000000000000000']);
 
@@ -129,6 +141,7 @@ describe('EvilX Token tests', () => {
             let xBorrowAmount = 500000000000;
             let accBeforeLiquidity = await call(controller, "getAccountLiquidity", [evilXToken._address]);
             expect(accBeforeLiquidity).toEqual({"0": "0", "1": "5000000000000", "2": "0"});
+            await increaseTime(borrowDelay);
             let tx82 = await send(evilXToken, 'borrow', [xBorrowAmount]);
             let accAfterLiquidity = await call(controller, "getAccountLiquidity", [evilXToken._address]);
             expect(accAfterLiquidity).toEqual({"0": "0", "1": "0", "2": "0"});
