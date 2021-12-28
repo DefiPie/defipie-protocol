@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 import "./PToken.sol";
@@ -8,7 +9,7 @@ import "./RegistryInterface.sol";
  * @notice PTokens which wrap an EIP-20 underlying
  * @author DeFiPie
  */
-contract PErc20 is PToken, PErc20Interface {
+contract PErc20 is PToken, PErc20Interface, PErc20ExtInterface {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -39,6 +40,8 @@ contract PErc20 is PToken, PErc20Interface {
         // Set underlying and sanity check it
         underlying = underlying_;
         EIP20Interface(underlying).totalSupply();
+
+        startBorrowTimestamp = block.timestamp + controller.getBorrowDelay();
     }
 
     /*** User Interface ***/
@@ -93,6 +96,7 @@ contract PErc20 is PToken, PErc20Interface {
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
     function borrow(uint borrowAmount) external override returns (uint) {
+        require(block.timestamp >= startBorrowTimestamp, "PErc20::borrow: borrow is not started");
         return borrowInternal(borrowAmount);
     }
 

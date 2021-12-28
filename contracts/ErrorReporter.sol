@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 contract ControllerErrorReporter {
@@ -42,7 +43,8 @@ contract ControllerErrorReporter {
         SUPPORT_MARKET_EXISTS,
         SUPPORT_MARKET_OWNER_CHECK,
         SET_FEE_FACTOR,
-        SET_MAX_FEE_FACTOR
+        SET_MAX_FEE_FACTOR,
+        SET_BORROW_DELAY_OWNER_CHECK
     }
 
     /**

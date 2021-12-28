@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 import "../../contracts/Controller.sol";
@@ -382,6 +383,11 @@ contract BoolController is ControllerInterface {
     function getFeeFactorMantissa(address pToken) public view override returns (uint) {
         return 0;
     }
+
+    function getBorrowDelay() public view override returns (uint) {
+        return 0;
+    }
+
 }
 
 contract EchoTypesController is UnitrollerAdminStorage {

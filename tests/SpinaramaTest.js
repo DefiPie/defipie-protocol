@@ -1,5 +1,6 @@
 const {
   etherMantissa,
+  increaseTime,
   minerStart,
   minerStop,
   UInt256Max
@@ -99,6 +100,10 @@ describe('Spinarama', () => {
       await send(pToken2, 'harnessSetExchangeRate', [etherMantissa(1)]);
       expect(await enterMarkets([pToken1, pToken2], from)).toSucceed();
       expect(await send(pToken1, 'mint', [10], {from})).toSucceed();
+      await expect(
+        send(pToken2, 'borrow', [2], {from})
+      ).rejects.toRevert('revert PErc20::borrow: borrow is not started');
+      await increaseTime(86400);
       expect(await send(pToken2, 'borrow', [2], {from})).toSucceed();
       await minerStop();
       const p1 = send(pToken2, 'repayBorrow', [1], {from});

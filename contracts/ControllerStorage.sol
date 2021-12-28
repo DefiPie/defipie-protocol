@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
 import "./PriceOracle.sol";
@@ -125,4 +126,7 @@ contract ControllerStorage is UnitrollerAdminStorage {
 
     // Max value of fee factor can be set for fee factor
     uint public feeFactorMaxMantissa;
+
+    // Value of borrow delay for markets
+    uint public borrowDelay;
 }

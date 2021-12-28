@@ -1,6 +1,10 @@
 const BigNumber = require('bignumber.js');
 
 const {
+    blockNumber
+} = require('./Utils/Ethereum');
+
+const {
     makeToken,
     makeInterestRateModel,
     makeController,
@@ -99,8 +103,11 @@ describe('PToken Factory tests', () => {
 
             let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
 
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +86400;
+
             expect(result).toSucceed();
-            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress});
+            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
         });
 
         it("create token (black list usage)", async () => {
@@ -132,8 +139,11 @@ describe('PToken Factory tests', () => {
             result = await send(pTokenFactory, 'createPToken', [underlying._address]);
             let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
 
+            let block = await web3.eth.getBlock(await blockNumber());
+            let startBorrowTimestamp = +block.timestamp + +86400;
+
             expect(result).toSucceed();
-            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress});
+            expect(result).toHaveLog('PTokenCreated', { newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp });
         });
     });
 

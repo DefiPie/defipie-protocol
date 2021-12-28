@@ -84,57 +84,6 @@ module.exports = {
         { unlocked: 0 }
       ]
     },
-    goerli: {
-      providers: [
-        { env: "PROVIDER" },
-        { file: "~/.ethereum/goerli-url" },                    // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
-      ],
-      web3: {
-        gas: [
-          { env: "GAS" },
-          { default: "6700000" }
-        ],
-        gas_price: [
-          { env: "GAS_PRICE" },
-          { default: "12000000000" }
-        ],
-        options: {
-          transactionConfirmationBlocks: 1,
-          transactionBlockTimeout: 5
-        }
-      },
-      accounts: [
-        { env: "ACCOUNT" },
-        { file: "~/.ethereum/goerli" },                         // Load from given file with contents as the private key (e.g. 0x...)
-        { unlocked: 0 }
-      ]
-    },
-    ropsten: {
-      providers: [
-        { env: "PROVIDER" },
-        { file: "~/.ethereum/ropsten-url" },                    // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
-        { http: "http://127.0.0.1:8545" }
-      ],
-      web3: {
-        gas: [
-          { env: "GAS" },
-          { default: "6700000" }
-        ],
-        gas_price: [
-          { env: "GAS_PRICE" },
-          { default: "12000000000" }
-        ],
-        options: {
-          transactionConfirmationBlocks: 1,
-          transactionBlockTimeout: 5
-        }
-      },
-      accounts: [
-        { env: "ACCOUNT" },
-        { file: "~/.ethereum/ropsten" },                         // Load from given file with contents as the private key (e.g. 0x...)
-        { unlocked: 0 }
-      ]
-    },
     rinkeby: {
       providers: [
         { env: "PROVIDER" },
@@ -158,31 +107,6 @@ module.exports = {
       accounts: [
         { env: "ACCOUNT" },
         { file: "~/.ethereum/rinkeby" },                        // Load from given file with contents as the private key (e.g. 0x...)
-        { unlocked: 0 }
-      ]
-    },
-    kovan: {
-      providers: [
-        { env: "PROVIDER" },
-        { file: "~/.ethereum/kovan-url" },                    // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
-      ],
-      web3: {
-        gas: [
-          { env: "GAS" },
-          { default: "4600000" }
-        ],
-        gas_price: [
-          { env: "GAS_PRICE" },
-          { default: "12000000000" }
-        ],
-        options: {
-          transactionConfirmationBlocks: 1,
-          transactionBlockTimeout: 5
-        }
-      },
-      accounts: [
-        { env: "ACCOUNT" },
-        { file: "~/.ethereum/kovan" },                        // Load from given file with contents as the private key (e.g. 0x...)
         { unlocked: 0 }
       ]
     },
