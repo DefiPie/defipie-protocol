@@ -198,33 +198,37 @@ async function main() {
     }
 
     // 14. Timelock contract verify
-    try {
-        await hre.run("verify:verify", {
-            address: data.timelock,
-            constructorArguments: [
-                process.env.TIMELOCK_ADMIN,
-                process.env.TIMELOCK_DELAY
-            ],
-            contract: "contracts/Timelock.sol:Timelock"
-        });
-    } catch (e) {
-        console.log(e);
+    if (data.timelock) {
+        try {
+            await hre.run("verify:verify", {
+                address: data.timelock,
+                constructorArguments: [
+                    process.env.TIMELOCK_ADMIN,
+                    process.env.TIMELOCK_DELAY
+                ],
+                contract: "contracts/Timelock.sol:Timelock"
+            });
+        } catch (e) {
+            console.log(e);
+        }
     }
 
     // 15. Governor contract verify
-    try {
-        await hre.run("verify:verify", {
-            address: data.governor,
-            constructorArguments: [
-                data.timelock,
-                data.registryProxy,
-                process.env.GOVERNANCE_GUARDIAN,
-                GOVERNANCE_PERIOD,
-            ],
-            contract: "contracts/Governance/Governor.sol:Governor"
-        });
-    } catch (e) {
-        console.log(e);
+    if (data.governor) {
+        try {
+            await hre.run("verify:verify", {
+                address: data.governor,
+                constructorArguments: [
+                    data.timelock,
+                    data.registryProxy,
+                    process.env.GOVERNANCE_GUARDIAN,
+                    GOVERNANCE_PERIOD,
+                ],
+                contract: "contracts/Governance/Governor.sol:Governor"
+            });
+        } catch (e) {
+            console.log(e);
+        }
     }
 }
 

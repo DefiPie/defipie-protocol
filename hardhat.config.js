@@ -52,9 +52,9 @@ module.exports = {
             skipDryRun: true
         },
         bsctestnet: {
-            url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+            url: "http://127.0.0.1:8575",
             // port: 8575, for local node use this port and host: "127.0.0.1",
-            accounts: [privateKey],
+            accounts: "remote",
             gasLimit: 8000000,
             network_id: "97",
             confirmations: 7,

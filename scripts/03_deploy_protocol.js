@@ -93,15 +93,17 @@ async function main() {
     console.log('tx2 hash', tx2.transactionHash);
 
     // 7. Deploy Timelock
-    const Timelock = await hre.ethers.getContractFactory("Timelock");
-    const timelock = await Timelock.deploy(
-        process.env.TIMELOCK_ADMIN,
-        process.env.TIMELOCK_DELAY
-    );
+    if (process.env.TIMELOCK_ADMIN) {
+        const Timelock = await hre.ethers.getContractFactory("Timelock");
+        const timelock = await Timelock.deploy(
+            process.env.TIMELOCK_ADMIN,
+            process.env.TIMELOCK_DELAY
+        );
 
-    console.log(`Timelock smart contract has been deployed to: ${timelock.address}`);
+        console.log(`Timelock smart contract has been deployed to: ${timelock.address}`);
 
-    namesAndAddresses.timelock = timelock.address;
+        namesAndAddresses.timelock = timelock.address;
+    }
 
     // 8. PETH delegate deploy
     const PEtherDelegate = await hre.ethers.getContractFactory("PEtherDelegate");
@@ -165,17 +167,19 @@ async function main() {
     namesAndAddresses.pTokenFactory = pTokenFactory.address;
 
     // 13. Deploy Governor
-    const Governor = await hre.ethers.getContractFactory("Governor");
-    const governor = await Governor.deploy(
-        timelock.address,
-        registryProxy.address,
-        process.env.GOVERNANCE_GUARDIAN,
-        GOVERNANCE_PERIOD,
-    );
+    if (typeof timelock !== 'undefined') {
+        const Governor = await hre.ethers.getContractFactory("Governor");
+        const governor = await Governor.deploy(
+            timelock.address,
+            registryProxy.address,
+            process.env.GOVERNANCE_GUARDIAN,
+            GOVERNANCE_PERIOD,
+        );
 
-    console.log(`Governor smart contract has been deployed to: ${governor.address}`);
+        console.log(`Governor smart contract has been deployed to: ${governor.address}`);
 
-    namesAndAddresses.governor = governor.address;
+        namesAndAddresses.governor = governor.address;
+    }
 
     // 14. Deploy Calc Pool Price
     const CalcPoolPrice = await hre.ethers.getContractFactory("CalcPoolPrice");

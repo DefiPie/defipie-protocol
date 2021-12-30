@@ -75,9 +75,11 @@ async function main() {
     console.log("Tx12 hash", tx.hash);
     await tx.wait();
 
-    tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
-    console.log("Tx13 hash", tx.hash);
-    await tx.wait();
+    if (PIE_ADDRESS) {
+        tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
+        console.log("Tx13 hash", tx.hash);
+        await tx.wait();
+    }
 
     console.log('Finish!');
 }
