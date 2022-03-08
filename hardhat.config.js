@@ -52,9 +52,9 @@ module.exports = {
             skipDryRun: true
         },
         bsctestnet: {
-            url: "http://127.0.0.1:8575",
+            url: "https://data-seed-prebsc-1-s1.binance.org:8545",
             // port: 8575, for local node use this port and host: "127.0.0.1",
-            accounts: "remote",
+            accounts: [privateKey],
             gasLimit: 8000000,
             network_id: "97",
             confirmations: 7,
@@ -78,7 +78,14 @@ module.exports = {
         artifacts: "./artifacts"
     },
     etherscan: {
-        apiKey: process.env.SCAN_API_KEY
+        apiKey: {
+            rinkeby: process.env.ETHERSCAN_API_KEY,
+            // mainnet: process.env.ETHERSCAN_API_KEY,
+            // bsc: process.env.BSCSCAN_API_KEY,
+            // bsctestnet: process.env.BSCSCAN_API_KEY,
+            // matic: process.env.POLYGONSCAN_API_KEY,
+            // mumbai: process.env.POLYGONSCAN_API_KEY,
+        }
     },
     mocha: {
         timeout: 30000

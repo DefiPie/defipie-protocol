@@ -29,7 +29,7 @@ describe('EvilX Token tests', () => {
             registryProxy: registryProxy,
             controller: controller,
             interestRateModel: interestRateModel,
-            uniswapOracle: oracle
+            priceOracle: oracle
         });
     });
 

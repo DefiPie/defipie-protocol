@@ -67,16 +67,26 @@ async function main() {
 
     namesAndAddresses.baseInterestRateModel = baseInterestRateModel.address;
 
-    // 5. Uniswap price oracle deploy
-    const UniswapPriceOracle = await hre.ethers.getContractFactory("UniswapPriceOracle");
-    const uniswapPriceOracle = await UniswapPriceOracle.deploy();
+    // 5. Price oracle deploy (uniswap + price oracle)
+    const UniswapV2PriceOracle = await hre.ethers.getContractFactory("UniswapV2PriceOracle");
+    const uniswapV2PriceOracle = await UniswapV2PriceOracle.deploy();
 
-    console.log(`UniswapPriceOracle smart contract has been deployed to: ${uniswapPriceOracle.address}`);
+    console.log(`UniswapV2PriceOracle smart contract has been deployed to: ${uniswapV2PriceOracle.address}`);
 
-    namesAndAddresses.uniswapPriceOracle = uniswapPriceOracle.address;
+    namesAndAddresses.uniswapV2PriceOracle = uniswapV2PriceOracle.address;
 
-    let tx1 = await uniswapPriceOracle.deployTransaction.wait();
+    let tx1 = await uniswapV2PriceOracle.deployTransaction.wait();
     console.log('tx1 hash', tx1.transactionHash);
+
+    const PriceOracle = await hre.ethers.getContractFactory("PriceOracle");
+    const priceOracle = await PriceOracle.deploy();
+
+    console.log(`PriceOracle smart contract has been deployed to: ${priceOracle.address}`);
+
+    namesAndAddresses.PriceOracle = priceOracle.address;
+
+    let tx1_ = await PriceOracle.deployTransaction.wait();
+    console.log('tx1_ hash', tx1_.transactionHash);
 
     // 6. Registry deploy proxy
     const RegistryProxy = await hre.ethers.getContractFactory("RegistryProxy");
@@ -93,17 +103,15 @@ async function main() {
     console.log('tx2 hash', tx2.transactionHash);
 
     // 7. Deploy Timelock
-    if (process.env.TIMELOCK_ADMIN) {
-        const Timelock = await hre.ethers.getContractFactory("Timelock");
-        const timelock = await Timelock.deploy(
-            process.env.TIMELOCK_ADMIN,
-            process.env.TIMELOCK_DELAY
-        );
+    const Timelock = await hre.ethers.getContractFactory("Timelock");
+    const timelock = await Timelock.deploy(
+        process.env.TIMELOCK_ADMIN,
+        process.env.TIMELOCK_DELAY
+    );
 
-        console.log(`Timelock smart contract has been deployed to: ${timelock.address}`);
+    console.log(`Timelock smart contract has been deployed to: ${timelock.address}`);
 
-        namesAndAddresses.timelock = timelock.address;
-    }
+    namesAndAddresses.timelock = timelock.address;
 
     // 8. PETH delegate deploy
     const PEtherDelegate = await hre.ethers.getContractFactory("PEtherDelegate");
@@ -121,22 +129,35 @@ async function main() {
 
     namesAndAddresses.ppieDelegate = ppieDelegate.address;
 
-    // 10. Uniswap price oracle proxy deploy
-    const UniswapPriceOracleProxy = await hre.ethers.getContractFactory("UniswapPriceOracleProxy");
-    let uniswapPriceOracleProxy = await UniswapPriceOracleProxy.deploy(
-        uniswapPriceOracle.address,
+    // 10. Price oracle proxy and uniswap price oracle proxy deploy
+    const PriceOracleProxy = await hre.ethers.getContractFactory("PriceOracleProxy");
+    let priceOracleProxy = await PriceOracleProxy.deploy(
+        priceOracle.address,
         registryProxy.address,
-        EXCHANGE_FACTORY,
-        WNATIVE_ADDRESS,
         PRICE_FEED_ADDRESS
     );
 
-    console.log(`UniswapPriceOracleProxy smart contract has been deployed to: ${uniswapPriceOracleProxy.address}`);
+    console.log(`PriceOracleProxy smart contract has been deployed to: ${priceOracleProxy.address}`);
 
-    namesAndAddresses.uniswapPriceOracleProxy = uniswapPriceOracleProxy.address;
+    namesAndAddresses.priceOracleProxy = priceOracleProxy.address;
 
-    let tx3 = await uniswapPriceOracleProxy.deployTransaction.wait();
+    let tx3 = await priceOracleProxy.deployTransaction.wait();
     console.log('tx3 hash', tx3.transactionHash);
+
+    const UniswapV2PriceOracleProxy = await hre.ethers.getContractFactory("UniswapV2PriceOracleProxy");
+    let uniswapV2PriceOracleProxy = await UniswapV2PriceOracleProxy.deploy(
+        uniswapV2PriceOracle.address,
+        registryProxy.address,
+        EXCHANGE_FACTORY,
+        WNATIVE_ADDRESS
+    );
+
+    console.log(`UniswapV2PriceOracleProxy smart contract has been deployed to: ${uniswapV2PriceOracleProxy.address}`);
+
+    namesAndAddresses.uniswapV2PriceOracleProxy = uniswapV2PriceOracleProxy.address;
+
+    let tx3_ = await uniswapV2PriceOracleProxy.deployTransaction.wait();
+    console.log('tx3_ hash', tx3_.transactionHash);
 
     // 11. Unitroller deploy
     const Unitroller = await hre.ethers.getContractFactory("Unitroller");
@@ -167,24 +188,22 @@ async function main() {
     namesAndAddresses.pTokenFactory = pTokenFactory.address;
 
     // 13. Deploy Governor
-    if (typeof timelock !== 'undefined') {
-        const Governor = await hre.ethers.getContractFactory("Governor");
-        const governor = await Governor.deploy(
-            timelock.address,
-            registryProxy.address,
-            process.env.GOVERNANCE_GUARDIAN,
-            GOVERNANCE_PERIOD,
-        );
+    const Governor = await hre.ethers.getContractFactory("Governor");
+    const governor = await Governor.deploy(
+        timelock.address,
+        registryProxy.address,
+        process.env.GOVERNANCE_GUARDIAN,
+        GOVERNANCE_PERIOD,
+    );
 
-        console.log(`Governor smart contract has been deployed to: ${governor.address}`);
+    console.log(`Governor smart contract has been deployed to: ${governor.address}`);
 
-        namesAndAddresses.governor = governor.address;
-    }
+    namesAndAddresses.governor = governor.address;
 
-    // 14. Deploy Calc Pool Price
+    // 14. Deploy Calc pool Price
     const CalcPoolPrice = await hre.ethers.getContractFactory("CalcPoolPrice");
     const calcPoolPrice = await CalcPoolPrice.deploy(
-        uniswapPriceOracleProxy.address
+        uniswapV2PriceOracleProxy.address
     );
 
     console.log(`CalcPoolPrice smart contract has been deployed to: ${calcPoolPrice.address}`);

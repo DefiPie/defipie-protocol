@@ -129,29 +129,52 @@ async function main() {
         console.log(e);
     }
 
-    // 9. Uniswap price oracle contract verify
+    // 9. Price oracle and uniswap price oracle contracts verify
     try {
         await hre.run("verify:verify", {
-            address: data.uniswapPriceOracle,
+            address: data.priceOracle,
             constructorArguments: [],
-            contract: "contracts/UniswapPriceOracle.sol:UniswapPriceOracle"
+            contract: "contracts/PriceOracle.sol:PriceOracle"
         });
     } catch (e) {
         console.log(e);
     }
 
-    // 10. Uniswap price oracle proxy contract verify
     try {
         await hre.run("verify:verify", {
-            address: data.uniswapPriceOracleProxy,
+            address: data.uniswapV2PriceOracle,
+            constructorArguments: [],
+            contract: "contracts/UniswapV2PriceOracle.sol:UniswapV2PriceOracle"
+        });
+    } catch (e) {
+        console.log(e);
+    }
+
+    // 10. Price oracle and Uniswap price oracle proxy contracts verify
+    try {
+        await hre.run("verify:verify", {
+            address: data.priceOracleProxy,
             constructorArguments: [
-                data.uniswapPriceOracle,
+                data.priceOracle,
                 data.registryProxy,
-                EXCHANGE_FACTORY,
-                WNATIVE_ADDRESS,
                 PRICE_FEED_ADDRESS
             ],
-            contract: "contracts/UniswapPriceOracleProxy.sol:UniswapPriceOracleProxy"
+            contract: "contracts/PriceOracleProxy.sol:PriceOracleProxy"
+        });
+    } catch (e) {
+        console.log(e);
+    }
+
+    try {
+        await hre.run("verify:verify", {
+            address: data.uniswapV2PriceOracleProxy,
+            constructorArguments: [
+                data.uniswapV2PriceOracle,
+                data.registryProxy,
+                EXCHANGE_FACTORY,
+                WNATIVE_ADDRESS
+            ],
+            contract: "contracts/UniswapV2PriceOracleProxy.sol:UniswapV2PriceOracleProxy"
         });
     } catch (e) {
         console.log(e);
@@ -186,11 +209,11 @@ async function main() {
         console.log(e);
     }
 
-    // 13. Calc Pool Price contract verify
+    // 13. Calc pool Price contract verify
     try {
         await hre.run("verify:verify", {
             address: data.calcPoolPrice,
-            constructorArguments: [data.uniswapPriceOracleProxy],
+            constructorArguments: [data.uniswapV2PriceOracleProxy],
             contract: "contracts/Lens/CalcPoolPrice.sol:CalcPoolPrice"
         });
     } catch (e) {
@@ -198,37 +221,33 @@ async function main() {
     }
 
     // 14. Timelock contract verify
-    if (data.timelock) {
-        try {
-            await hre.run("verify:verify", {
-                address: data.timelock,
-                constructorArguments: [
-                    process.env.TIMELOCK_ADMIN,
-                    process.env.TIMELOCK_DELAY
-                ],
-                contract: "contracts/Timelock.sol:Timelock"
-            });
-        } catch (e) {
-            console.log(e);
-        }
+    try {
+        await hre.run("verify:verify", {
+            address: data.timelock,
+            constructorArguments: [
+                process.env.TIMELOCK_ADMIN,
+                process.env.TIMELOCK_DELAY
+            ],
+            contract: "contracts/Timelock.sol:Timelock"
+        });
+    } catch (e) {
+        console.log(e);
     }
 
     // 15. Governor contract verify
-    if (data.governor) {
-        try {
-            await hre.run("verify:verify", {
-                address: data.governor,
-                constructorArguments: [
-                    data.timelock,
-                    data.registryProxy,
-                    process.env.GOVERNANCE_GUARDIAN,
-                    GOVERNANCE_PERIOD,
-                ],
-                contract: "contracts/Governance/Governor.sol:Governor"
-            });
-        } catch (e) {
-            console.log(e);
-        }
+    try {
+        await hre.run("verify:verify", {
+            address: data.governor,
+            constructorArguments: [
+                data.timelock,
+                data.registryProxy,
+                process.env.GOVERNANCE_GUARDIAN,
+                GOVERNANCE_PERIOD,
+            ],
+            contract: "contracts/Governance/Governor.sol:Governor"
+        });
+    } catch (e) {
+        console.log(e);
     }
 }
 

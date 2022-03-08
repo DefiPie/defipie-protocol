@@ -14,7 +14,7 @@ const {
 
 describe('PToken Factory tests', () => {
     let root, admin, accounts;
-    let pTokenFactory, oracle, mockPriceFeed, mockUniswapFactory, mockUniswapPool, WETHToken, asset, registryProxy;
+    let pTokenFactory, priceOracle, uniswapOracle, mockPriceFeed, mockUniswapV2Factory, mockUniswapV2Pool, WETHToken, asset, registryProxy;
     let controller, interestRateModel, exchangeRate, reserveFactor;
 
     beforeEach(async () => {
@@ -28,23 +28,30 @@ describe('PToken Factory tests', () => {
         controller = await makeController({registryProxy: registryProxy});
 
         mockPriceFeed = await deploy('MockPriceFeed');
-        mockUniswapFactory = await deploy('MockUniswapFactory');
-        mockUniswapPool = await deploy('MockUniswapPool');
+        mockUniswapV2Factory = await deploy('MockUniswapV2Factory');
+        mockUniswapV2Pool = await deploy('MockUniswapV2Pool');
         WETHToken = await makeToken();
         asset = await makeToken();
 
-        let tx1 = await send(mockUniswapFactory, 'setPair', [mockUniswapPool._address]);
-        let tx2 = await send(mockUniswapFactory, 'setPairExist', [true]);
-        let pair = await call(mockUniswapFactory, "getPair", [WETHToken._address, asset._address]);
-        expect(pair).toEqual(mockUniswapPool._address);
+        let tx1 = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
+        let tx2 = await send(mockUniswapV2Factory, 'setPairExist', [true]);
+        let pair = await call(mockUniswapV2Factory, "getPair", [WETHToken._address, asset._address]);
+        expect(pair).toEqual(mockUniswapV2Pool._address);
 
-        oracle = await deploy('UniswapPriceOracleHarness', [
-            mockUniswapFactory._address,
-            WETHToken._address,
-            mockPriceFeed._address,
+        priceOracle = await deploy('PriceOracleHarness', [
+            mockPriceFeed._address
+        ]);
+        let tx = await send(priceOracle, '_setRegistry', [registryProxy._address]);
+
+        uniswapOracle = await deploy('UniswapV2PriceOracleHarness', [
+            mockUniswapV2Factory._address,
+            WETHToken._address
         ]);
 
-        await send(mockUniswapPool, 'setData', [
+        let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
+        let tx0_ = await send(priceOracle, '_addOracle', [uniswapOracle._address]);
+
+        await send(mockUniswapV2Pool, 'setData', [
             asset._address,
             WETHToken._address,
             '185850109323804242560637514',
@@ -57,12 +64,12 @@ describe('PToken Factory tests', () => {
             registryProxy: registryProxy,
             controller: controller,
             interestRateModel: interestRateModel,
-            exchangeRate:exchangeRate,
-            reserveFactor:reserveFactor,
-            mockPriceFeed:mockPriceFeed,
-            mockUniswapFactory:mockUniswapFactory,
-            mockUniswapPool:mockUniswapPool,
-            uniswapOracle:oracle
+            exchangeRate: exchangeRate,
+            reserveFactor: reserveFactor,
+            mockPriceFeed: mockPriceFeed,
+            mockUniswapV2Factory: mockUniswapV2Factory,
+            mockUniswapV2Pool: mockUniswapV2Pool,
+            priceOracle: priceOracle
         });
     });
 
@@ -96,7 +103,7 @@ describe('PToken Factory tests', () => {
     describe("Create token", () => {
         it("create token with default data", async () => {
             let underlying = await makeToken();
-            let tx = await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address]);
+            let tx = await send(mockUniswapV2Pool, 'setData', [underlying._address, WETHToken._address]);
             expect(tx).toSucceed();
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
@@ -112,7 +119,7 @@ describe('PToken Factory tests', () => {
 
         it("create token (black list usage)", async () => {
             let underlying = await makeToken();
-            let tx = await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address]);
+            let tx = await send(mockUniswapV2Pool, 'setData', [underlying._address, WETHToken._address]);
             expect(tx).toSucceed();
 
             let result = await send(pTokenFactory, '_addBlackList', [underlying._address], {from: accounts[1]});
@@ -163,11 +170,11 @@ describe('PToken Factory tests', () => {
         it("invalid pool, deficiency eth liquidity in pool", async () => {
             let underlying = await makeToken();
 
-            let reserves = await call(mockUniswapPool, 'getReserves');
+            let reserves = await call(mockUniswapV2Pool, 'getReserves');
             let reserve0 = new BigNumber(reserves[0]);
             let reserve1 = new BigNumber(reserves[1]);
 
-            await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address, reserve0.minus(1), reserve1.minus(1)]);
+            await send(mockUniswapV2Pool, 'setData', [underlying._address, WETHToken._address, reserve0.minus(1), reserve1.minus(1)]);
             await send(pTokenFactory, '_setMinUniswapLiquidity', [reserve1]);
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
@@ -176,7 +183,7 @@ describe('PToken Factory tests', () => {
         });
 
         it("invalid pool, pool not exist", async () => {
-            await send(mockUniswapFactory, 'setPairExist', [false]);
+            await send(mockUniswapV2Factory, 'setPairExist', [false]);
 
             let underlying = await makeToken();
 

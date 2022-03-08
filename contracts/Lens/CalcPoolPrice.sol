@@ -3,19 +3,20 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 
 import "../SafeMath.sol";
-import "../UniswapPriceOracle.sol";
-import "../IPriceFeeds.sol";
+import "../UniswapV2PriceOracle.sol";
+import "../Interfaces/IPriceFeeds.sol";
 
 contract CalcPoolPrice {
+    //@todo
     uint224 constant Q112 = 2**112;
 
     using FixedPoint for *;
     using SafeMath for uint;
 
-    UniswapPriceOracle public oracle;
+    UniswapV2PriceOracle public oracle;
 
     constructor(address oracle_) {
-        oracle = UniswapPriceOracle(oracle_);
+        oracle = UniswapV2PriceOracle(oracle_);
     }
 
     function getPoolPriceAverage(address pair_, address asset) public view returns (FixedPoint.uq112x112 memory) {

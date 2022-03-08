@@ -63,11 +63,19 @@ async function main() {
     console.log("Tx10 hash", tx.hash);
     await tx.wait();
 
-    tx = await registryInterface._setOracle(data.uniswapPriceOracleProxy);
+    tx = await registryInterface._setOracle(data.priceOracleProxy);
     console.log("Tx11 hash", tx.hash);
     await tx.wait();
 
-    // 3. Factory transactions
+    // 3. PriceOracle transactions
+    const PriceOracleInterface = await hre.ethers.getContractFactory("PriceOracle");
+    const priceOracleInterface = await PriceOracleInterface.attach(data.priceOracleProxy);
+
+    tx = await priceOracleInterface._addOracle(data.uniswapV2PriceOracleProxy);
+    console.log("Tx11_ hash", tx.hash);
+    await tx.wait();
+
+    // 4. Factory transactions
     const PTokenFactoryInterface = await hre.ethers.getContractFactory("PTokenFactory");
     const pTokenFactoryInterface = await PTokenFactoryInterface.attach(data.pTokenFactory);
 
@@ -75,11 +83,9 @@ async function main() {
     console.log("Tx12 hash", tx.hash);
     await tx.wait();
 
-    if (PIE_ADDRESS) {
-        tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
-        console.log("Tx13 hash", tx.hash);
-        await tx.wait();
-    }
+    tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
+    console.log("Tx13 hash", tx.hash);
+    await tx.wait();
 
     console.log('Finish!');
 }

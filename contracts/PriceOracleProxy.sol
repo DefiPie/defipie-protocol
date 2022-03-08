@@ -1,118 +1,83 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
+pragma abicoder v2;
 
-import "./PErc20.sol";
+import "./ErrorReporter.sol";
+import "./RegistryInterface.sol";
 import "./PriceOracle.sol";
 
-interface V1PriceOracleInterface {
-    function assetPrices(address asset) external view returns (uint);
+contract PriceOracleProxyStorage {
+    address public implementation;
+    address public registry;
 }
 
-contract PriceOracleProxy is PriceOracle {
-    /// @notice The v1 price oracle, which will continue to serve prices for v1 assets
-    V1PriceOracleInterface public v1PriceOracle;
-
-    /// @notice Address of the guardian, which may set the SAI price once
-    address public guardian;
-
-    /// @notice Address of the pEther contract, which has a constant price
-    address public pETHAddress;
-
-    /// @notice Address of the pUSDC contract, which we hand pick a key for
-    address public pUsdcAddress;
-
-    /// @notice Address of the pUSDT contract, which uses the pUSDC price
-    address public pUsdtAddress;
-
-    /// @notice Address of the pSAI contract, which may have its price set
-    address public pSaiAddress;
-
-    /// @notice Address of the pDAI contract, which we hand pick a key for
-    address public pDaiAddress;
-
-    /// @notice Handpicked key for USDC
-    address public constant usdcOracleKey = address(1);
-
-    /// @notice Handpicked key for DAI
-    address public constant daiOracleKey = address(2);
-
-    /// @notice Frozen SAI price (or 0 if not set yet)
-    uint public saiPrice;
+contract PriceOracleProxy is PriceOracleProxyStorage, OracleErrorReporter {
 
     /**
-     * @param guardian_ The address of the guardian, which may set the SAI price once
-     * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
-     * @param pETHAddress_ The address of pETH, which will return a constant 1e18, since all prices relative to ether
-     * @param pUsdcAddress_ The address of pUSDC, which will be read from a special oracle key
-     * @param pSaiAddress_ The address of pSAI, which may be read directly from storage
-     * @param pDaiAddress_ The address of pDAI, which will be read from a special oracle key
-     * @param pUsdtAddress_ The address of pUSDT, which uses the pUSDC price
-     */
-    constructor(address guardian_,
-        address v1PriceOracle_,
-        address pETHAddress_,
-        address pUsdcAddress_,
-        address pSaiAddress_,
-        address pDaiAddress_,
-        address pUsdtAddress_
+      * @notice Emitted when implementation is changed
+      */
+    event NewImplementation(address oldImplementation, address newImplementation);
+
+    constructor(
+        address implementation_,
+        address registry_,
+        address ethPriceFeed_
     ) {
-        guardian = guardian_;
-        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
+        implementation = implementation_;
+        registry = registry_;
 
-        pETHAddress = pETHAddress_;
-        pUsdcAddress = pUsdcAddress_;
-        pSaiAddress = pSaiAddress_;
-        pDaiAddress = pDaiAddress_;
-        pUsdtAddress = pUsdtAddress_;
+        delegateTo(implementation, abi.encodeWithSignature("initialize(address)", ethPriceFeed_));
+    }
+
+    function _setOracleImplementation(address newImplementation) external returns(uint256) {
+        if (msg.sender != RegistryInterface(registry).admin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
+        }
+
+        address oldImplementation = implementation;
+        implementation = newImplementation;
+
+        emit NewImplementation(oldImplementation, implementation);
+
+        return(uint(Error.NO_ERROR));
     }
 
     /**
-     * @notice Get the underlying price of a listed pToken asset
-     * @param pToken The pToken to get the underlying price of
-     * @return The underlying asset price mantissa (scaled by 1e18)
+     * @notice Internal method to delegate execution to another contract
+     * @dev It returns to the external caller whatever the implementation returns or forwards reverts
+     * @param callee The contract to delegatecall
+     * @param data The raw data to delegatecall
+     * @return The returned bytes from the delegatecall
      */
-    function getUnderlyingPrice(address pToken) public view override returns (uint) {
-        address pTokenAddress = pToken;
-
-        if (pTokenAddress == pETHAddress) {
-            // ether always worth 1
-            return 1e18;
+    function delegateTo(address callee, bytes memory data) internal returns (bytes memory) {
+        (bool success, bytes memory returnData) = callee.delegatecall(data);
+        assembly {
+            if eq(success, 0) {
+                revert(add(returnData, 0x20), returndatasize())
+            }
         }
+        return returnData;
+    }
 
-        if (pTokenAddress == pUsdcAddress || pTokenAddress == pUsdtAddress) {
-            return v1PriceOracle.assetPrices(usdcOracleKey);
+    function delegateAndReturn() private returns (bytes memory) {
+        (bool success, ) = implementation.delegatecall(msg.data);
+
+        assembly {
+            let free_mem_ptr := mload(0x40)
+            returndatacopy(free_mem_ptr, 0, returndatasize())
+
+            switch success
+            case 0 { revert(free_mem_ptr, returndatasize()) }
+            default { return(free_mem_ptr, returndatasize()) }
         }
-
-        if (pTokenAddress == pDaiAddress) {
-            return v1PriceOracle.assetPrices(daiOracleKey);
-        }
-
-        if (pTokenAddress == pSaiAddress) {
-            // use the frozen SAI price if set, otherwise use the DAI price
-            return saiPrice > 0 ? saiPrice : v1PriceOracle.assetPrices(daiOracleKey);
-        }
-
-        // otherwise just read from v1 oracle
-        address underlying = PErc20(pTokenAddress).underlying();
-        return v1PriceOracle.assetPrices(underlying);
     }
 
     /**
-     * @notice Set the price of SAI, permanently
-     * @param price The price for SAI
+     * @notice Delegates execution to an implementation contract
+     * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
-    function setSaiPrice(uint price) public {
-        require(msg.sender == guardian, "only guardian may set the SAI price");
-        require(saiPrice == 0, "SAI price may only be set once");
-        require(price < 0.1e18, "SAI price must be < 0.1 ETH");
-        saiPrice = price;
-    }
-
-    function updateUnderlyingPrice(address) external override returns (uint) {
-        return 0;
-    }
-
-    function update(address) external returns (uint) {
-        return 0;
+    fallback() external {
+        // delegate all other functions to current implementation
+        delegateAndReturn();
     }
 }

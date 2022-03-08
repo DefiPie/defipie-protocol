@@ -26,7 +26,7 @@ contract ProxyProtocol {
     uint public feePercentRepayBorrow;
 
     address public pTokenFactory;
-    UniswapPriceOracle public oracle;
+    PriceOracle public oracle;
     address payable public pETH;
     address payable public maximillion;
 
@@ -213,11 +213,15 @@ contract ProxyProtocol {
     }
 
     function calcFee(uint feePercent, address pToken, uint amount) public view returns (uint) {
-        uint feeInUSD = oracle.getUnderlyingPrice(pToken).mul(amount).mul(feePercent).div(1e18);
+        uint feeInUSD = oracle.getPriceInUSD(pToken).mul(amount).mul(feePercent).div(1e18);
         uint feeTokenPriceInUSD = oracle.getPriceInUSD(feeToken);
         uint power = EIP20Interface(feeToken).decimals();
 
-        return calcFeeAmount(power, feeInUSD.div(feeTokenPriceInUSD));
+        if (feeTokenPriceInUSD == 0) {
+            return 0;
+        } else {
+            return calcFeeAmount(power, feeInUSD.div(feeTokenPriceInUSD));
+        }
     }
 
     function calcFeeAmount(uint power, uint amount) internal view returns (uint) {
@@ -281,7 +285,7 @@ contract ProxyProtocol {
         require(msg.sender == admin, 'ProxyProtocol: Only admin can set oracle');
 
         // Store oracle with value newOracle
-        oracle = UniswapPriceOracle(newOracle);
+        oracle = PriceOracle(newOracle);
 
         return true;
     }

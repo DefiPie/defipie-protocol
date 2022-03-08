@@ -4,13 +4,13 @@ pragma solidity ^0.7.6;
 import './PErc20Delegator.sol';
 import './RegistryInterface.sol';
 import './EIP20Interface.sol';
-import "./IPriceFeeds.sol";
+import "./Interfaces/IPriceFeeds.sol";
 import "./ErrorReporter.sol";
 import "./SafeMath.sol";
 import "./PEtherDelegator.sol";
 import "./PPIEDelegator.sol";
 import "./Controller.sol";
-import "./UniswapPriceOracle.sol";
+import "./PriceOracle.sol";
 import "./PTokenInterfaces.sol";
 
 contract PTokenFactory is FactoryErrorReporter {
@@ -145,7 +145,7 @@ contract PTokenFactory is FactoryErrorReporter {
     }
 
     function checkPair(address asset) public view returns (bool) {
-        (address pair, uint112 ethEquivalentReserves) = getOracle().searchPair(asset);
+        (, address pair, uint112 ethEquivalentReserves) = getOracle().searchPair(asset);
 
         return bool(pair != address(0) && ethEquivalentReserves >= minUniswapLiquidity);
     }
@@ -253,8 +253,8 @@ contract PTokenFactory is FactoryErrorReporter {
         return registry.admin();
     }
 
-    function getOracle() public view returns (UniswapPriceOracle) {
-        return UniswapPriceOracle(registry.oracle());
+    function getOracle() public view returns (PriceOracle) {
+        return PriceOracle(registry.oracle());
     }
 
     function _createPTokenNameAndSymbol(address underlying_) internal view returns (string memory, string memory) {

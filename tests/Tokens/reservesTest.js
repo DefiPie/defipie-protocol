@@ -71,7 +71,7 @@ describe('PToken', function () {
     let pToken, oracle;
     beforeEach(async () => {
       oracle = await makePriceOracle();
-      pToken = await makePToken({uniswapOracle: oracle});
+      pToken = await makePToken({priceOracle: oracle});
     });
 
     beforeEach(async () => {
@@ -105,7 +105,7 @@ describe('PToken', function () {
     let pToken, oracle;
     beforeEach(async () => {
       oracle = await makePriceOracle();
-      pToken = await makePToken({uniswapOracle: oracle});
+      pToken = await makePToken({priceOracle: oracle});
       expect(await send(pToken, 'harnessSetTotalReserves', [reserves])).toSucceed();
       expect(
         await send(pToken.underlying, 'harnessSetBalance', [pToken._address, cash])
@@ -158,7 +158,7 @@ describe('PToken', function () {
     let pToken, oracle;
     beforeEach(async () => {
       oracle = await makePriceOracle();
-      pToken = await makePToken({uniswapOracle: oracle});
+      pToken = await makePToken({priceOracle: oracle});
       await send(pToken.interestRateModel, 'setFailBorrowRate', [false]);
       expect(await send(pToken, 'harnessSetTotalReserves', [reserves])).toSucceed();
       expect(

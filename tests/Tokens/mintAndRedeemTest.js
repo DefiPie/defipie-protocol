@@ -63,7 +63,7 @@ describe('PToken', function () {
   beforeEach(async () => {
     [root, minter, redeemer, ...accounts] = saddle.accounts;
     oracle = await makePriceOracle();
-    pToken = await makePToken({uniswapOracle: oracle, controllerOpts: {kind: 'bool'}, exchangeRate});
+    pToken = await makePToken({priceOracle: oracle, controllerOpts: {kind: 'bool'}, exchangeRate});
   });
 
   describe('mintFresh', () => {

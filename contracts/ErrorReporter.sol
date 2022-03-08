@@ -193,11 +193,13 @@ contract OracleErrorReporter {
     enum Error {
         NO_ERROR,
         POOL_OR_COIN_EXIST,
+        ORACLE_EXIST,
         UNAUTHORIZED,
         UPDATE_PRICE
     }
 
     enum FailureInfo {
+        ADD_ORACLE,
         ADD_POOL_OR_COIN,
         NO_PAIR,
         NO_RESERVES,
