@@ -1,4 +1,4 @@
-// $ npx hardhat run scripts/06_verify_ppie_and_peth.js --network bsctestnet
+// $ npx hardhat run scripts/06_verify_ppie_and_peth.js --network bscTestnet
 const bn = require('bignumber.js');
 const hre = require("hardhat");
 const dotenv = require('dotenv');

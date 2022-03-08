@@ -75,7 +75,7 @@ async function main() {
     console.log("Tx11_ hash", tx.hash);
     await tx.wait();
 
-    if (network !== 'bsc' && network !== 'bsctestnet') {
+    if (network !== 'bsc' && network !== 'bscTestnet') {
         // 3a. Add uniswap v3
         tx = await priceOracleInterface._addOracle(data.uniswapV3PriceOracle);
         console.log("Tx11_2 hash", tx.hash);

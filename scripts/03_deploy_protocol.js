@@ -83,9 +83,9 @@ async function main() {
 
     console.log(`PriceOracle smart contract has been deployed to: ${priceOracle.address}`);
 
-    namesAndAddresses.PriceOracle = priceOracle.address;
+    namesAndAddresses.priceOracle = priceOracle.address;
 
-    let tx1_ = await PriceOracle.deployTransaction.wait();
+    let tx1_ = await priceOracle.deployTransaction.wait();
     console.log('tx1_ hash', tx1_.transactionHash);
 
     // 6. Registry deploy proxy
@@ -159,7 +159,7 @@ async function main() {
     let tx3_ = await uniswapV2PriceOracleProxy.deployTransaction.wait();
     console.log('tx3_ hash', tx3_.transactionHash);
 
-    if (network !== 'bsc' && network !== 'bsctestnet') {
+    if (network !== 'bsc' && network !== 'bscTestnet') {
         // 10a. Add uniswap v3
         let EXCHANGE_FACTORY_V3;
 

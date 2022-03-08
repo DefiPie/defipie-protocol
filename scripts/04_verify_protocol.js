@@ -180,7 +180,7 @@ async function main() {
         console.log(e);
     }
 
-    if (network !== 'bsc' && network !== 'bsctestnet') {
+    if (network !== 'bsc' && network !== 'bscTestnet') {
         // 3a. Add uniswap v3
         try {
             await hre.run("verify:verify", {

@@ -27,14 +27,14 @@ module.exports = {
             gasPrice: 2e9,
             network_id: "1"
         },
-        mumbai: {
+        polygonMumbai: {
             url: "https://rpc-mumbai.maticvigil.com",
             accounts: [privateKey],
             gasPrice: 2e9,
             confirmations: 7,
             skipDryRun: true
         },
-        matic: {
+        polygon: {
             url: "https://rpc-mainnet.matic.quiknode.pro",
             accounts: [privateKey],
             gasPrice: 10e9,
@@ -51,7 +51,7 @@ module.exports = {
             timeoutBlocks: 700,
             skipDryRun: true
         },
-        bsctestnet: {
+        bscTestnet: {
             url: "https://data-seed-prebsc-1-s1.binance.org:8545",
             // port: 8575, for local node use this port and host: "127.0.0.1",
             accounts: [privateKey],
@@ -80,11 +80,11 @@ module.exports = {
     etherscan: {
         apiKey: {
             rinkeby: process.env.ETHERSCAN_API_KEY,
-            // mainnet: process.env.ETHERSCAN_API_KEY,
-            // bsc: process.env.BSCSCAN_API_KEY,
-            // bsctestnet: process.env.BSCSCAN_API_KEY,
-            // matic: process.env.POLYGONSCAN_API_KEY,
-            // mumbai: process.env.POLYGONSCAN_API_KEY,
+            mainnet: process.env.ETHERSCAN_API_KEY,
+            bsc: process.env.BSCSCAN_API_KEY,
+            bscTestnet: process.env.BSCSCAN_API_KEY,
+            polygon: process.env.POLYGONSCAN_API_KEY,
+            polygonMumbai: process.env.POLYGONSCAN_API_KEY,
         }
     },
     mocha: {
