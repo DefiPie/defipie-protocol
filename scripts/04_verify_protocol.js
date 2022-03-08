@@ -180,6 +180,40 @@ async function main() {
         console.log(e);
     }
 
+    if (network !== 'bsc' && network !== 'bsctestnet') {
+        // 3a. Add uniswap v3
+        try {
+            await hre.run("verify:verify", {
+                address: data.uniswapV3PriceOracle,
+                constructorArguments: [],
+                contract: "contracts/UniswapV3PriceOracle.sol:UniswapV3PriceOracle"
+            });
+        } catch (e) {
+            console.log(e);
+        }
+
+        let EXCHANGE_FACTORY_V3;
+
+        EXCHANGE_FACTORY_V3 = process.env[prefix + '_EXCHANGE_FACTORY_V3'];
+
+        console.log('EXCHANGE_FACTORY: ', EXCHANGE_FACTORY_V3);
+
+        try {
+            await hre.run("verify:verify", {
+                address: data.uniswapV3PriceOracleProxy,
+                constructorArguments: [
+                    data.uniswapV3PriceOracle,
+                    data.registryProxy,
+                    EXCHANGE_FACTORY_V3,
+                    WNATIVE_ADDRESS
+                ],
+                contract: "contracts/UniswapV3PriceOracleProxy.sol:UniswapV3PriceOracleProxy"
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
     // 11. PToken factory contract verify
     try {
         await hre.run("verify:verify", {

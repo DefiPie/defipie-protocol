@@ -75,6 +75,13 @@ async function main() {
     console.log("Tx11_ hash", tx.hash);
     await tx.wait();
 
+    if (network !== 'bsc' && network !== 'bsctestnet') {
+        // 3a. Add uniswap v3
+        tx = await priceOracleInterface._addOracle(data.uniswapV3PriceOracle);
+        console.log("Tx11_2 hash", tx.hash);
+        await tx.wait();
+    }
+
     // 4. Factory transactions
     const PTokenFactoryInterface = await hre.ethers.getContractFactory("PTokenFactory");
     const pTokenFactoryInterface = await PTokenFactoryInterface.attach(data.pTokenFactory);
