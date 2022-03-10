@@ -13,9 +13,6 @@ import "./UniswapCommon.sol";
 import "./PriceOracleProxy.sol";
 
 abstract contract PriceOracleCore {
-
-    event PriceUpdated(address asset, uint price);
-
     /**
       * @notice Get the underlying price of a pToken asset
       * @param pToken The pToken to get the underlying price of
@@ -39,6 +36,8 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
     event OracleAdded(uint oracleId, address oracle);
     event OracleRemoved(uint oracleId, address oracle);
     event OracleUpdated(uint oracleId, address oracle);
+
+    event PriceUpdated(address oracle, address asset, uint price);
 
     function initialize(
         address ETHUSDPriceFeed_
@@ -76,7 +75,13 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         if (oracle != address(0)) {
             assetOracle[asset] = oracle;
 
-            return UniswapCommon(oracle).update(asset);
+            uint result = UniswapCommon(oracle).update(asset);
+
+            if (result == uint(Error.NO_ERROR)) {
+                emit PriceUpdated(oracle, asset, UniswapCommon(oracle).getCourseInETH(asset));
+            }
+
+            return result;
         }
 
         return fail(Error.UPDATE_PRICE, FailureInfo.NO_PAIR);

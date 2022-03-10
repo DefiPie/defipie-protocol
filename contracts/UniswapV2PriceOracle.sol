@@ -143,8 +143,6 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
 
         averagePrices[asset] = calcCourseInETH(asset);
 
-        emit PriceUpdated(asset, getCourseInETH(asset));
-
         return uint(Error.NO_ERROR);
     }
 

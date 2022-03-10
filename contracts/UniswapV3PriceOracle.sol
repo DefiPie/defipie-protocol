@@ -78,8 +78,6 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
             }
         }
 
-        emit PriceUpdated(asset, getCourseInETH(asset));
-
         return uint(Error.NO_ERROR);
     }
 
