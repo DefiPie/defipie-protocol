@@ -222,7 +222,7 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         return uint(Error.NO_ERROR);
     }
 
-    function _updateAssetPair(address oracle, address asset) public returns (uint) {
+    function _updateAssetOracle(address oracle, address asset) public returns (uint) {
         // Check caller = admin
         if (msg.sender != getMyAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
