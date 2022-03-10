@@ -236,6 +236,19 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         return (pair, uint112(virtualETHReserves));
     }
 
+    function reSearchPair(address asset) public returns (uint) {
+        address oldPair = assetPair[asset];
+        (address newPair,) = searchPair(asset);
+
+        if (newPair != address(0) && newPair != oldPair) {
+            assetPair[asset] = newPair;
+
+            emit AssetPairUpdated(asset, newPair);
+        }
+
+        return uint(Error.NO_ERROR);
+    }
+
     function _updateAssetPair(address asset, address pair) public returns (uint) {
         // Check caller = admin
         if (msg.sender != getMyAdmin()) {
