@@ -169,7 +169,7 @@ abstract contract UniswapCommon is UniswapProxyStorage, UniswapCommonStorage, Or
 
         require(
             stableCoin_ != address(0)
-        , 'Oracle: invalid address for stable coin'
+            , 'Oracle: invalid address for stable coin'
         );
 
         for (uint i = 0; i < stableCoins.length; i++) {

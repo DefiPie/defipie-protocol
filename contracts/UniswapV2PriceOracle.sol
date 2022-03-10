@@ -317,8 +317,9 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
         }
 
         require(
-            pair != address(0)
-            , 'Oracle: invalid address for pair'
+            asset != address(0)
+            && pair != address(0)
+            , 'Oracle: invalid address for asset or pair'
         );
 
         cumulativePrices[assetPair[asset]][asset].priceAverage._x = 0;

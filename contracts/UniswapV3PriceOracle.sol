@@ -245,7 +245,7 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         require(
             pair != address(0)
             && asset != address(0)
-            , 'Oracle: invalid address or asset for pair'
+            , 'Oracle: invalid address for asset or pair'
         );
 
         assetPair[asset] = pair;

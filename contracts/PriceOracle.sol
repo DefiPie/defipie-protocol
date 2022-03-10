@@ -38,6 +38,7 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
     event OracleUpdated(uint oracleId, address oracle);
 
     event PriceUpdated(address oracle, address asset, uint price);
+    event AssetOracleUpdated(address oracle, address asset);
 
     function initialize(
         address ETHUSDPriceFeed_
@@ -73,11 +74,14 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         }
 
         if (oracle != address(0)) {
-            assetOracle[asset] = oracle;
+            if (assetOracle[asset] == address(0)) {
+                assetOracle[asset] = oracle;
+            }
 
             uint result = UniswapCommon(oracle).update(asset);
 
             if (result == uint(Error.NO_ERROR)) {
+                emit AssetOracleUpdated(oracle, asset);
                 emit PriceUpdated(oracle, asset, UniswapCommon(oracle).getCourseInETH(asset));
             }
 
@@ -216,6 +220,23 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         emit OracleUpdated(oracleId, oracle_);
 
         return uint(Error.NO_ERROR);
+    }
+
+    function _updateAssetPair(address oracle, address asset) public returns (uint) {
+        // Check caller = admin
+        if (msg.sender != getMyAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
+        }
+
+        require(
+            oracle != address(0)
+            && asset != address(0)
+            , 'Oracle: invalid address oracle or asset'
+        );
+
+        assetOracle[asset] = oracle;
+
+        return update(asset);
     }
 
     function getAllPriceOracles() public view returns (address[] memory) {
