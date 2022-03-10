@@ -98,6 +98,8 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
             assetOracle[asset] = oracle;
         }
 
+        UniswapCommon(oracle).reSearchPair(asset);
+
         return update(asset);
     }
 

@@ -310,7 +310,7 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
         return (pair, maxReserves);
     }
 
-    function reSearchPair(address asset) public returns (uint) {
+    function reSearchPair(address asset) public override returns (uint) {
         address oldPair = assetPair[asset];
         (address newPair,) = searchPair(asset);
 

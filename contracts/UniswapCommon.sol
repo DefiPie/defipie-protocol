@@ -40,6 +40,8 @@ abstract contract UniswapCommon is UniswapProxyStorage, UniswapCommonStorage, Or
 
     function searchPair(address asset) public view virtual returns (address, uint112);
 
+    function reSearchPair(address asset) public virtual returns (uint);
+
     function getMyAdmin() public view returns (address) {
         return RegistryInterface(registry).admin();
     }

@@ -236,7 +236,7 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         return (pair, uint112(virtualETHReserves));
     }
 
-    function reSearchPair(address asset) public returns (uint) {
+    function reSearchPair(address asset) public override returns (uint) {
         address oldPair = assetPair[asset];
         (address newPair,) = searchPair(asset);
 
