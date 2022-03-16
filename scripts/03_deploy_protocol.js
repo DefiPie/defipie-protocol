@@ -239,7 +239,7 @@ async function main() {
     // 14. Deploy Calc pool Price
     const CalcPoolPrice = await hre.ethers.getContractFactory("CalcPoolPrice");
     const calcPoolPrice = await CalcPoolPrice.deploy(
-        uniswapV2PriceOracleProxy.address
+        PriceOracleProxy.address
     );
 
     console.log(`CalcPoolPrice smart contract has been deployed to: ${calcPoolPrice.address}`);

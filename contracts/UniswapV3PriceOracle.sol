@@ -167,19 +167,24 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         uint virtualReserves;
 
         uint128 liquidity = IUniswapV3PoolState(pair).liquidity();
-        (, int24 tick,,,,,) = IUniswapV3PoolState(pair).slot0();
+        (uint160 sqrtPriceX96, int24 tick,,,,,) = IUniswapV3PoolState(pair).slot0();
         int24 tickSpacing = IUniswapV3PoolImmutables(pair).tickSpacing();
 
-        int24 tickLow = tick / tickSpacing * tickSpacing;
-        int24 tickHigh = tickLow + tickSpacing;
+//        int24 tickLow = tick / tickSpacing * tickSpacing;
+//        int24 tickHigh = tickLow + tickSpacing;
+//
+//        uint160 sqrtPriceAX96 = TickMath.getSqrtRatioAtTick(tickLow);
+//        uint160 sqrtPriceBX96 = TickMath.getSqrtRatioAtTick(tickHigh);
 
-        uint160 sqrtPriceAX96 = TickMath.getSqrtRatioAtTick(tickLow);
-        uint160 sqrtPriceBX96 = TickMath.getSqrtRatioAtTick(tickHigh);
+        uint160 sqrtPriceAX96 = sqrtPriceX96 / 4;
+        uint160 sqrtPriceBX96 = sqrtPriceX96 * 4;
+
+        (uint256 amount0, uint256 amount1) = LiquidityAmounts.getAmountsForLiquidity(sqrtPriceX96, sqrtPriceAX96, sqrtPriceBX96, liquidity);
 
         if (IUniswapV3PoolImmutables(pair).token0() == asset) {
-            virtualReserves = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceAX96, sqrtPriceBX96, liquidity);
+            virtualReserves = amount1;
         } else {
-            virtualReserves = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceAX96, sqrtPriceBX96, liquidity);
+            virtualReserves = amount0;
         }
 
         return virtualReserves;
@@ -234,6 +239,19 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         }
 
         return (pair, uint112(virtualETHReserves));
+    }
+
+    function reSearchPair(address asset) public override returns (uint) {
+        address oldPair = assetPair[asset];
+        (address newPair,) = searchPair(asset);
+
+        if (newPair != address(0) && newPair != oldPair) {
+            assetPair[asset] = newPair;
+
+            emit AssetPairUpdated(asset, newPair);
+        }
+
+        return uint(Error.NO_ERROR);
     }
 
     function _updateAssetPair(address asset, address pair) public returns (uint) {

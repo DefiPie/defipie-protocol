@@ -310,6 +310,23 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
         return (pair, maxReserves);
     }
 
+    function reSearchPair(address asset) public override returns (uint) {
+        address oldPair = assetPair[asset];
+        (address newPair,) = searchPair(asset);
+
+        if (newPair != address(0) && newPair != oldPair) {
+            cumulativePrices[oldPair][asset].priceAverage._x = 0;
+            cumulativePrices[oldPair][asset].priceCumulativePrevious = 0;
+            cumulativePrices[oldPair][asset].blockTimeStampPrevious = 0;
+
+            assetPair[asset] = newPair;
+
+            emit AssetPairUpdated(asset, newPair);
+        }
+
+        return update(asset);
+    }
+
     function _updateAssetPair(address asset, address pair) public returns (uint) {
         // Check caller = admin
         if (msg.sender != getMyAdmin()) {

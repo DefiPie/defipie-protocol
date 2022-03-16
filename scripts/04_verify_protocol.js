@@ -247,7 +247,7 @@ async function main() {
     try {
         await hre.run("verify:verify", {
             address: data.calcPoolPrice,
-            constructorArguments: [data.uniswapV2PriceOracleProxy],
+            constructorArguments: [data.priceOracleProxy],
             contract: "contracts/Lens/CalcPoolPrice.sol:CalcPoolPrice"
         });
     } catch (e) {

@@ -91,6 +91,18 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         return fail(Error.UPDATE_PRICE, FailureInfo.NO_PAIR);
     }
 
+    function reSearchPair(address asset) public returns (uint) {
+        (address oracle,,) = searchPair(asset);
+
+        if (oracle != address(0) && oracle != assetOracle[asset]) {
+            assetOracle[asset] = oracle;
+        }
+
+        UniswapCommon(oracle).reSearchPair(asset);
+
+        return update(asset);
+    }
+
     function getPriceInUSD(address asset) public view virtual returns (uint) {
         uint ETHUSDPrice = uint(AggregatorInterface(ETHUSDPriceFeed).latestAnswer());
         uint AssetETHCourse = getPriceInETH(asset);
