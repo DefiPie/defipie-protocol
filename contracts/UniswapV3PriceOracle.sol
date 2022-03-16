@@ -170,12 +170,6 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         (uint160 sqrtPriceX96, int24 tick,,,,,) = IUniswapV3PoolState(pair).slot0();
         int24 tickSpacing = IUniswapV3PoolImmutables(pair).tickSpacing();
 
-//        int24 tickLow = tick / tickSpacing * tickSpacing;
-//        int24 tickHigh = tickLow + tickSpacing;
-//
-//        uint160 sqrtPriceAX96 = TickMath.getSqrtRatioAtTick(tickLow);
-//        uint160 sqrtPriceBX96 = TickMath.getSqrtRatioAtTick(tickHigh);
-
         uint160 sqrtPriceAX96 = sqrtPriceX96 / 4;
         uint160 sqrtPriceBX96 = sqrtPriceX96 * 4;
 
