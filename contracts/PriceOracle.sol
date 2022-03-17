@@ -11,6 +11,8 @@ import "./EIP20Interface.sol";
 import "./SafeMath.sol";
 import "./UniswapCommon.sol";
 import "./PriceOracleProxy.sol";
+import "./Controller.sol";
+import "./PTokenFactory.sol";
 
 abstract contract PriceOracleCore {
     /**
@@ -161,6 +163,14 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         return RegistryInterface(registry).admin();
     }
 
+    function isPeriodElapsed(address asset) public view returns (bool) {
+        if (isNewAsset(asset)) {
+            return true;
+        }
+
+        return UniswapCommon(assetOracle[asset]).isPeriodElapsed(asset);
+    }
+
     function _addOracle(address oracle_) public returns (uint) {
         // Check caller = admin
         if (msg.sender != getMyAdmin()) {
@@ -249,6 +259,35 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         assetOracle[asset] = oracle;
 
         return update(asset);
+    }
+
+    function checkAndUpdateAllNewAssets() public {
+        PTokenFactory factory = PTokenFactory(RegistryInterface(registry).factory());
+        Controller controller = Controller(factory.controller());
+
+        address[] memory allMarkets = Controller(controller).getAllMarkets();
+
+        updateNewAssets(allMarkets);
+    }
+
+    function updateNewAssets(address[] memory pTokens) public {
+        address asset;
+
+        for(uint i = 0; i < pTokens.length; i++) {
+            if (pTokens[i] == RegistryInterface(registry).pETH()) {
+                continue;
+            }
+
+            asset = PErc20Interface(pTokens[i]).underlying();
+
+            if (isNewAsset(asset)) {
+                update(asset);
+            }
+        }
+    }
+
+    function isNewAsset(address asset) public view returns (bool) {
+        return bool(assetOracle[asset] == address(0));
     }
 
     function getAllPriceOracles() public view returns (address[] memory) {

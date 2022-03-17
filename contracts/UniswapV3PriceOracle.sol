@@ -82,7 +82,7 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
     }
 
     function getCourseInETH(address asset) public view override returns (uint) {
-        if (asset == Registry(registry).pETH()) {
+        if (asset == RegistryInterface(registry).pETH()) {
             // ether always worth 1
             return 1e18;
         }
@@ -246,6 +246,10 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         }
 
         return uint(Error.NO_ERROR);
+    }
+
+    function isPeriodElapsed(address /*asset*/) public view override returns (bool) {
+        return false;
     }
 
     function _updateAssetPair(address asset, address pair) public returns (uint) {
