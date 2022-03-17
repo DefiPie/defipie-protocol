@@ -78,12 +78,12 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         if (oracle != address(0)) {
             if (assetOracle[asset] == address(0)) {
                 assetOracle[asset] = oracle;
+                emit AssetOracleUpdated(oracle, asset);
             }
 
             uint result = UniswapCommon(oracle).update(asset);
 
             if (result == uint(Error.NO_ERROR)) {
-                emit AssetOracleUpdated(oracle, asset);
                 emit PriceUpdated(oracle, asset, UniswapCommon(oracle).getCourseInETH(asset));
             }
 
@@ -257,6 +257,8 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         );
 
         assetOracle[asset] = oracle;
+
+        emit AssetOracleUpdated(oracle, asset);
 
         return update(asset);
     }
