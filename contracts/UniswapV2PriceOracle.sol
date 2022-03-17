@@ -8,8 +8,6 @@ import "./PTokenInterfaces.sol";
 import "./SafeMath.sol";
 import "./UniswapV2PriceOracleStorage.sol";
 import "./EIP20Interface.sol";
-import "./Controller.sol";
-import "./PTokenFactory.sol";
 
 contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
     using FixedPoint for *;
@@ -46,7 +44,7 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
     }
 
     function getCourseInETH(address asset) public view override returns (uint) {
-        if (asset == Registry(registry).pETH()) {
+        if (asset == RegistryInterface(registry).pETH()) {
             // ether always worth 1
             return 1e18;
         }
@@ -146,31 +144,6 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
         return uint(Error.NO_ERROR);
     }
 
-    function checkAndUpdateAllNewAssets() public {
-        PTokenFactory factory = PTokenFactory(Registry(registry).factory());
-        Controller controller = Controller(factory.controller());
-
-        address[] memory allMarkets = Controller(controller).getAllMarkets();
-
-        updateNewAssets(allMarkets);
-    }
-
-    function updateNewAssets(address[] memory pTokens) public {
-        address asset;
-
-        for(uint i = 0; i < pTokens.length; i++) {
-            if (pTokens[i] == Registry(registry).pETH()) {
-                continue;
-            }
-
-            asset = PErc20Interface(pTokens[i]).underlying();
-
-            if (isNewAsset(asset)) {
-                update(asset);
-            }
-        }
-    }
-
     function isNewAsset(address asset) public view returns (bool) {
         return bool(cumulativePrices[assetPair[asset]][asset].blockTimeStampPrevious == 0);
     }
@@ -205,7 +178,7 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
         return (assetReserve, ethOrCoinReserves, blockTimeStamp);
     }
 
-    function isPeriodElapsed(address asset) public view returns (bool) {
+    function isPeriodElapsed(address asset) public view override returns (bool) {
         IUniswapV2Pair pair = IUniswapV2Pair(assetPair[asset]);
 
         ( , , uint32 blockTimeStamp) = pair.getReserves();
@@ -216,7 +189,7 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
     }
 
     function calcCourseInETH(address asset) public view returns (uint) {
-        if (asset == Registry(registry).pETH()) {
+        if (asset == RegistryInterface(registry).pETH()) {
             // ether always worth 1
             return 1e18;
         }
