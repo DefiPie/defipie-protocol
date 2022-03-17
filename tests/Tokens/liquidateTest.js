@@ -58,8 +58,8 @@ describe('PToken', function () {
   beforeEach(async () => {
     [root, liquidator, borrower, ...accounts] = saddle.accounts;
     oracle = await makePriceOracle();
-    pToken = await makePToken({uniswapOracle: oracle, controllerOpts: {kind: 'bool'}});
-    pTokenCollateral = await makePToken({uniswapOracle: oracle, controller: pToken.controller});
+    pToken = await makePToken({priceOracle: oracle, controllerOpts: {kind: 'bool'}});
+    pTokenCollateral = await makePToken({priceOracle: oracle, controller: pToken.controller});
   });
 
   beforeEach(async () => {

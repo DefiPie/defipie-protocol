@@ -3,8 +3,9 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 
 import "../SafeMath.sol";
-import "../UniswapPriceOracle.sol";
-import "../IPriceFeeds.sol";
+import "../UniswapV2PriceOracle.sol";
+import "../Interfaces/IPriceFeeds.sol";
+import "../UniswapV3PriceOracle.sol";
 
 contract CalcPoolPrice {
     uint224 constant Q112 = 2**112;
@@ -12,29 +13,58 @@ contract CalcPoolPrice {
     using FixedPoint for *;
     using SafeMath for uint;
 
-    UniswapPriceOracle public oracle;
+    PriceOracle public priceOracle;
 
-    constructor(address oracle_) {
-        oracle = UniswapPriceOracle(oracle_);
+    constructor(address priceOracle_) {
+        priceOracle = PriceOracle(priceOracle_);
+    }
+
+    function isContract(address account) public view returns (bool) {
+        uint256 size;
+        assembly {
+            size := extcodesize(account)
+        }
+        return size > 0;
+    }
+
+    function checkFunctionStaticCall(
+        address target
+    ) public view returns (bool) {
+        require(isContract(target), "Address: static call to non-contract");
+
+        bytes4 FUNC_SELECTOR = bytes4(keccak256("getReserves()"));
+        bytes memory data = abi.encodeWithSelector(FUNC_SELECTOR);
+
+        (bool success, ) = target.staticcall(data);
+        return success;
     }
 
     function getPoolPriceAverage(address pair_, address asset) public view returns (FixedPoint.uq112x112 memory) {
-        IUniswapV2Pair pair = IUniswapV2Pair(pair_);
-        (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
+        if (checkFunctionStaticCall(pair_)) {
+            IUniswapV2Pair pair = IUniswapV2Pair(pair_);
+            (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
 
-        FixedPoint.uq112x112 memory priceAverage;
+            FixedPoint.uq112x112 memory priceAverage;
 
-        if (asset == pair.token0()) {
-            priceAverage = FixedPoint.uq112x112(uqdiv(encode(reserve1), reserve0));
+            if (asset == pair.token0()) {
+                priceAverage = FixedPoint.uq112x112(uqdiv(encode(reserve1), reserve0));
+            } else {
+                priceAverage = FixedPoint.uq112x112(uqdiv(encode(reserve0), reserve1));
+            }
+
+            return priceAverage;
         } else {
-            priceAverage = FixedPoint.uq112x112(uqdiv(encode(reserve0), reserve1));
-        }
+            address oracle = priceOracle.assetOracle(asset);
+            uint price = UniswapV3PriceOracle(oracle).getAveragePrice(asset);
+            uint power = EIP20Interface(asset).decimals();
 
-        return priceAverage;
+            return FixedPoint.uq112x112(uqdiv(encode(uint112(price)), (uint112(10**power))));
+        }
     }
 
     function getPoolETHAmount(address asset, uint amountIn) public view returns (uint) {
-        address pair = oracle.assetPair(asset);
+        address oracle = priceOracle.assetOracle(asset);
+        address pair = UniswapV2PriceOracle(oracle).assetPair(asset);
 
         address token0 = IUniswapV2Pair(pair).token0();
         address token1 = IUniswapV2Pair(pair).token1();
@@ -44,7 +74,7 @@ contract CalcPoolPrice {
         FixedPoint.uq112x112 memory priceAverage = getPoolPriceAverage(pair, asset);
         uint result = priceAverage.mul(amountIn).decode144();
 
-        if (token0 == oracle.WETHToken() || token1 == oracle.WETHToken()) {
+        if (token0 == UniswapV2PriceOracle(oracle).WETHToken() || token1 == UniswapV2PriceOracle(oracle).WETHToken()) {
             // asset and weth pool
             return result;
         } else {
@@ -60,7 +90,7 @@ contract CalcPoolPrice {
     }
 
     function calcPoolCourseInETH(address asset) public view returns (uint) {
-        if (asset == Registry(oracle.registry()).pETH()) {
+        if (asset == Registry(priceOracle.registry()).pETH()) {
             // ether always worth 1
             return 1e18;
         }
@@ -72,7 +102,7 @@ contract CalcPoolPrice {
     }
 
     function getPoolCourseInETH(address asset) public view returns (uint) {
-        if (asset == Registry(oracle.registry()).pETH()) {
+        if (asset == Registry(priceOracle.registry()).pETH()) {
             // ether always worth 1
             return 1e18;
         }
@@ -81,7 +111,7 @@ contract CalcPoolPrice {
     }
 
     function getPoolPriceInUSD(address asset) public view returns (uint) {
-        uint ETHUSDPrice = uint(AggregatorInterface(oracle.ETHUSDPriceFeed()).latestAnswer());
+        uint ETHUSDPrice = uint(AggregatorInterface(priceOracle.ETHUSDPriceFeed()).latestAnswer());
         uint AssetETHCourse = getPoolCourseInETH(asset);
 
         // div 1e8 is chainlink precision for ETH

@@ -6,22 +6,14 @@ import "./PriceOracle.sol";
 import "./ErrorReporter.sol";
 import "./PTokenInterfaces.sol";
 import "./SafeMath.sol";
-import "./UniswapPriceOracleStorage.sol";
+import "./UniswapV2PriceOracleStorage.sol";
 import "./EIP20Interface.sol";
 import "./Controller.sol";
 import "./PTokenFactory.sol";
 
-contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleErrorReporter {
+contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
     using FixedPoint for *;
     using SafeMath for uint;
-
-    event PoolAdded(uint id, address poolFactory);
-    event PoolRemoved(uint id, address poolFactory);
-    event PoolUpdated(uint id, address poolFactory);
-
-    event StableCoinAdded(uint id, address coin);
-    event StableCoinRemoved(uint id, address coin);
-    event StableCoinUpdated(uint id, address coin);
 
     event AssetPairUpdated(address asset, address pair);
 
@@ -29,50 +21,31 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
 
     function initialize(
         address poolFactory_,
-        address WETHToken_,
-        address ETHUSDPriceFeed_
+        address WETHToken_
     )
         public
     {
         require(
-            WETHToken == address(0) &&
-            ETHUSDPriceFeed == address(0)
+            WETHToken == address(0)
             , "Oracle: may only be initialized once"
         );
 
         WETHToken = WETHToken_;
-        ETHUSDPriceFeed = ETHUSDPriceFeed_;
 
         require(
             poolFactory_ != address(0)
             , 'Oracle: invalid address for factory'
         );
 
+        Q112 = 2**112;
+        period = 10 minutes;
+
         poolFactories.push(poolFactory_);
 
         emit PoolAdded(0, poolFactory_);
     }
 
-    function updateUnderlyingPrice(address pToken) public override returns (uint) {
-        if (pToken == Registry(registry).pETH()) {
-            return uint(Error.NO_ERROR);
-        }
-
-        address asset = PErc20Interface(pToken).underlying();
-
-        return update(asset);
-    }
-
-    // Get the most recent price for a asset in USD with 18 decimals of precision.
-    function getPriceInUSD(address asset) public view virtual returns (uint) {
-        uint ETHUSDPrice = uint(AggregatorInterface(ETHUSDPriceFeed).latestAnswer());
-        uint AssetETHCourse = getCourseInETH(asset);
-
-        // div 1e8 is chainlink precision for ETH
-        return ETHUSDPrice.mul(AssetETHCourse).div(1e8);
-    }
-
-    function getCourseInETH(address asset) public view returns (uint) {
+    function getCourseInETH(address asset) public view override returns (uint) {
         if (asset == Registry(registry).pETH()) {
             // ether always worth 1
             return 1e18;
@@ -81,7 +54,7 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
         return averagePrices[asset];
     }
 
-    function update(address asset) public returns (uint) {
+    function update(address asset) public override returns (uint) {
         uint112 reserve0;
         uint112 reserve1;
         uint32 blockTimeStamp;
@@ -170,8 +143,6 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
 
         averagePrices[asset] = calcCourseInETH(asset);
 
-        emit PriceUpdated(asset, getCourseInETH(asset));
-
         return uint(Error.NO_ERROR);
     }
 
@@ -198,18 +169,6 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
                 update(asset);
             }
         }
-    }
-
-    function getUnderlyingPrice(address pToken) public view override virtual returns (uint) {
-        if (pToken == Registry(registry).pETH()) {
-            return getPriceInUSD(Registry(registry).pETH());
-        }
-
-        address asset = PErc20Interface(pToken).underlying();
-        uint price = getPriceInUSD(asset);
-        uint decimals = EIP20Interface(asset).decimals();
-
-        return price.mul(10 ** (36 - decimals)).div(1e18);
     }
 
     function isNewAsset(address asset) public view returns (bool) {
@@ -292,12 +251,17 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
         }
     }
 
-    function searchPair(address asset) public view returns (address, uint112) {
+    function searchPair(address asset) public view override returns (address, uint112) {
         address pair;
         uint112 maxReserves;
 
         IUniswapV2Pair tempPair;
         uint112 ETHReserves;
+
+        uint112 stableCoinReserve;
+        uint power;
+        address token0;
+        address token1;
 
         for (uint i = 0; i < poolFactories.length; i++) {
             tempPair = IUniswapV2Pair(getPoolPair(asset, i));
@@ -319,11 +283,11 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
                 tempPair = IUniswapV2Pair(getPoolPairWithStableCoin(asset, i, j));
 
                 if (address(tempPair) != address(0)) {
-                    uint112 stableCoinReserve;
-                    uint power;
+                    stableCoinReserve;
+                    power;
 
-                    address token0 = tempPair.token0();
-                    address token1 = tempPair.token1();
+                    token0 = tempPair.token0();
+                    token1 = tempPair.token1();
 
                     if (token0 == asset) {
                         (, stableCoinReserve,) = tempPair.getReserves();
@@ -346,195 +310,21 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
         return (pair, maxReserves);
     }
 
-    function _setNewAddresses(address WETHToken_, address ETHUSDPriceFeed_) external returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
+    function reSearchPair(address asset) public override returns (uint) {
+        address oldPair = assetPair[asset];
+        (address newPair,) = searchPair(asset);
+
+        if (newPair != address(0) && newPair != oldPair) {
+            cumulativePrices[oldPair][asset].priceAverage._x = 0;
+            cumulativePrices[oldPair][asset].priceCumulativePrevious = 0;
+            cumulativePrices[oldPair][asset].blockTimeStampPrevious = 0;
+
+            assetPair[asset] = newPair;
+
+            emit AssetPairUpdated(asset, newPair);
         }
 
-        WETHToken = WETHToken_;
-        ETHUSDPriceFeed = ETHUSDPriceFeed_;
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _setNewRegistry(address registry_) external returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
-        }
-
-        registry = registry_;
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _setMinReserveLiquidity(uint minReserveLiquidity_) public returns (uint) {
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
-        }
-
-        minReserveLiquidity = minReserveLiquidity_;
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _setPeriod(uint period_) public returns (uint) {
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
-        }
-
-        period = period_;
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _addPool(address poolFactory_) public returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.ADD_POOL_OR_COIN);
-        }
-
-        require(
-            poolFactory_ != address(0)
-            , 'Oracle: invalid address for factory'
-        );
-
-        for (uint i = 0; i < poolFactories.length; i++) {
-            if (poolFactories[i] == poolFactory_) {
-                return fail(Error.POOL_OR_COIN_EXIST, FailureInfo.ADD_POOL_OR_COIN);
-            }
-        }
-
-        poolFactories.push(poolFactory_);
-        uint poolId = poolFactories.length - 1;
-
-        emit PoolAdded(poolId, poolFactory_);
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _removePool(uint poolId) public returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
-        }
-
-        require(
-            poolFactories.length > 1
-            , 'Oracle: must have one pool'
-        );
-
-        uint lastId = poolFactories.length - 1;
-
-        address factory = poolFactories[lastId];
-        poolFactories.pop();
-        emit PoolRemoved(lastId, factory);
-
-        if (lastId != poolId) {
-            poolFactories[poolId] = factory;
-            emit PoolUpdated(poolId, factory);
-        }
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _updatePool(uint poolId, address poolFactory_) public returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
-        }
-
-        require(
-            poolFactory_ != address(0)
-            , 'Oracle: invalid address for factory'
-        );
-
-        for (uint i = 0; i < poolFactories.length; i++) {
-            if (poolFactories[i] == poolFactory_) {
-                return fail(Error.POOL_OR_COIN_EXIST, FailureInfo.UPDATE_DATA);
-            }
-        }
-
-        poolFactories[poolId] = poolFactory_;
-
-        emit PoolUpdated(poolId, poolFactory_);
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _addStableCoin(address stableCoin_) public returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.ADD_POOL_OR_COIN);
-        }
-
-        require(
-            stableCoin_ != address(0)
-            , 'Oracle: invalid address for stable coin'
-        );
-
-        for (uint i = 0; i < stableCoins.length; i++) {
-            if (stableCoins[i] == stableCoin_) {
-                return fail(Error.POOL_OR_COIN_EXIST, FailureInfo.ADD_POOL_OR_COIN);
-            }
-        }
-
-        stableCoins.push(stableCoin_);
-
-        emit StableCoinAdded(stableCoins.length - 1, stableCoin_);
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _removeStableCoin(uint coinId) public returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
-        }
-
-        require(
-            stableCoins.length > 0
-            , 'Oracle: stable coins are empty'
-        );
-
-
-        uint lastId = stableCoins.length - 1;
-
-        address stableCoin = stableCoins[lastId];
-        stableCoins.pop();
-        emit StableCoinRemoved(lastId, stableCoin);
-
-        if (lastId != coinId) {
-            stableCoins[coinId] = stableCoin;
-            emit StableCoinUpdated(coinId, stableCoin);
-        }
-
-        return uint(Error.NO_ERROR);
-    }
-
-    function _updateStableCoin(uint coinId, address stableCoin_) public returns (uint) {
-        // Check caller = admin
-        if (msg.sender != getMyAdmin()) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.UPDATE_DATA);
-        }
-
-        require(
-            stableCoin_ != address(0)
-            , 'Oracle: invalid address for stable coin'
-        );
-
-        for (uint i = 0; i < stableCoins.length; i++) {
-            if (stableCoins[i] == stableCoin_) {
-                return fail(Error.POOL_OR_COIN_EXIST, FailureInfo.UPDATE_DATA);
-            }
-        }
-
-        stableCoins[coinId] = stableCoin_;
-
-        emit StableCoinUpdated(coinId, stableCoin_);
-
-        return uint(Error.NO_ERROR);
+        return update(asset);
     }
 
     function _updateAssetPair(address asset, address pair) public returns (uint) {
@@ -544,8 +334,9 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
         }
 
         require(
-            pair != address(0)
-            , 'Oracle: invalid address for pair'
+            asset != address(0)
+            && pair != address(0)
+            , 'Oracle: invalid address for asset or pair'
         );
 
         cumulativePrices[assetPair[asset]][asset].priceAverage._x = 0;
@@ -557,18 +348,6 @@ contract UniswapPriceOracle is UniswapPriceOracleStorageV1, PriceOracle, OracleE
         emit AssetPairUpdated(asset, pair);
 
         return update(asset);
-    }
-
-    function getAllPoolFactories() public view returns (address[] memory) {
-        return poolFactories;
-    }
-
-    function getAllStableCoins() public view returns (address[] memory) {
-        return stableCoins;
-    }
-
-    function getMyAdmin() public view returns (address) {
-        return Registry(registry).admin();
     }
 
     // encode a uint112 as a UQ112x112

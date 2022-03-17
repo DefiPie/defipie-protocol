@@ -4,7 +4,7 @@ pragma solidity ^0.7.6;
 import "./PriceOracle.sol";
 import "./PErc20.sol";
 
-contract SimplePriceOracle is PriceOracle {
+contract SimplePriceOracle is PriceOracleCore {
     address public registry;
     mapping(address => uint) prices;
     event PricePosted(address asset, uint previousPriceMantissa, uint requestedPriceMantissa, uint newPriceMantissa);
@@ -49,7 +49,7 @@ contract SimplePriceOracle is PriceOracle {
         registry = _registry;
     }
 
-    function searchPair(address) public view returns (address, uint112) {
-        return (address(this), uint112(1));
+    function searchPair(address) public view returns (address, address, uint112) {
+        return (address(this), address(this), uint112(1));
     }
 }

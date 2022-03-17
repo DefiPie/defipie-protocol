@@ -3,10 +3,10 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 
 import "./ErrorReporter.sol";
-import "./UniswapPriceOracleStorage.sol";
+import "./UniswapV3PriceOracleStorage.sol";
 import "./RegistryInterface.sol";
 
-contract UniswapPriceOracleProxy is UniswapPriceOracleProxyStorage, OracleErrorReporter {
+contract UniswapV3PriceOracleProxy is UniswapProxyStorage, OracleErrorReporter {
 
     /*** Admin Events ***/
 
@@ -19,16 +19,14 @@ contract UniswapPriceOracleProxy is UniswapPriceOracleProxyStorage, OracleErrorR
         address implementation_,
         address registry_,
         address uniswapFactory_,
-        address WETHToken_,
-        address ETHUSDPriceFeed_
+        address WETHToken_
     ) {
         implementation = implementation_;
         registry = registry_;
 
-        delegateTo(implementation, abi.encodeWithSignature("initialize(address,address,address)",
+        delegateTo(implementation, abi.encodeWithSignature("initialize(address,address)",
                                                             uniswapFactory_,
-                                                            WETHToken_,
-                                                            ETHUSDPriceFeed_));
+                                                            WETHToken_));
     }
 
     function _setOracleImplementation(address newImplementation) external returns(uint256) {

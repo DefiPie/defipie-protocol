@@ -39,13 +39,12 @@ describe('Fee Token tests', () => {
             registryProxy: registryProxy,
             controller: controller,
             interestRateModel: interestRateModel,
-            uniswapOracle: oracle
+            priceOracle: oracle
         });
     });
 
     describe("Liquidation", () => {
         it("simple liquidation", async () => {
-            let borrowDelay = 86400;
             let simpleToken = await makeToken(); // BUSD
             let feeToken = await makeToken({kind: 'fee', basisPointFee: '1000'});  // fee = 10%
 
@@ -480,7 +479,6 @@ describe('Fee Token tests', () => {
 
     describe("Other functions", () => {
         it("revert for token with big % fee ", async () => {
-            let borrowDelay = 86400;
             let feeToken = await makeToken({kind: 'fee', basisPointFee: '9000'}); // 90% fee
 
             let tx1 = await send(oracle, 'setPrice', [feeToken._address, '25000000000000000000']); // $25

@@ -70,7 +70,7 @@ describe('PToken', function () {
   beforeEach(async () => {
     [root, borrower, benefactor, ...accounts] = saddle.accounts;
     oracle = await makePriceOracle();
-    pToken = await makePToken({uniswapOracle: oracle, controllerOpts: {kind: 'bool'}});
+    pToken = await makePToken({priceOracle: oracle, controllerOpts: {kind: 'bool'}});
   });
 
   describe('borrowFresh', () => {

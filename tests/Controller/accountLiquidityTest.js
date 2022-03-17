@@ -23,8 +23,8 @@ describe('Controller', () => {
 
     it("allows a borrow up to collateralFactor, but not more", async () => {
       const collateralFactor = 0.5, underlyingPrice = 1, user = accounts[1], amount = 1e6;
-      const priceOracle = await makePriceOracle();
-      const pToken = await makePToken({uniswapOracle: priceOracle, supportMarket: true, collateralFactor, underlyingPrice});
+      const simplePriceOracle = await makePriceOracle();
+      const pToken = await makePToken({ priceOracle: simplePriceOracle, supportMarket: true, collateralFactor, underlyingPrice});
 
       let liquidity, shortfall;
 
@@ -56,10 +56,10 @@ describe('Controller', () => {
       const amount1 = 1e6, amount2 = 1e3, user = accounts[1];
       const cf1 = 0.5, cf2 = 0.666, cf3 = 0, up1 = 3, up2 = 2.718, up3 = 1;
       const c1 = amount1 * cf1 * up1, c2 = amount2 * cf2 * up2, collateral = Math.floor(c1 + c2);
-      const priceOracle = await makePriceOracle();
-      const pToken1 = await makePToken({uniswapOracle: priceOracle, supportMarket: true, collateralFactor: cf1, underlyingPrice: up1});
-      const pToken2 = await makePToken({uniswapOracle: priceOracle, supportMarket: true, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, collateralFactor: cf2, underlyingPrice: up2});
-      const pToken3 = await makePToken({uniswapOracle: priceOracle, supportMarket: true, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, collateralFactor: cf3, underlyingPrice: up3});
+      const simplePriceOracle = await makePriceOracle();
+      const pToken1 = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, collateralFactor: cf1, underlyingPrice: up1});
+      const pToken2 = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, collateralFactor: cf2, underlyingPrice: up2});
+      const pToken3 = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, collateralFactor: cf3, underlyingPrice: up3});
 
       await enterMarkets([pToken1, pToken2, pToken3], user);
       await quickMint(pToken1, user, amount1);
@@ -111,8 +111,8 @@ describe('Controller', () => {
 
     it("returns collateral factor times dollar amount of tokens minted in a single market", async () => {
       const collateralFactor = 0.5, exchangeRate = 1, underlyingPrice = 1;
-      const priceOracle = await makePriceOracle();
-      const pToken = await makePToken({uniswapOracle: priceOracle, supportMarket: true, collateralFactor, underlyingPrice});
+      const simplePriceOracle = await makePriceOracle();
+      const pToken = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, collateralFactor, underlyingPrice});
       const from = accounts[0], balance = 1e7, amount = 1e6;
       await enterMarkets([pToken], from);
       await send(pToken.underlying, 'harnessSetBalance', [from, balance], {from});

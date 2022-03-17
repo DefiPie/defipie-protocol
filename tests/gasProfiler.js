@@ -99,7 +99,7 @@ describe('Gas report', () => {
             [root, minter, redeemer, ...accounts] = saddle.accounts;
             oracle = await makePriceOracle();
             pToken = await makePToken({
-                uniswapOracle: oracle,
+                priceOracle: oracle,
                 controllerOpts: { kind: 'bool'},
                 interestRateModelOpts: { kind: 'harnessed'},
                 exchangeRate
@@ -185,7 +185,7 @@ describe('Gas report', () => {
             [root, minter, redeemer, ...accounts] = saddle.accounts;
             controller = await makeController({ kind: patch });
             let interestRateModelOpts = {borrowRate: 0.000001};
-            pToken = await makePToken({kind: 'ppie', controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
+            pToken = await makePToken({kind: 'ppie', controller: controller, priceOracle: controller.priceOracle, registryProxy: controller.registryProxy, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
             if (patch == 'unitroller') {
                 await send(controller, '_setPieSpeed', [pToken._address, etherExp(0.05)]);
             } else {

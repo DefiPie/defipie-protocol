@@ -160,20 +160,28 @@ async function makePToken(opts = {}) {
   }
   const controller = opts.controller || await makeController(opts.controllerOpts);
   const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
-  const mockUniswapFactory = opts.mockUniswapFactory || await deploy('MockUniswapFactory');
-  const mockUniswapPool = opts.mockUniswapPool || await deploy('MockUniswapPool');
+  const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
+  const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool');
   const WETHToken = opts.WETHToken || await makeToken();
 
-  let tx = await send(mockUniswapFactory, 'setPair', [mockUniswapPool._address]);
-  let tx_ = await send(mockUniswapFactory, 'setPairExist', [true]);
+  let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
+  let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
 
-  const uniswapOracle = opts.uniswapOracle || await deploy('UniswapPriceOracleMock', [
-    mockUniswapFactory._address,
-    WETHToken._address,
+  const priceOracle = opts.priceOracle || await deploy('PriceOracleMock', [
     mockPriceFeed._address
   ]);
 
-  let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
+  if (opts.priceOracle === undefined) {
+      let tx = await send(priceOracle, '_setRegistry', [registryProxy._address]);
+
+      const uniswapOracle = opts.uniswapOracle || await deploy('UniswapV2PriceOracleMock', [
+          mockUniswapV2Factory._address,
+          WETHToken._address
+      ]);
+
+      let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
+      let tx0_ = await send(priceOracle, '_addOracle', [uniswapOracle._address]);
+  }
 
   let pToken, underlying;
   let pTokenFactory;
@@ -190,7 +198,7 @@ async function makePToken(opts = {}) {
   ]);
 
   tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
-  let tx2_ = await send(registryProxy, '_setOracle', [uniswapOracle._address]);
+  let tx2_ = await send(registryProxy, '_setOracle', [priceOracle._address]);
 
   let token0, token1;
 
@@ -206,11 +214,11 @@ async function makePToken(opts = {}) {
 
     case 'ppie':
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
-      token0 = await call(mockUniswapPool, "token0");
-      token1 = await call(mockUniswapPool, "token1");
+      token0 = await call(mockUniswapV2Pool, "token0");
+      token1 = await call(mockUniswapV2Pool, "token1");
 
       if (token0 === '0x0000000000000000000000000000000000000000' || token1 === '0x0000000000000000000000000000000000000000') {
-        await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address]);
+        await send(mockUniswapV2Pool, 'setData', [underlying._address, WETHToken._address]);
       }
 
       let pPIEImplementation = await deploy('PPIEDelegateHarness');
@@ -225,11 +233,11 @@ async function makePToken(opts = {}) {
     case 'perc20':
     default:
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
-      token0 = await call(mockUniswapPool, "token0");
-      token1 = await call(mockUniswapPool, "token1");
+      token0 = await call(mockUniswapV2Pool, "token0");
+      token1 = await call(mockUniswapV2Pool, "token1");
 
       if (token0 === '0x0000000000000000000000000000000000000000' || token1 === '0x0000000000000000000000000000000000000000') {
-        await send(mockUniswapPool, 'setData', [underlying._address, WETHToken._address]);
+        await send(mockUniswapV2Pool, 'setData', [underlying._address, WETHToken._address]);
       }
 
       tx3 = await send(pTokenFactory, 'createPToken', [underlying._address]);
@@ -250,7 +258,7 @@ async function makePToken(opts = {}) {
 
   if (opts.underlyingPrice) {
     const price = etherMantissa(opts.underlyingPrice);
-    await send(uniswapOracle, 'setUnderlyingPrice', [pToken._address, price]);
+    await send(priceOracle, 'setUnderlyingPrice', [pToken._address, price]);
   }
 
   if (opts.collateralFactor) {
@@ -305,23 +313,41 @@ async function makePriceOracle(opts = {}) {
 
   if (kind == 'uniswap') {
       const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
-      const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
-      const mockUniswapFactory = opts.mockUniswapFactory || await deploy('MockUniswapFactory');
-      const mockUniswapPool = opts.mockUniswapPool || await deploy('MockUniswapPool');
+      const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
+      const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool');
       const WETHToken = opts.WETHToken || await makeToken();
 
-      let tx = await send(mockUniswapFactory, 'setPair', [mockUniswapPool._address]);
-      let tx_ = await send(mockUniswapFactory, 'setPairExist', [true]);
+      let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
+      let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
 
-      const uniswapOracle = await deploy('UniswapPriceOracleMock', [
-          mockUniswapFactory._address,
-          WETHToken._address,
-          mockPriceFeed._address
+      const uniswapOracle = await deploy('UniswapV2PriceOracleMock', [
+          mockUniswapV2Factory._address,
+          WETHToken._address
       ]);
 
       let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
 
       return uniswapOracle;
+  }
+
+  if (kind == 'uniswapV3') {
+    const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
+    const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
+    const mockUniswapV3Factory = opts.mockUniswapV3Factory || await deploy('MockUniswapV3Factory');
+    const mockUniswapV3Pool = opts.mockUniswapV3Pool || await deploy('MockUniswapV3Pool');
+    const WETHToken = opts.WETHToken || await makeToken();
+
+    let tx = await send(mockUniswapV3Factory, 'setPair', [mockUniswapV3Pool._address]);
+
+    const uniswapOracle = await deploy('UniswapV3PriceOracleMock', [
+        mockUniswapV3Factory._address,
+        WETHToken._address,
+        mockPriceFeed._address
+    ]);
+
+    let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
+
+    return uniswapOracle;
   }
 }
 
@@ -370,18 +396,26 @@ async function makePTokenFactory(opts = {}) {
 
     let pTokenFactory;
     const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
-    const mockUniswapFactory = opts.mockUniswapFactory || await deploy('MockUniswapFactory');
-    const mockUniswapPool = opts.mockUniswapPool || await deploy('MockUniswapPool');
-    let tx = await send(mockUniswapFactory, 'setPair', [mockUniswapPool._address]);
-    let tx_ = await send(mockUniswapFactory, 'setPairExist', [true]);
+    const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
+    const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool');
+    let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
+    let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
 
-    const uniswapOracle = opts.uniswapOracle || await deploy('UniswapPriceOracleMock', [
-        mockUniswapFactory._address,
-        mockUniswapPool._address,
+    const priceOracle = opts.priceOracle || await deploy('PriceOracleMock', [
         mockPriceFeed._address
     ]);
 
-    let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
+    if (opts.priceOracle === undefined) {
+        let tx = await send(priceOracle, '_setRegistry', [registryProxy._address]);
+
+        const uniswapOracle = opts.uniswapOracle || await deploy('UniswapV2PriceOracleMock', [
+            mockUniswapV2Factory._address,
+            mockUniswapV2Pool._address
+        ]);
+
+        let tx0 = await send(uniswapOracle, '_setRegistry', [registryProxy._address]);
+        let tx0_ = await send(priceOracle, '_addOracle', [uniswapOracle._address]);
+    }
 
     pTokenFactory = await deploy('PTokenFactoryHarness', [
         registryProxy._address,
@@ -393,7 +427,7 @@ async function makePTokenFactory(opts = {}) {
     ]);
 
     let tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
-    let tx2_ = await send(registryProxy, '_setOracle', [uniswapOracle._address]);
+    let tx2_ = await send(registryProxy, '_setOracle', [priceOracle._address]);
 
     pTokenFactory = await saddle.getContractAt('PTokenFactoryHarness', pTokenFactory._address);
 

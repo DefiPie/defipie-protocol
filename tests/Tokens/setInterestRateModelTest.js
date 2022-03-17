@@ -73,7 +73,7 @@ describe('PToken', function () {
     let pToken, oracle;
     beforeEach(async () => {
       oracle = await makePriceOracle();
-      pToken = await makePToken({uniswapOracle: oracle});
+      pToken = await makePToken({priceOracle: oracle});
     });
 
     beforeEach(async () => {

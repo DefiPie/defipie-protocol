@@ -36,7 +36,7 @@ describe('Controller', function() {
     beforeEach(async () => {
       unitrollerAsController = await initializeBrains();
       await send(unitrollerAsController, '_setMaxAssets', [+maxAssets - 1]);
-      pToken = await makePToken({ controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
+      pToken = await makePToken({ controller: unitrollerAsController, priceOracle: oracle, registryProxy: registryProxy });
     });
 
     describe('becoming brains sets initial state', () => {
@@ -121,14 +121,14 @@ describe('Controller', function() {
       });
 
       it('fails if factor is too high', async () => {
-        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
+        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, priceOracle: oracle, registryProxy: registryProxy });
         expect(
           await send(unitrollerAsController, '_setCollateralFactor', [pToken._address, one])
         ).toHaveTrollFailure('INVALID_COLLATERAL_FACTOR', 'SET_COLLATERAL_FACTOR_VALIDATION');
       });
 
       it('fails if factor is set without an underlying price', async () => {
-        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
+        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, priceOracle: oracle, registryProxy: registryProxy });
         await send(oracle, 'setUnderlyingPrice', [pToken._address, 0]);
         expect(
           await send(unitrollerAsController, '_setCollateralFactor', [pToken._address, half])
@@ -136,7 +136,7 @@ describe('Controller', function() {
       });
 
       it('succeeds and sets market', async () => {
-        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
+        const pToken = await makePToken({ supportMarket: true, controller: unitrollerAsController, priceOracle: oracle, registryProxy: registryProxy });
         await send(oracle, 'setUnderlyingPrice', [pToken._address, 1]);
         expect(
           await send(unitrollerAsController, '_setCollateralFactor', [pToken._address, half])
@@ -171,8 +171,8 @@ describe('Controller', function() {
       });
 
       it('can list two different markets', async () => {
-        const pToken1 = await makePToken({ controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy });
-        const pToken2 = await makePToken({ controller: unitrollerAsController, uniswapOracle: oracle, registryProxy: registryProxy, pTokenFactory: pToken1.pTokenFactory, });
+        const pToken1 = await makePToken({ controller: unitrollerAsController, priceOracle: oracle, registryProxy: registryProxy });
+        const pToken2 = await makePToken({ controller: unitrollerAsController, priceOracle: oracle, registryProxy: registryProxy, pTokenFactory: pToken1.pTokenFactory, });
         const result1 = await call(unitrollerAsController, 'markets', [pToken1._address]);
         const result2 = await call(unitrollerAsController, 'markets', [pToken2._address]);
         expect(result1.isListed).toEqual(true);
