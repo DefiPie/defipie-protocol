@@ -4,7 +4,7 @@ Macro InKindBorrow borrowAmount borrowRate user=Geoff borrowPrice=1.0 mintAmount
     Controller LiquidationIncentive 1.1
     NewPToken BAT pBAT borrowRate 2e9 0 8 borrowTokenType -- note: cannot use macros with named args right now
     Give pBAT giveAmount BAT -- Faucet some bat
-    PriceOracle SetPrice pBAT borrowPrice
+    PriceOracleProxy SetPrice pBAT borrowPrice
     Support pBAT collateralFactor:0.5
     Prep user mintAmount BAT pBAT
     Mint user mintAmount pBAT
@@ -207,7 +207,7 @@ Test "When price oracle for collateral token is zero"
     Assert Equal (Controller Liquidity Geoff) -1e18
     -- Okay, so we should be able to liquidate, so let's do that.
     Prep Torrey 10e18 BAT pBAT
-    PriceOracle SetPrice pBAT 0
+    PriceOracleProxy SetPrice pBAT 0
     AllowFailures
     Liquidate Torrey "->" Geoff 2e18 pBAT "Seizing" pBAT
     Assert Failure CONTROLLER_REJECTION LIQUIDATE_CONTROLLER_REJECTION PRICE_ERROR
@@ -237,7 +237,7 @@ Test "When price oracle for collateral token is whack"
     Assert Equal (Controller Liquidity Geoff) -1e18
     -- Okay, so we should be able to liquidate, so let's do that.
     Prep Torrey 10e18 BAT pBAT
-    PriceOracle SetPrice pBAT 1.15792e59
+    PriceOracleProxy SetPrice pBAT 1.15792e59
     AllowFailures
     Liquidate Torrey "->" Geoff 2e18 pBAT "Seizing" pBAT
     Assert Failure CONTROLLER_REJECTION LIQUIDATE_CONTROLLER_REJECTION MATH_ERROR

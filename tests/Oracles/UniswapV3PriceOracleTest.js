@@ -1732,7 +1732,7 @@ describe('UniswapV3PriceOracle', () => {
                     updateAsset._address,
                     constants.ZERO_ADDRESS
                 ]),
-            ).rejects.toRevert('revert Oracle: invalid address or asset for pair');
+            ).rejects.toRevert('revert Oracle: invalid address for asset or pair');
         });
 
         it('update asset, invalid address asset for pair', async () => {
@@ -1741,7 +1741,7 @@ describe('UniswapV3PriceOracle', () => {
                     constants.ZERO_ADDRESS,
                     mockUniswapPool2._address
                 ]),
-            ).rejects.toRevert('revert Oracle: invalid address or asset for pair');
+            ).rejects.toRevert('revert Oracle: invalid address for asset or pair');
         });
 
         it("update asset pair, check data and event", async () => {

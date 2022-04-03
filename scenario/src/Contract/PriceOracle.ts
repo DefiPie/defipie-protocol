@@ -3,10 +3,12 @@ import {Callable, Sendable} from '../Invokation';
 import {encodedNumber} from '../Encoding';
 
 interface PriceOracleMethods {
+  initialize(address: string): Sendable<void>
   assetPrices(asset: string): Callable<number>
   setUnderlyingPrice(pToken: string, amount: encodedNumber): Sendable<number>
-  setDirectPrice(address: string, amount: encodedNumber): Sendable<number>
-
+  setDirectPrice(asset: string, amount: encodedNumber): Sendable<number>
+  getUnderlyingPrice(pToken: string): Callable<number>
+  
   // Anchor Price Oracle
   getPrice(asset: string): Callable<number>
   readers(asset: string): Callable<string>

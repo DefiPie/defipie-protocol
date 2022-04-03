@@ -46,11 +46,11 @@ async function setPrice(world: World, from: string, priceOracle: PriceOracle, pT
   );
 }
 
-async function setDirectPrice(world: World, from: string, priceOracle: PriceOracle, address: string, amount: NumberV): Promise<World> {
+async function setDirectPrice(world: World, from: string, priceOracle: PriceOracle, asset: string, amount: NumberV): Promise<World> {
   return addAction(
     world,
-    `Set price oracle price for ${address} to ${amount.show()}`,
-    await invoke(world, priceOracle.methods.setDirectPrice(address, amount.encode()), from)
+    `Set price oracle price for ${asset} to ${amount.show()}`,
+    await invoke(world, priceOracle.methods.setDirectPrice(asset, amount.encode()), from)
   );
 }
 
@@ -108,7 +108,7 @@ export function priceOracleCommands() {
       (world, from, {priceOracle, pToken, amount}) => setPrice(world, from, priceOracle, pToken.val, amount)
     ),
 
-    new Command<{priceOracle: PriceOracle, address: AddressV, amount: NumberV}>(`
+    new Command<{priceOracle: PriceOracle, asset: AddressV, amount: NumberV}>(`
         #### SetDirectPrice
 
         * "SetDirectPrice <Address> <Amount>" - Sets the per-ether price for the given pToken
@@ -117,10 +117,10 @@ export function priceOracleCommands() {
       "SetDirectPrice",
       [
         new Arg("priceOracle", getPriceOracle, {implicit: true}),
-        new Arg("address", getAddressV),
+        new Arg("asset", getAddressV),
         new Arg("amount", getExpNumberV)
       ],
-      (world, from, {priceOracle, address, amount}) => setDirectPrice(world, from, priceOracle, address.val, amount)
+      (world, from, {priceOracle, asset, amount}) => setDirectPrice(world, from, priceOracle, asset.val, amount)
     ),
 
     new View<{priceOracle: PriceOracle, apiKey: StringV, contractName: StringV}>(`

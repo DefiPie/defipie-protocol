@@ -3,7 +3,7 @@ Macro FlywheelController price=1.0 borrowRate=0.000005 pieInitAmount=5000000e18
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed price
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address)
     ----g4
     ControllerImpl Deploy ScenarioG4 ControllerScen
     Unitroller SetPendingImpl ControllerScen

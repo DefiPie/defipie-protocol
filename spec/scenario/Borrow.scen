@@ -1,4 +1,3 @@
-
 Test "Borrow some BAT and enters BAT if BAT not entered"
     NewController price:1.0
     NewPToken ZRX pZRX

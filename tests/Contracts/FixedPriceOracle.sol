@@ -3,11 +3,15 @@ pragma solidity ^0.7.6;
 
 import "../../contracts/PriceOracle.sol";
 
-contract FixedPriceOracle is PriceOracleCore {
+contract FixedPriceOracle is PriceOracleProxyStorage, PriceOracleCore {
     uint public price;
 
     constructor(uint _price) {
         price = _price;
+    }
+
+    function initialize(address) public {
+        price = 1e18;
     }
 
     function getUnderlyingPrice(address) public view override returns (uint) {
@@ -20,6 +24,14 @@ contract FixedPriceOracle is PriceOracleCore {
 
     function updateUnderlyingPrice(address) external override returns (uint) {
         return 0;
+    }
+
+    function setPrice(uint _price) public {
+        price = _price;
+    }
+
+    function setUnderlyingPrice(address, uint _price) public {
+        price = _price;
     }
 }
 

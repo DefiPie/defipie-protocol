@@ -20,7 +20,7 @@ const FixedPriceOracle = getTestContract('FixedPriceOracle');
 const SimplePriceOracle = getContract('SimplePriceOracle');
 const AnchorPriceOracle = getContract('AnchorPriceOracle');
 const NotPriceOracle = getTestContract('NotPriceOracle');
-const PriceOracleInterface = getTestContract('PriceOracle');
+const PriceOracleInterface = getContract('PriceOracle');
 
 export interface PriceOracleData {
   invokation?: Invokation<PriceOracle>,
@@ -95,7 +95,22 @@ export async function buildPriceOracle(world: World, from: string, event: Event)
           description: "Not a Price Oracle"
         };
       }
-    )
+    ),
+    new Fetcher<{}, PriceOracleData>(`
+        #### Implementation
+
+        * "Implementation" - The a simple price oracle that has a harness price setter
+          * E.g. "PriceOracle Deploy Implementation"
+      `,
+      "Implementation",
+      [],
+      async (world, {}) => {
+        return {
+          invokation: await PriceOracleInterface.deploy<PriceOracle>(world, from, []),
+          description: "Implementation Price Oracle"
+        };
+      }
+    ),
   ];
 
   let priceOracleData = await getFetcherValue<any, PriceOracleData>("DeployPriceOracle", fetchers, world, event);

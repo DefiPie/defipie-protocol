@@ -7,8 +7,7 @@ const {
   makeController,
   makePriceOracle,
   makePToken,
-  makeToken,
-  makePTokenFactory
+  makeToken
 } = require('../Utils/DeFiPie');
 
 describe('Controller', () => {
@@ -84,36 +83,22 @@ describe('Controller', () => {
   });
 
   describe('_setPriceOracle', () => {
-    let controller, oldOracle, newOracle, factory;
-    beforeEach(async () => {
+    let controller, newOracle;
+
+    it("accepts a valid price oracle, and fails if called by non-admin", async () => {
       controller = await makeController();
-      oldOracle = controller.priceOracle;
       newOracle = await makePriceOracle();
-      factory = await makePTokenFactory({controller: controller, uniswapOracle: controller.priceOracle, registryProxy: controller.registryProxy});
-    });
 
-    it("fails if called by non-admin", async () => {
-      expect(
-        await send(controller.registryProxy, '_setOracle', [newOracle._address], {from: accounts[0]})
-      ).toHaveRegistryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
-      expect(await controller.methods.getOracle().call()).toEqual(oldOracle._address);
-    });
-
-    it.skip("reverts if passed a contract that doesn't implement isPriceOracle", async () => {
-      await expect(send(controller, '_setPriceOracle', [controller._address])).rejects.toRevert();
-      expect(await call(controller, 'oracle')).toEqual(oldOracle._address);
-    });
-
-    it.skip("reverts if passed a contract that implements isPriceOracle as false", async () => {
-      await send(newOracle, 'setIsPriceOracle', [false]); // Note: not yet implemented
-      await expect(send(notOracle, '_setPriceOracle', [controller._address])).rejects.toRevert("revert oracle method isPriceOracle returned false");
-      expect(await call(controller, 'oracle')).toEqual(oldOracle._address);
-    });
-
-    it("accepts a valid price oracle and emits a NewPriceOracle event", async () => {
       const result = await send(controller.registryProxy, '_setOracle', [newOracle._address]);
       expect(result).toSucceed();
       expect(await call(controller, 'getOracle')).toEqual(newOracle._address);
+
+      let currentOracle = await controller.methods.getOracle().call();
+
+      expect(
+          await send(controller.registryProxy, '_setOracle', [newOracle._address], {from: accounts[0]})
+      ).toHaveRegistryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
+      expect(await controller.methods.getOracle().call()).toEqual(currentOracle);
     });
   });
 

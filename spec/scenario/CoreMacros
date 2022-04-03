@@ -12,7 +12,7 @@ Macro PricedController closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     PriceOracle Deploy Simple
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address) -- if listing pEther use ListedEtherToken to replace proxy
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
@@ -31,7 +31,7 @@ Macro NewController price=1.0 closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     PriceOracle Deploy Fixed price
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address) -- if listing pEther use ListedEtherToken to replace proxy
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
@@ -98,8 +98,6 @@ Macro ListedPTokenImmutable erc20 pToken borrowRate=0.000005 initialExchangeRate
 Macro ListedEtherToken pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 admin=Admin
     NewEtherToken pToken borrowRate initialExchangeRate initialReserveFactor decimals
     Controller SupportMarket pToken
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address pETH) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
-    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
 
 Macro ListedEtherTokenMinted pToken borrowRate=0.000005 initialExchangeRate=2e9 initialReserveFactor=1e17 decimals=18 admin=Admin
     NewEtherToken pToken borrowRate initialExchangeRate initialReserveFactor decimals
@@ -117,7 +115,7 @@ Macro ListedPPIEToken pToken underlying borrowRate=0.000005 initialExchangeRate=
     Controller SupportMarket pToken
 
 Macro SetPriceCF pToken price collateralFactor
-    PriceOracle SetPrice pToken price
+    PriceOracleProxy SetPrice pToken price
     Controller SetCollateralFactor pToken collateralFactor
 
 Macro Give user amount erc20

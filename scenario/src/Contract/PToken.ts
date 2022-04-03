@@ -54,6 +54,7 @@ export interface PTokenMethods {
   transfer(address: string, amount: encodedNumber): Sendable<boolean>;
   transferScenario(destinations: string[], amount: encodedNumber): Sendable<boolean>;
   transferFromScenario(froms: string[], amount: encodedNumber): Sendable<boolean>;
+  startBorrowTimestamp(): Callable<number>;
 }
 
 export interface PTokenScenarioMethods extends PTokenMethods {

@@ -22,8 +22,8 @@ Test "Repay borrow should work and not change exchange rate"
     Erc20 Deploy Fee USDT USDT 18 100 Admin
     NewPTokenBringERC20 USDT pUSDT
     NewPToken ZRX pZRX 0.000005 2e9 1e17 8 Standard
-    PriceOracle SetPrice pZRX 1.0
-    PriceOracle SetPrice pUSDT 1.0
+    PriceOracleProxy SetPrice pZRX 1.0
+    PriceOracleProxy SetPrice pUSDT 1.0
     Support pZRX 0.5
     Support pUSDT 0.5
     Give pUSDT 10e18 USDT -- Faucet some Tether to borrow
@@ -58,8 +58,8 @@ Test "Should be able to liquidate fee token borrow"
     Erc20 Deploy Fee USDT USDT 18 100 Admin
     NewPTokenBringERC20 USDT pUSDT
     NewPToken ZRX pZRX 0.000005 2e9 1e17 8 Standard
-    PriceOracle SetPrice pZRX 1.0
-    PriceOracle SetPrice pUSDT 1.0
+    PriceOracleProxy SetPrice pZRX 1.0
+    PriceOracleProxy SetPrice pUSDT 1.0
     Support pZRX 0.5
     Support pUSDT 0.5
     Give pUSDT 10e18 USDT -- Faucet some Tether to borrow
