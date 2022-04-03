@@ -58,8 +58,8 @@ Pending "TODO: Add Back Tether Tests"
 --     Erc20 Deploy ExistingTether USDT TetherAddress
 --     NewPTokenBringERC20 USDT pUSDT
 --     NewPToken ZRX pZRX 0.000005 2e9 8 Standard
---     PriceOracle SetPrice pZRX 1.0
---     PriceOracle SetPrice pUSDT 1.0
+--     PriceOracleProxy SetPrice pZRX 1.0
+--     PriceOracleProxy SetPrice pUSDT 1.0
 --     Support pZRX 0.5
 --     Support pUSDT 0.5
 --     Invariant Static (PToken pUSDT ExchangeRate)
@@ -90,8 +90,8 @@ Pending "TODO: Add Back Tether Tests"
 --     Erc20 Deploy ExistingTether USDT TetherAddress-- FYI tether is 6 decimals
 --     NewPTokenBringERC20 USDT pUSDT
 --     NewPToken ZRX pZRX 0.000005 2e9 8 Standard
---     PriceOracle SetPrice pZRX 1.0
---     PriceOracle SetPrice pUSDT 1e12
+--     PriceOracleProxy SetPrice pZRX 1.0
+--     PriceOracleProxy SetPrice pUSDT 1e12
 --     Support pZRX 0.5
 --     Support pUSDT 0.5
 --     Invariant Static (PToken pUSDT ExchangeRate)

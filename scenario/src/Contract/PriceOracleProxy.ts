@@ -3,9 +3,11 @@ import {Callable, Sendable} from '../Invokation';
 import {encodedNumber} from '../Encoding';
 
 interface PriceOracleProxyMethods {
-  getUnderlyingPrice(asset: string): Callable<number>
-  v1PriceOracle(): Callable<string>;
-  setSaiPrice(amount: encodedNumber): Sendable<number>
+  getUnderlyingPrice(pToken: string): Callable<number>
+  implementaion(): Callable<string>;
+  setDirectPrice(asset: string, amount: encodedNumber): Sendable<void>
+  setUnderlyingPrice(pToken: string, amount: encodedNumber): Sendable<number>
+  assetPrices(asset: string): Callable<number>
 }
 
 export interface PriceOracleProxy extends Contract {

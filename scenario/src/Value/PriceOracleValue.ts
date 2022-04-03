@@ -11,12 +11,12 @@ import {
 import {Arg, Fetcher, getFetcherValue} from '../Command';
 import {getPriceOracle} from '../ContractLookup';
 
-async function getPrice(world: World, priceOracle: PriceOracle, asset: string): Promise<NumberV> {
-  return new NumberV(await priceOracle.methods.assetPrices(asset).call());
-}
-
 export async function getPriceOracleAddress(world: World, priceOracle: PriceOracle): Promise<AddressV> {
   return new AddressV(priceOracle._address);
+}
+
+async function getPrice(world: World, priceOracle: PriceOracle, asset: string): Promise<NumberV> {
+  return new NumberV(await priceOracle.methods.getUnderlyingPrice(asset).call());
 }
 
 export function priceOracleFetchers() {
@@ -40,7 +40,7 @@ export function priceOracleFetchers() {
       "Price",
       [
         new Arg("priceOracle", getPriceOracle, {implicit: true}),
-        new Arg("asset", getAddressV,)
+        new Arg("asset", getAddressV)
       ],
       (world, {priceOracle, asset}) => getPrice(world, priceOracle, asset.val)
     )

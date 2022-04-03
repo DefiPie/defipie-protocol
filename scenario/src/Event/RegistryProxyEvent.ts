@@ -148,6 +148,7 @@ export function registryProxyCommands() {
             [new Arg("registryProxyParams", getEventV, {variadic: true})],
             (world, from, {registryProxyParams}) => genToken(world, from, registryProxyParams.val)
         ),
+
         new Command<{registryProxy: RegistryProxy, newImplementation: AddressV}>(`
         #### SetImplementation
 

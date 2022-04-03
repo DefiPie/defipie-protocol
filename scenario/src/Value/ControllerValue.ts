@@ -78,6 +78,10 @@ async function getBlockNumber(world: World, controller: Controller): Promise<Num
   return new NumberV(await controller.methods.getBlockNumber().call());
 }
 
+async function getBorrowDelay(world: World, controller: Controller): Promise<NumberV> {
+  return new NumberV(await controller.methods.getBorrowDelay().call());
+}
+
 async function getFeeFactorMantissa(world: World, controller: Controller, pToken: PToken): Promise<NumberV> {
   return new NumberV(await controller.methods.getFeeFactorMantissa(pToken._address).call());
 }
@@ -274,6 +278,18 @@ export function controllerFetchers() {
           new Arg("pToken", getPTokenV)
       ],
       (world, {controller, pToken}) => getFeeFactorMantissa(world, controller, pToken)
+    ),
+    new Fetcher<{controller: Controller}, NumberV>(`
+      #### BorrowDelay
+
+        * "Controller BorrowDelay" - Returns the BorrowDelay from controller
+        * E.g. "Controller BorrowDelay"
+      `,
+        "BorrowDelay",
+        [
+          new Arg("controller", getController, {implicit: true})
+        ],
+        (world, {controller}) => getBorrowDelay(world, controller)
     ),
     new Fetcher<{controller: Controller, pToken: PToken}, NumberV>(`
         #### CollateralFactor

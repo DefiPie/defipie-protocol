@@ -276,6 +276,10 @@ contract PErc20DelegatorScenario is PErc20Delegator, PTokenStorage {
         delegateAndReturn();
     }
 
+    function startBorrowTimestamp() public view returns (uint) {
+        delegateToViewAndReturn();
+    }
+
     function delegateToViewAndReturn() private view returns (bytes memory) {
         (bool success, ) = address(this).staticcall(abi.encodeWithSignature("delegateToImplementation(bytes)", msg.data));
 

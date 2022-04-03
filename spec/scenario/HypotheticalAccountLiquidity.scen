@@ -38,7 +38,7 @@ Test "Calculates hypothetical account liquidity"
     -- Fails if the given asset doesn't have a price
     Assert ReadError (Controller Hypothetical Geoff Redeems 1e20 pOMG) "Failed to compute account hypothetical liquidity: error code = 12"
     Assert ReadError (Controller Hypothetical Geoff Borrows 1e20 pOMG) "Failed to compute account hypothetical liquidity: error code = 12"
-    PriceOracle SetPrice pOMG 0.01
+    PriceOracleProxy SetPrice pOMG 0.01
     -- Has a price and now is listed
     Assert Equal (Controller Hypothetical Geoff Redeems 100e9 pOMG) 3.0e18 -- No collateral factor
     Assert Equal (Controller Hypothetical Geoff Borrows 100e18 pOMG) 2.0e18 -- 0.01 * -100e18 = -1e18

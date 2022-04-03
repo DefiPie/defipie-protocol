@@ -59,7 +59,7 @@ contract PriceOracleProxy is PriceOracleProxyStorage, OracleErrorReporter {
         return returnData;
     }
 
-    function delegateAndReturn() private returns (bytes memory) {
+    function delegateAndReturn() internal returns (bytes memory) {
         (bool success, ) = implementation.delegatecall(msg.data);
 
         assembly {

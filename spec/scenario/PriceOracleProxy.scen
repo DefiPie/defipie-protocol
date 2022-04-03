@@ -5,7 +5,7 @@ Macro SetupPriceOracleProxy
     -- Update to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address)
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
@@ -19,7 +19,7 @@ Macro SetupPriceOracleProxy
     ControllerImpl Deploy StandardG3 ControllerG3
     Unitroller SetPendingImpl ControllerG3
     ControllerImpl ControllerG3 Become
-    -- Update to G*
+    -- Update to GScen
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
     ControllerImpl ScenController Become
@@ -33,26 +33,23 @@ Macro SetupPriceOracleProxy
     Controller SupportMarket pSAI
     Controller SupportMarket pDAI
     Controller SupportMarket pUSDT
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address pETH) (Address pUSDC) (Address pSAI) (Address pDAI) (Address pUSDT)
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
 
 Test "uses address(2) for dai and address(1) for usdc"
     SetupPriceOracleProxy
-    PriceOracle SetDirectPrice (Address 0x0000000000000000000000000000000000000001) 5740564708.572881
-    PriceOracle SetDirectPrice (Address 0x0000000000000000000000000000000000000002) 0.005842307360923634
+    PriceOracleProxy SetDirectPrice USDC 5740564708.572881
+    PriceOracleProxy SetDirectPrice DAI 0.005842307360923634
     Assert Equal (PriceOracleProxy Price pUSDC) 5740564708572881000000000000
     Assert Equal (PriceOracleProxy Price pDAI) 5842307360923634
 
 Test "sai price is dai price until set"
     SetupPriceOracleProxy
-    PriceOracle SetDirectPrice (Address 0x0000000000000000000000000000000000000002) 0.005842307360923634
-    Assert Equal (PriceOracleProxy Price pSAI) 5842307360923634
-    PriceOracleProxy SetSaiPrice 0.006842307360923634
-    Assert Equal (PriceOracleProxy Price pSAI) 6842307360923634
+    PriceOracleProxy SetDirectPrice USDC 0.005842307360923634
+    Assert Equal (PriceOracleProxy Price pUSDC) 5842307360923634
 
 Test "gets tether and usdc prices"
     SetupPriceOracleProxy
-    PriceOracle SetDirectPrice (Address 0x0000000000000000000000000000000000000001) 5740564708.572881
+    PriceOracleProxy SetDirectPrice USDT 5740564708.572881
     -- scaled to 1e30 bc both tokens have 6 decimals
     Assert Equal (PriceOracleProxy Price pUSDT) 5740564708572881000000000000
-    Assert Equal (PriceOracleProxy Price pUSDC) 5740564708572881000000000000

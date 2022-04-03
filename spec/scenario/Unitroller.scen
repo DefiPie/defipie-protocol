@@ -3,12 +3,13 @@ Test "Standard Upgrade"
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (PriceOracle Address)
     -- Upgrade to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
-    RegistryProxy SetPriceOracle (PriceOracle Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
     Assert Equal (Controller CloseFactor) 0.2
@@ -39,12 +40,13 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (PriceOracle Address)
     -- Upgrade to G1
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
-    RegistryProxy SetPriceOracle (PriceOracle Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
     Assert Equal (Controller CloseFactor) 0.2
@@ -95,11 +97,12 @@ Test "Once become, can become again"
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (PriceOracle Address)
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
-    RegistryProxy SetPriceOracle (PriceOracle Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
     Assert Equal (Controller CloseFactor) 0.2
@@ -108,7 +111,7 @@ Test "Once become, can become again"
     ControllerImpl Deploy ScenarioG1 ScenControllerG1_2
     Unitroller SetPendingImpl ScenControllerG1_2
     ControllerImpl ScenControllerG1_2 Become
-    RegistryProxy SetPriceOracle (PriceOracle Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.4
     Controller SetMaxAssets 40
     Assert Equal (Controller CloseFactor) 0.4
@@ -132,12 +135,13 @@ Test "Bork and unbork"
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (PriceOracle Address)
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     -- Set a normal impl
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
     Controller SetPieRate 1e18
-    RegistryProxy SetPriceOracle (PriceOracle Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
     Assert Equal (Controller CloseFactor) 0.2
@@ -172,8 +176,8 @@ Macro CheckUnitrollerStorage implementation
 
 Macro CheckV1Storage
     -- Oracle; 4
-    Assert Equal (Controller PriceOracle) (Address PriceOracle)
-    Assert Equal (StorageAt Controller 4 0 "address") (Address PriceOracle)
+    Assert Equal (Controller PriceOracleProxy) (Address PriceOracleProxy)
+    Assert Equal (StorageAt Controller 4 0 "address") (Address PriceOracleProxy)
     -- CloseFactorMantissa; 5
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (StorageAt Controller 5 0 "number") 0.2e18
@@ -260,11 +264,12 @@ Pending "Keeps all storage"
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed 1.0
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (PriceOracle Address)
     ControllerImpl Deploy StandardG3 ControllerG1
     Unitroller SetPendingImpl ControllerG1
     ControllerImpl ControllerG1 Become
     Controller SetPieRate 1e18
-    RegistryProxy SetPriceOracle (PriceOracle Address)
+    RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
     Controller SetPendingAdmin Coburn

@@ -113,6 +113,10 @@ async function getImplementation(world: World, pToken: PToken): Promise<AddressV
   return new AddressV(await (pToken as PErc20Delegator).methods.implementation().call());
 }
 
+async function getStartBorrowTimestamp(world: World, pToken: PToken): Promise<NumberV> {
+    return new NumberV(await pToken.methods.startBorrowTimestamp().call());
+}
+
 async function ppieGetCurrentVotes(world: World, pToken: PToken, account: string): Promise<NumberV> {
     return new NumberV(await pToken.methods.getCurrentVotes(account).call());
 }
@@ -261,7 +265,19 @@ export function pTokenFetchers() {
       (world, { pToken }) => getTotalBorrows(world, pToken),
       { namePos: 1 }
     ),
-
+    new Fetcher<{ pToken: PToken }, NumberV>(`
+    #### StartBorrowTimestamp
+    
+    * "PToken <PToken> StartBorrowTimestamp" - Returns the pToken's total borrow balance
+      * E.g. "PToken pZRX StartBorrowTimestamp"
+    `,
+      "StartBorrowTimestamp",
+      [
+          new Arg("pToken", getPTokenV)
+      ],
+      (world, { pToken }) => getStartBorrowTimestamp(world, pToken),
+      { namePos: 1 }
+    ),
     new Fetcher<{ pToken: PToken }, NumberV>(`
         #### TotalBorrowsCurrent
 

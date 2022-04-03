@@ -70,12 +70,7 @@ describe('UniswapV2PriceOracle', () => {
         let block = await saddle.web3.eth.getBlock("latest");
         await send(mockUniswapV2Pool, 'setBlockTimeStampLast', [block.timestamp]);
 
-        expect(
-            await send(uniswapV2PriceOracle, 'update', [asset._address])
-        ).toHaveLog("PriceUpdated", {
-            asset: asset._address,
-            price: "2785485648324132", // Price in ETH with 18 decimals of precision
-        });
+        await send(uniswapV2PriceOracle, 'update', [asset._address]);
 
         let assetInUSD = new BigNumber('1114194259329652800'); // 1,11$ with 18 decimals of precision
         let assetPriceInETH = await call(uniswapV2PriceOracle, "getCourseInETH", [asset._address]);
@@ -103,12 +98,7 @@ describe('UniswapV2PriceOracle', () => {
 
             await send(mockUniswapV2Pool, 'setBlockTimeStampLast', [timestamp]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [asset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: asset._address,
-                price: "2722007343137834", // Price in ETH with 18 decimals of precision
-            });
+            await send(uniswapV2PriceOracle, 'update', [asset._address]);
 
             let assetInUSD = new BigNumber('1088802937255133600'); // 1,08$ with 18 decimals of precision
             let assetPriceInETH = await call(uniswapV2PriceOracle, "getCourseInETH", [asset._address]);
@@ -1217,26 +1207,11 @@ describe('UniswapV2PriceOracle', () => {
             priceAverage = await call(uniswapV2PriceOracle, "getCourseInETH", [usdc._address]);
             expect(priceAverage).toEqual('0');
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [usdt._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: usdt._address,
-                price: "480795523705607", // Price in ETH with 18 decimals of precision
-            });
+            await send(uniswapV2PriceOracle, 'update', [usdt._address]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [dai._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: dai._address,
-                price: "481290002365351", // Price in ETH with 18 decimals of precision
-            });
+            await send(uniswapV2PriceOracle, 'update', [dai._address]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [usdc._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: usdc._address,
-                price: "481487710010249", // Price in ETH with 18 decimals of precision
-            });
+            await send(uniswapV2PriceOracle, 'update', [usdc._address]);
 
             newMockUniswapV2Factory2 = await deploy('MockUniswapV2FactoryV2');
             newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool');
@@ -1349,12 +1324,7 @@ describe('UniswapV2PriceOracle', () => {
             getPoolPairWithStableCoin3 = await call(uniswapV2PriceOracle, "getPoolPairWithStableCoin", [newAsset._address, '2', '2']);
             expect(getPoolPairWithStableCoin3).toEqual(newMockUniswapV2Pool3._address);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newAsset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "481487710010249000000000000", // Get USDC pool, because reserve is max
-            });
+            await send(uniswapV2PriceOracle, 'update', [newAsset._address]);
 
             priceAverage = await call(uniswapV2PriceOracle, "getCourseInETH", [newAsset._address]);
             calcPriceAverage = await call(uniswapV2PriceOracle, "calcCourseInETH", [newAsset._address]);
@@ -1374,12 +1344,7 @@ describe('UniswapV2PriceOracle', () => {
 
             let pair = await call(uniswapV2PriceOracle, "searchPair", [newAsset._address]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newAsset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "480795523705607000000000000", // Get USDT pool
-            });
+            await send(uniswapV2PriceOracle, 'update', [newAsset._address]);
 
             let assetPair = await call(uniswapV2PriceOracle, "assetPair", [newAsset._address]);
             expect(pair[0]).toEqual(assetPair);
@@ -1402,12 +1367,7 @@ describe('UniswapV2PriceOracle', () => {
 
             let pair = await call(uniswapV2PriceOracle, "searchPair", [newAsset._address]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newAsset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "481290002365351", // Get DAI pool, because 1 DAI = 1 Asset
-            });
+            await send(uniswapV2PriceOracle, 'update', [newAsset._address]);
 
             let assetPair = await call(uniswapV2PriceOracle, "assetPair", [newAsset._address]);
             expect(pair[0]).toEqual(assetPair);
@@ -1428,12 +1388,7 @@ describe('UniswapV2PriceOracle', () => {
                 '0'
             ]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newAsset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "481290002365351", // Get DAI pool, because reserve is max and 1 DAI = 1 Asset
-            });
+            await send(uniswapV2PriceOracle, 'update', [newAsset._address]);
 
             let priceAverage = await call(uniswapV2PriceOracle, "getCourseInETH", [newAsset._address]);
             let calcPriceAverage = await call(uniswapV2PriceOracle, "calcCourseInETH", [newAsset._address]);
@@ -1443,12 +1398,7 @@ describe('UniswapV2PriceOracle', () => {
             let assetPairAddress = await call(uniswapV2PriceOracle, "assetPair", [newAsset._address]);
             expect(assetPairAddress).toEqual(newMockUniswapV2Pool2._address);
 
-            expect(
-                await send(uniswapV2PriceOracle, '_updateAssetPair', [newAsset._address, newMockUniswapV2Pool1._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "480795523705607000000000000",
-            });
+            await send(uniswapV2PriceOracle, '_updateAssetPair', [newAsset._address, newMockUniswapV2Pool1._address]);
 
             priceAverage = await call(uniswapV2PriceOracle, "getCourseInETH", [newAsset._address]);
             calcPriceAverage = await call(uniswapV2PriceOracle, "calcCourseInETH", [newAsset._address]);
@@ -1458,12 +1408,7 @@ describe('UniswapV2PriceOracle', () => {
             assetPairAddress = await call(uniswapV2PriceOracle, "assetPair", [newAsset._address]);
             expect(assetPairAddress).toEqual(newMockUniswapV2Pool1._address);
 
-            expect(
-                await send(uniswapV2PriceOracle, '_updateAssetPair', [newAsset._address, newMockUniswapV2Pool2._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "481290002365351",
-            });
+            await send(uniswapV2PriceOracle, '_updateAssetPair', [newAsset._address, newMockUniswapV2Pool2._address]);
 
             priceAverage = await call(uniswapV2PriceOracle, "getCourseInETH", [newAsset._address]);
             calcPriceAverage = await call(uniswapV2PriceOracle, "calcCourseInETH", [newAsset._address]);
@@ -1504,12 +1449,7 @@ describe('UniswapV2PriceOracle', () => {
             expect(result).toSucceed();
 
             // update token price
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [token._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "1870662228360967",
-            });
+            await send(uniswapV2PriceOracle, 'update', [token._address]);
 
             // update token price - fail (period is not elapsed)
             expect(
@@ -1533,12 +1473,7 @@ describe('UniswapV2PriceOracle', () => {
             await send(pair, 'setBlockTimeStampLast', [+block.timestamp + +766]);
 
             // update token price
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [token._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "1955453362090548",
-            });
+            await send(uniswapV2PriceOracle, 'update', [token._address]);
 
             // create factory #2
             uniswapFactory2 = await deploy('MockUniswapV2FactoryV2');
@@ -1567,12 +1502,7 @@ describe('UniswapV2PriceOracle', () => {
             expect(result).toSucceed();
 
             // update stableCoin
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [stableCoin._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: stableCoin._address,
-                price: "709566091696059",
-            });
+            await send(uniswapV2PriceOracle, 'update', [stableCoin._address]);
 
             tokenPairWithStableCoin = await deploy('MockUniswapV2Pool');
 
@@ -1591,12 +1521,7 @@ describe('UniswapV2PriceOracle', () => {
             result = await send(uniswapFactory2, 'addPair', [stableCoin._address, token._address, tokenPairWithStableCoin._address]);
             expect(result).toSucceed();
 
-            expect(
-                await send(uniswapV2PriceOracle, '_updateAssetPair', [token._address, tokenPairWithStableCoin._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "708857944736546",
-            });
+            await send(uniswapV2PriceOracle, '_updateAssetPair', [token._address, tokenPairWithStableCoin._address]);
 
             // 1620833317
             await send(tokenPairWithStableCoin, 'setData', [
@@ -1611,12 +1536,7 @@ describe('UniswapV2PriceOracle', () => {
             await send(tokenPairWithStableCoin, 'setBlockTimeStampLast', [+block.timestamp + +3048]);
 
             // update token price
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [token._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "708964379650300",
-            });
+            await send(uniswapV2PriceOracle, 'update', [token._address]);
 
             // 1620834909
             await send(tokenPairWithStableCoin, 'setData', [
@@ -1631,12 +1551,7 @@ describe('UniswapV2PriceOracle', () => {
             await send(tokenPairWithStableCoin, 'setBlockTimeStampLast', [+block.timestamp + +4640]);
 
             // update token price
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [token._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "708447815535546",
-            });
+            await send(uniswapV2PriceOracle, 'update', [token._address]);
 
             // stable coin with decimals 18, for example dai
             newStableCoin = await makeToken();
@@ -1663,12 +1578,7 @@ describe('UniswapV2PriceOracle', () => {
             expect(result).toSucceed();
 
             // update stableCoin
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newStableCoin._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newStableCoin._address,
-                price: "985816335955356",
-            });
+            await send(uniswapV2PriceOracle, 'update', [newStableCoin._address]);
 
             tokenPairWithNewStableCoin = await deploy('MockUniswapV2Pool');
 
@@ -1688,12 +1598,7 @@ describe('UniswapV2PriceOracle', () => {
             result = await send(uniswapFactory2, 'addPair', [newStableCoin._address, token._address, tokenPairWithNewStableCoin._address]);
             expect(result).toSucceed();
 
-            expect(
-                await send(uniswapV2PriceOracle, '_updateAssetPair', [token._address, tokenPairWithNewStableCoin._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "1975571988074291",
-            });
+            await send(uniswapV2PriceOracle, '_updateAssetPair', [token._address, tokenPairWithNewStableCoin._address]);
 
             // 1620848689
             await send(tokenPairWithNewStableCoin, 'setData', [
@@ -1708,12 +1613,7 @@ describe('UniswapV2PriceOracle', () => {
             await send(tokenPairWithNewStableCoin, 'setBlockTimeStampLast', [+block.timestamp + +3678]);
 
             // update token price
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [token._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "1986543955301333",
-            });
+            await send(uniswapV2PriceOracle, 'update', [token._address]);
 
             // 1620849335
             await send(tokenPairWithNewStableCoin, 'setData', [
@@ -1728,12 +1628,7 @@ describe('UniswapV2PriceOracle', () => {
             await send(tokenPairWithNewStableCoin, 'setBlockTimeStampLast', [+block.timestamp + +4324]);
 
             // update token price
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [token._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: token._address,
-                price: "1991368507936111",
-            });
+            await send(uniswapV2PriceOracle, 'update', [token._address]);
         });
     });
 
@@ -1802,26 +1697,11 @@ describe('UniswapV2PriceOracle', () => {
                 newMockUniswapV2Factory1._address
             ]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [usdt._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: usdt._address,
-                price: "480795523705607", // Price in ETH with 18 decimals of precision
-            });
+            await send(uniswapV2PriceOracle, 'update', [usdt._address]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [dai._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: dai._address,
-                price: "481290002365351", // Price in ETH with 18 decimals of precision
-            });
+            await send(uniswapV2PriceOracle, 'update', [dai._address]);
 
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [usdc._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: usdc._address,
-                price: "481487710010249", // Price in ETH with 18 decimals of precision
-            });
+            await send(uniswapV2PriceOracle, 'update', [usdc._address]);
 
             newMockUniswapV2Factory2 = await deploy('MockUniswapV2FactoryV2');
             newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool');
@@ -1872,12 +1752,7 @@ describe('UniswapV2PriceOracle', () => {
 
         it("remove liquidity for pair", async () => {
             // update asset (set #1 pair)
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newAsset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "481487228522538", // Get USDC pool, because reserve is max
-            });
+            await send(uniswapV2PriceOracle, 'update', [newAsset._address]);
 
             // remove liquidity from pair usdc/new asset
             await send(newMockUniswapV2Pool3, 'setData', [
@@ -1890,12 +1765,8 @@ describe('UniswapV2PriceOracle', () => {
             ]);
 
             // update asset (search new pair and set pair dai/new asset)
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newAsset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "481290002365351", // Get DAI pool, because reserve is max
-            });
+            await send(uniswapV2PriceOracle, 'update', [newAsset._address]);
+
 
             // remove liquidity from #2 pair
             await send(newMockUniswapV2Pool2, 'setData', [
@@ -1908,12 +1779,8 @@ describe('UniswapV2PriceOracle', () => {
             ]);
 
             // update asset (search new pair and set pair usdt/new asset)
-            expect(
-                await send(uniswapV2PriceOracle, 'update', [newAsset._address])
-            ).toHaveLog("PriceUpdated", {
-                asset: newAsset._address,
-                price: "480795042910083", // Get USDT pool, because reserve is max
-            });
+            await send(uniswapV2PriceOracle, 'update', [newAsset._address])
+
 
             // add liquidity to #1 and #2 pair
             await send(newMockUniswapV2Pool2, 'setData', [

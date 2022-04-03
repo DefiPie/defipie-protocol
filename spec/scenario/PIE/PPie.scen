@@ -302,7 +302,7 @@ Macro InKindBorrow borrowAmount borrowRate user=Geoff borrowPrice=1.0 mintAmount
     PricedController
     Controller LiquidationIncentive 1.1
     ListedPPIEToken pPIE PIE borrowRate 0.02 0 18
-    PriceOracle SetPrice pPIE borrowPrice
+    PriceOracleProxy SetPrice pPIE borrowPrice
     Controller SetCollateralFactor pPIE 0.5
     From Coburn (ERC20 PIE Transfer Geoff mintAmount)
     From user (Pie Approve pPIE mintAmount)
@@ -370,8 +370,8 @@ Test "Delegate from borrow to liquidator after liquidate"
 --    NewPToken BAT pBAT borrowRate 2e9 0 8 borrowTokenType -- note: cannot use macros with named args right now
 --    ListedPPIEToken pPIE PIE borrowRate 0.02 0 18
 --    Give pBAT giveAmount BAT -- Faucet some bat
---    PriceOracle SetPrice pBAT borrowPrice
---    PriceOracle SetPrice pPIE borrowPrice
+--    PriceOracleProxy SetPrice pBAT borrowPrice
+--    PriceOracleProxy SetPrice pPIE borrowPrice
 --    Support pBAT collateralFactor:0.5
 --    Controller SetCollateralFactor pPIE 0.5
 --    Prep user mintAmount BAT pBAT

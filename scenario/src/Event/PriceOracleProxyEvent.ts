@@ -1,98 +1,94 @@
 import {Event} from '../Event';
-import {addAction, World} from '../World';
+import {addAction, World, describeUser} from '../World';
 import {PriceOracleProxy} from '../Contract/PriceOracleProxy';
 import {buildPriceOracleProxy} from '../Builder/PriceOracleProxyBuilder';
 import {invoke} from '../Invokation';
 import {
+  getAddressV,
   getEventV,
-  getExpNumberV,
-  getStringV
+  getExpNumberV
 } from '../CoreValue';
 import {
+  AddressV,
   EventV,
-  NumberV,
-  StringV
+  NumberV
 } from '../Value';
-import {Arg, Command, processCommandEvent, View} from '../Command';
+import {Arg, Command, processCommandEvent} from '../Command';
 import {getPriceOracleProxy} from '../ContractLookup';
-import {verify} from '../Verify';
 
 async function genPriceOracleProxy(world: World, from: string, params: Event): Promise<World> {
-  let priceOracleProxy;
-  let invokation;
 
-  ({world, priceOracleProxy, invokation} = await buildPriceOracleProxy(world, from, params));
+  let {world: newWorld, priceOracleProxy, priceOracleProxyData} = await buildPriceOracleProxy(world, from, params);
+  world = newWorld;
 
   world = addAction(
     world,
-    `Deployed PriceOracleProxy to address ${priceOracleProxy._address}`,
-    invokation
+      `Added RegistryProxy (${priceOracleProxyData.description}) at address ${priceOracleProxy._address}`,
+      priceOracleProxyData.invokation
   );
 
   return world;
 }
 
-async function verifyPriceOracleProxy(world: World, priceOracleProxy: PriceOracleProxy, apiKey: string, contractName: string): Promise<World> {
-  if (world.isLocalNetwork()) {
-    world.printer.printLine(`Politely declining to verify on local network: ${world.network}.`);
-  } else {
-    await verify(world, apiKey, "PriceOracleProxy", contractName, priceOracleProxy._address);
-  }
-
-  return world;
-}
-
-async function setSaiPrice(world: World, from: string, priceOracleProxy: PriceOracleProxy, amount: NumberV): Promise<World> {
+async function setPrice(world: World, from: string, priceOracleProxy: PriceOracleProxy, pToken: string, amount: NumberV): Promise<World> {
   return addAction(
     world,
-    `Set price oracle SAI price to ${amount.show()}`,
-    await invoke(world, priceOracleProxy.methods.setSaiPrice(amount.encode()), from)
+    `Set price oracle price for ${pToken} to ${amount.show()}`,
+    await invoke(world, priceOracleProxy.methods.setUnderlyingPrice(pToken, amount.encode()), from)
   );
+}
+
+async function setDirectPrice(world: World, from: string, priceOracleProxy: PriceOracleProxy, asset: string, amount: NumberV): Promise<World> {
+  let invokation = await invoke(world, priceOracleProxy.methods.setDirectPrice(asset, amount.encode()), from);
+
+  world = addAction(
+      world,
+      `Called add PPIE address ${asset} to ${amount.show()} as ${describeUser(world, from)}`,
+      invokation
+  );
+
+  return world;
 }
 
 export function priceOracleProxyCommands() {
   return [
-    new Command<{params: EventV}>(`
+    new Command<{priceOracleProxyParams: EventV}>(`
         #### Deploy
-
-        * "Deploy ...params" - Generates a new price oracle proxy
-          * E.g. "PriceOracleProxy Deploy (Unitroller Address) (PriceOracle Address) (pEther Address)"
+        * "PriceOracleProxy Deploy ...priceOracleProxyParams" - Generates a new PriceOracleProxy
+          * E.g. "PriceOracleProxy Deploy ..."
       `,
-      "Deploy",
-      [
-        new Arg("params", getEventV, {variadic: true})
-      ],
-      (world, from, {params}) => genPriceOracleProxy(world, from, params.val)
+    "Deploy",
+    [new Arg("priceOracleProxyParams", getEventV, {variadic: true})],
+    (world, from, {priceOracleProxyParams}) => genPriceOracleProxy(world, from, priceOracleProxyParams.val)
     ),
+    new Command<{priceOracleProxy: PriceOracleProxy, asset: AddressV, amount: NumberV}>(`
+        #### SetDirectPrice
 
-    new View<{priceOracleProxy: PriceOracleProxy, apiKey: StringV, contractName: StringV}>(`
-        #### Verify
-
-        * "Verify apiKey:<String> contractName:<String>=PriceOracleProxy" - Verifies PriceOracleProxy in Etherscan
-          * E.g. "PriceOracleProxy Verify "myApiKey"
+        * "SetDirectPrice <Address> <Amount>" - Sets the per-ether price for the given pToken
+          * E.g. "PriceOracle SetDirectPrice (Address Zero) 1.0"
       `,
-      "Verify",
+      "SetDirectPrice",
       [
         new Arg("priceOracleProxy", getPriceOracleProxy, {implicit: true}),
-        new Arg("apiKey", getStringV),
-        new Arg("contractName", getStringV, {default: new StringV("PriceOracleProxy")})
-      ],
-      (world, {priceOracleProxy, apiKey, contractName}) => verifyPriceOracleProxy(world, priceOracleProxy, apiKey.val, contractName.val)
-    ),
-
-    new Command<{priceOracleProxy: PriceOracleProxy, amount: NumberV}>(`
-        #### SetSaiPrice
-
-        * "SetSaiPrice <Amount>" - Sets the per-ether price for SAI
-          * E.g. "PriceOracleProxy SetSaiPrice 1.0"
-      `,
-      "SetSaiPrice",
-      [
-        new Arg("priceOracleProxy", getPriceOracleProxy, {implicit: true}),
+        new Arg("asset", getAddressV),
         new Arg("amount", getExpNumberV)
       ],
-      (world, from, {priceOracleProxy, amount}) => setSaiPrice(world, from, priceOracleProxy, amount)
-    )
+      (world, from, {priceOracleProxy, asset, amount}) => setDirectPrice(world, from, priceOracleProxy, asset.val, amount)
+    ),
+    new Command<{priceOracleProxy: PriceOracleProxy, pToken: AddressV, amount: NumberV}>(`
+        #### SetPrice
+
+        * "SetPrice <PToken> <Amount>" - Sets the per-ether price for the given pToken
+          * E.g. "PriceOracle SetPrice pZRX 1.0"
+      `,
+      "SetPrice",
+      [
+        new Arg("priceOracleProxy", getPriceOracleProxy, {implicit: true}),
+        new Arg("pToken", getAddressV),
+        new Arg("amount", getExpNumberV)
+      ],
+      (world, from, {priceOracleProxy, pToken, amount}) => setPrice(world, from, priceOracleProxy, pToken.val, amount)
+    ),
   ];
 }
 

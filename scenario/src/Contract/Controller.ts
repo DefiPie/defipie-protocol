@@ -63,6 +63,7 @@ interface ControllerMethods {
   _setPieSpeed(pToken: string, encodedNumber): Sendable<void>
   getPieAddress(): Callable<string>
   getFeeFactorMantissa(string): Callable<number>
+  getBorrowDelay(): Callable<number>
 }
 
 export interface Controller extends Contract {

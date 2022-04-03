@@ -5,9 +5,9 @@ Macro NewBorrow borrowAmount mintAmount borrowRate=0.000005 user=Geoff collatera
     NewPToken ZRX pZRX
     NewPToken BAT pBAT borrowRate
     Give pBAT 10e18 BAT -- Faucet some bat to borrow
-    PriceOracle SetPrice pZRX collateralPrice
+    PriceOracleProxy SetPrice pZRX collateralPrice
     Support pZRX collateralFactor:0.7
-    PriceOracle SetPrice pBAT borrowPrice
+    PriceOracleProxy SetPrice pBAT borrowPrice
     Support pBAT collateralFactor:0
     SimpleBorrow user borrowAmount mintAmount
 
@@ -29,7 +29,7 @@ Test "When account goes further underwater than the liquidation incentive and ca
     --
     -- Put the account underwater s.t. 0.91 < Borrow/Supply
     --      i.e. (1 / liquidationIncentive) < Borrow/Supply
-    PriceOracle SetPrice pZRX 0.76
+    PriceOracleProxy SetPrice pZRX 0.76
     --
     -- Pay back a bunch of debt by liquidating
     Prep Jared 10e18 BAT pBAT
@@ -55,7 +55,7 @@ Test "When account goes further underwater than the liquidation incentive and ca
     --
     -- Put the account underwater s.t. 0.91 < Borrow/Supply
     --      i.e. (1 / liquidationIncentive) < Borrow/Supply
-    PriceOracle SetPrice pZRX 0.76
+    PriceOracleProxy SetPrice pZRX 0.76
     --
     -- Pay back a bunch of debt by liquidating
     Prep Jared 10e18 BAT pBAT
@@ -76,7 +76,7 @@ Test "When liquidation incentive is too high to be effective (liquidate guardian
     --
     -- Put the account underwater s.t. 0.7 < Borrow/Supply
     --              i.e. collateral factor < Borrow/Supply
-    PriceOracle SetPrice pZRX 0.87
+    PriceOracleProxy SetPrice pZRX 0.87
     --
     -- Now any amount of debt that we pay back by liquidating will make liquidity worse
     --
@@ -115,7 +115,7 @@ Test "When liquidation incentive is too high to be effective"
     --
     -- Put the account underwater s.t. 0.7 < Borrow/Supply
     --              i.e. collateral factor < Borrow/Supply
-    PriceOracle SetPrice pZRX 0.87
+    PriceOracleProxy SetPrice pZRX 0.87
     --
     -- Now any amount of debt that we pay back by liquidating will make liquidity worse
     --

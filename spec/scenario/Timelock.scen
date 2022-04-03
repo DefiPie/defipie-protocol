@@ -187,7 +187,7 @@ Test "Set Pending Controller implementation on Unitroller from Timelock"
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     Assert Equal (Unitroller PendingImplementation) (ControllerImpl ScenControllerG1 Address)
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing pEther use ListedEtherToken to replace proxy
+    PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (PriceOracle Address)-- if listing pEther use ListedEtherToken to replace proxy
     ControllerImpl ScenControllerG1 Become
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.1
