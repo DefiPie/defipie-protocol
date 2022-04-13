@@ -1,7 +1,7 @@
 -- Mint Tests
 
 Test "Mint 1 pWBTC"
-    NewController
+    NewController price:40000
     ListedPToken WBTC pWBTC initialExchangeRate:0.2 tokenType:WBTC
     Prep Geoff Some WBTC pWBTC
     Mint Geoff 10e8 pWBTC
@@ -9,7 +9,7 @@ Test "Mint 1 pWBTC"
     Assert Equal (PToken pWBTC UnderlyingBalance Geoff) (Exactly 10e8)
 
 Test "Mint WBTC with insufficient allowance"
-    NewController
+    NewController price:40000
     ListedPToken WBTC pWBTC initialExchangeRate:0.2 tokenType:WBTC
     Prep Geoff 5e8 WBTC pWBTC allowanceAmount:4.9e8
     AllowFailures
@@ -19,7 +19,7 @@ Test "Mint WBTC with insufficient allowance"
     Assert Equal (Erc20 pWBTC TokenBalance Geoff) (Exactly 0e8)
 
 Test "Mint WBTC with insufficient balance"
-    NewController
+    NewController price:40000
     ListedPToken WBTC pWBTC initialExchangeRate:0.2 tokenType:WBTC
     Prep Geoff 4.9e8 WBTC pWBTC allowanceAmount:5e8
     AllowFailures
@@ -29,7 +29,7 @@ Test "Mint WBTC with insufficient balance"
     Assert Equal (Erc20 pWBTC TokenBalance Geoff) (Exactly 0e8)
 
 Test "Mint two WBTC after minting two WBTC, and then I mint two more"
-    NewController
+    NewController price:40000
     ListedPToken WBTC pWBTC initialExchangeRate:0.2 tokenType:WBTC
     Prep Geoff Some WBTC pWBTC
     Mint Geoff 2e8 pWBTC
@@ -43,7 +43,7 @@ Test "Mint two WBTC after minting two WBTC, and then I mint two more"
     Assert Equal (Erc20 pWBTC TotalSupply) (Exactly 30e8)
 
 Test "Two users Mint WBTC"
-    NewController
+    NewController price:40000
     ListedPToken WBTC pWBTC initialExchangeRate:0.2 tokenType:WBTC
     Prep Geoff Some WBTC pWBTC
     Prep Torrey Some WBTC pWBTC
@@ -56,7 +56,7 @@ Test "Two users Mint WBTC"
     Assert Equal (Erc20 pWBTC TotalSupply) (Exactly 20e8)
 
 Test "Mint WBTC accrues no interest without borrows"
-    NewController
+    NewController price:40000
     ListedPToken WBTC pWBTC initialExchangeRate:0.2 tokenType:WBTC
     Prep Geoff Some WBTC pWBTC
     Prep Torrey Some WBTC pWBTC
@@ -68,7 +68,7 @@ Test "Mint WBTC accrues no interest without borrows"
     Assert Equal (Erc20 pWBTC TotalSupply) (Exactly 10e8)
 
 Test "Mint WBTC transfer in fails due to paused"
-    NewController
+    NewController price:40000
     ListedPToken WBTC pWBTC initialExchangeRate:0.2 tokenType:WBTC
     Prep Geoff Some WBTC pWBTC
     Prep Torrey Some WBTC pWBTC
@@ -81,7 +81,7 @@ Test "Mint WBTC transfer in fails due to paused"
     Assert Revert
 
 Test "Denied by controller because WBTC unlisted"
-    NewController
+    NewController price:40000
     NewPToken WBTC pWBTC tokenType:WBTC
     Prep Geoff Some WBTC pWBTC
     Prep Torrey Some WBTC pWBTC

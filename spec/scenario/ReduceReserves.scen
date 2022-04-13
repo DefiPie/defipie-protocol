@@ -63,7 +63,7 @@ Test "Reduce partial reserves and verify effects"
     -- (54.5e18+0.5e18-0.0e18)/500.0e8
     Assert Equal (PToken pZRX ExchangeRate) (Exactly 1.08e9)
 
-Test "Redeem all and then reduce all reserves"
+Test "Redeem all possible tokens and then reduce all reserves"
     NewController
     ListedPToken ZRX pZRX initialExchangeRate:1e9
     Prep Geoff 50e18 ZRX pZRX
@@ -85,27 +85,28 @@ Test "Redeem all and then reduce all reserves"
     Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 54e18)
     -- (55.0e18+0.0e18-1.0e18)/500.0e8
     Assert Equal (PToken pZRX ExchangeRate) (Exactly 1.08e9)
+    Assert Equal (PriceOracleProxy Price pZRX) 1e18 -- $1 price
+    Assert Equal (PToken pZRX UnderlyingAmountMin) 10e18 -- $10
     -- Now let's redeem all
-    Redeem Geoff 500e8 pZRX
+    Redeem Geoff 407.40740740e8 pZRX -- (500e8 / 54e18) * 10e18 = 407407407407
     -- Check our values
-    Assert Equal (Erc20 ZRX TokenBalance Geoff) (Exactly 54e18)
-    Assert Equal (Erc20 ZRX TokenBalance pZRX) (Exactly 1e18)
+    Assert Equal (Erc20 ZRX TokenBalance Geoff) (Exactly 43.9999999992e18)
+    Assert Equal (Erc20 ZRX TokenBalance pZRX) (Exactly 11.0000000008e18)
     Assert Equal (Erc20 ZRX TokenBalance Root) (Exactly 0e18)
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) (Exactly 0e8)
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) (Exactly 92.5925926e8)
     Assert Equal (PToken pZRX Reserves) (Exactly 1e18)
-    Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 0e18)
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 10.0000000008e18)
     -- 0 tokens implies initial exchange rate
-    Assert Equal (PToken pZRX ExchangeRate) (Exactly 1e9)
+    Assert Equal (PToken pZRX ExchangeRate) (Exactly 1.08e9)
     -- Then now, let's pull out all of our reserves (1e18)
     ReduceReserves 1e18 pZRX
-    Assert Equal (Erc20 ZRX TokenBalance Geoff) (Exactly 54e18)
-    Assert Equal (Erc20 ZRX TokenBalance pZRX) (Exactly 0e18)
+    Assert Equal (Erc20 ZRX TokenBalance Geoff) (Exactly 43.9999999992e18)
+    Assert Equal (Erc20 ZRX TokenBalance pZRX) (Exactly 10.0000000008e18)
     Assert Equal (Erc20 ZRX TokenBalance Root) (Exactly 1e18)
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) (Exactly 0e8)
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) (Exactly 92.5925926e8)
     Assert Equal (PToken pZRX Reserves) (Exactly 0e18)
-    Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 0e18)
-    -- 0 tokens implies initial exchange rate
-    Assert Equal (PToken pZRX ExchangeRate) (Exactly 1e9)
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) (Exactly 10.0000000008e18)
+    Assert Equal (PToken pZRX ExchangeRate) (Exactly 1.08e9)
 
 Test "Reduce reserves WBTC when paused"
     NewController

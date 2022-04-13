@@ -1,6 +1,6 @@
 -- Delegate upgrade tests
 
-Test "Change the delegate"
+Test "Change the delegate and check redeem"
     NewController
     NewPToken DEL pDEL
     Support pDEL collateralFactor:0.5
@@ -8,4 +8,12 @@ Test "Change the delegate"
     Mint Jared 100e18 pDEL
     PTokenDelegate Deploy PErc20Delegate pErc20Delegate2
     RegistryProxy SetPTokenImplementation (PTokenDelegate pErc20Delegate2 Address)
-    Redeem Jared 50e9 pDEL
+    Assert Equal (PriceOracleProxy Price pDEL) 1e18 -- $1 price
+    Assert Equal (PToken pDEL TokenBalance Jared) 50e9
+    Assert Equal (PToken pDEL UnderlyingBalance Jared) 100e18
+    Assert Equal (PToken pDel UnderlyingAmountMin) 10e18 -- $10
+    Assert Equal (Erc20 DEL TokenBalance pDEL) 100e18
+    Redeem Jared 45e9 pDEL
+    Assert Equal (PToken pDEL TokenBalance Jared) 5e9
+    Assert Equal (PToken pDEL UnderlyingBalance Jared) 10e18
+    Assert Equal (Erc20 DEL TokenBalance pDEL) 10e18

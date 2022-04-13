@@ -65,7 +65,7 @@ export function priceOracleProxyCommands() {
         #### SetDirectPrice
 
         * "SetDirectPrice <Address> <Amount>" - Sets the per-ether price for the given pToken
-          * E.g. "PriceOracle SetDirectPrice (Address Zero) 1.0"
+          * E.g. "PriceOracleProxy SetDirectPrice (Address Zero) 1.0"
       `,
       "SetDirectPrice",
       [
@@ -79,7 +79,7 @@ export function priceOracleProxyCommands() {
         #### SetPrice
 
         * "SetPrice <PToken> <Amount>" - Sets the per-ether price for the given pToken
-          * E.g. "PriceOracle SetPrice pZRX 1.0"
+          * E.g. "PriceOracleProxy SetPrice pZRX 1.0"
       `,
       "SetPrice",
       [

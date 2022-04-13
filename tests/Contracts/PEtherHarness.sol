@@ -90,7 +90,7 @@ contract PEtherHarness is PEther {
     }
 
     function harnessRedeemFresh(address payable account, uint pTokenAmount, uint underlyingAmount) public returns (uint) {
-        (uint err,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        (uint err,,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
         return err;
     }
 
@@ -263,7 +263,7 @@ contract PEtherDelegateHarness is PEtherDelegate {
     }
 
     function harnessRedeemFresh(address payable account, uint pTokenAmount, uint underlyingAmount) public returns (uint) {
-        (uint err,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        (uint err,,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
         return err;
     }
 

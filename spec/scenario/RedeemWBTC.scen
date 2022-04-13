@@ -12,9 +12,9 @@ Test "Mint WBTC then Redeem All"
     Invariant Static (PToken pWBTC ExchangeRateStored)
     -- Now redeem after some time
     FastForward 2 Blocks
-    Redeem Geoff 500e8 pWBTC
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) Zero
-    Assert Equal (Erc20 WBTC TokenBalance Geoff) 70e8
+    Redeem Geoff 400e8 pWBTC
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 100e8
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) 60e8
 
 Test "Mint WBTC, Enter and then Redeem All"
     NewController
@@ -29,9 +29,9 @@ Test "Mint WBTC, Enter and then Redeem All"
     -- Now redeem after some time
     FastForward 2 Blocks
     EnterMarkets Geoff pWBTC
-    Redeem Geoff 500e8 pWBTC
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) Zero
-    Assert Equal (Erc20 WBTC TokenBalance Geoff) 70e8
+    Redeem Geoff 400e8 pWBTC
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 100e8
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) 60e8
 
 Test "Mint WBTC then Redeem Part"
     NewController
@@ -99,12 +99,12 @@ Test "Mint WBTC then redeem with interest - no reserves"
     Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 55e8
     Assert Equal (PToken pWBTC ExchangeRate) 0.11
     -- Now redeem all with interest
-    Redeem Geoff 500e8 pWBTC
-    Assert Equal (Erc20 WBTC TokenBalance Geoff) 55e8
-    Assert Equal (Erc20 WBTC TokenBalance pWBTC) 0e8
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 0e8
-    Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 0e8
-    Assert Equal (PToken pWBTC ExchangeRate) 0.1
+    Redeem Geoff 409.0909091e8 pWBTC
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) 45e8
+    Assert Equal (Erc20 WBTC TokenBalance pWBTC) 10e8
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 90.9090909e8
+    Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 9.99999999e8
+    Assert Equal (PToken pWBTC ExchangeRate) 0.110000000011
 
 Test "Mint WBTC then redeem part with interest - no reserves"
     NewController
@@ -125,10 +125,11 @@ Test "Mint WBTC then redeem part with interest - no reserves"
     Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 55e8
     Assert Equal (PToken pWBTC ExchangeRate) 0.11
     -- Now redeem all with interest
-    Redeem Geoff 499e8 pWBTC
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 1e8
-    Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 0.11e8
-    Assert Equal (PToken pWBTC ExchangeRate) 0.11
+    Redeem Geoff 408.0909091e8 pWBTC
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 91.9090909e8
+    Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 10.10999999e8
+    Assert Equal (PToken pWBTC ExchangeRate) 0.11000000001088032
+    Assert Equal (Erc20 WBTC TokenBalance pWBTC) 10.11e8
 
 Test "Mint WBTC then redeem with reserves and interest"
     NewController
@@ -151,30 +152,30 @@ Test "Mint WBTC then redeem with reserves and interest"
     -- 55e8 + 0e8 - 1e8 / 500
     Assert Equal (PToken pWBTC ExchangeRate) 0.108
     -- Now redeem all with interest
-    Redeem Geoff 500e8 pWBTC
-    Assert Equal (Erc20 WBTC TokenBalance Geoff) 54e8
-    Assert Equal (Erc20 WBTC TokenBalance pWBTC) 1e8
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 0e8
+    Redeem Geoff 407.4074074e8 pWBTC
+    Assert Equal (Erc20 WBTC TokenBalance Geoff) 43.99999999e8
+    Assert Equal (Erc20 WBTC TokenBalance pWBTC) 11.00000001e8
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 92.5925926e8
     Assert Equal (PToken pWBTC Reserves) 1e8
-    Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 0e8
-    Assert Equal (PToken pWBTC ExchangeRate) 0.1
+    Assert Equal (PToken pWBTC UnderlyingBalance Geoff) 10e8
+    Assert Equal (PToken pWBTC ExchangeRate) 0.10800000009936
 
 Test "Two users Mint WBTC, one redeems"
     NewController
     ListedPToken WBTC pWBTC initialExchangeRate:0.1 tokenType:WBTC
     Prep Geoff Some WBTC pWBTC
     Prep Torrey Some WBTC pWBTC
-    Mint Geoff 2e8 pWBTC
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 20e8
-    Assert Equal (Erc20 pWBTC TotalSupply) 20e8
-    Mint Torrey 2e8 pWBTC
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 20e8
-    Assert Equal (Erc20 pWBTC TokenBalance Torrey) 20e8
-    Assert Equal (Erc20 pWBTC TotalSupply) 40e8
-    Redeem Torrey 10e8 pWBTC
-    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 20e8
-    Assert Equal (Erc20 pWBTC TokenBalance Torrey) 10e8
-    Assert Equal (Erc20 pWBTC TotalSupply) 30e8
+    Mint Geoff 20e8 pWBTC
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 200e8
+    Assert Equal (Erc20 pWBTC TotalSupply) 200e8
+    Mint Torrey 20e8 pWBTC
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 200e8
+    Assert Equal (Erc20 pWBTC TokenBalance Torrey) 200e8
+    Assert Equal (Erc20 pWBTC TotalSupply) 400e8
+    Redeem Torrey 100e8 pWBTC
+    Assert Equal (Erc20 pWBTC TokenBalance Geoff) 200e8
+    Assert Equal (Erc20 pWBTC TokenBalance Torrey) 100e8
+    Assert Equal (Erc20 pWBTC TotalSupply) 300e8
 
 Test "Redeem WBTC transfer out fails"
     NewController

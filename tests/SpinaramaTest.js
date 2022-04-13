@@ -90,8 +90,8 @@ describe('Spinarama', () => {
 
   describe('#repayRepay', () => {
     it('should succeed', async () => {
-      const pToken1 = await makePToken({priceOracle: priceOracle, supportMarket: true, underlyingPrice: 1, collateralFactor: .5});
-      const pToken2 = await makePToken({priceOracle: priceOracle, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, supportMarket: true, underlyingPrice: 1, controller: pToken1.controller});
+      const pToken1 = await makePToken({priceOracle: priceOracle, supportMarket: true, underlyingPrice: 1e18, collateralFactor: .5});
+      const pToken2 = await makePToken({priceOracle: priceOracle, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, supportMarket: true, underlyingPrice: 1e18, controller: pToken1.controller});
       await send(pToken1.underlying, 'harnessSetBalance', [from, 10]);
       await send(pToken1.underlying, 'approve', [pToken1._address, 10], {from});
       await send(pToken2.underlying, 'harnessSetBalance', [pToken2._address, 10]);
