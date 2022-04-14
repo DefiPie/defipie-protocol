@@ -1,9 +1,10 @@
 -- NewController, but with markets listed so that we can make them pie markets in constructor
-Macro FlywheelController price=1.0 borrowRate=0.000005 pieInitAmount=5000000e18
+Macro FlywheelController price=10.0 borrowRate=0.000005 pieInitAmount=5000000e18
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed price
     PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address)
+    PriceOracleProxy SetPrice (PriceOracle Address) price -- fixed oracle, set price for all assets
     ----g4
     ControllerImpl Deploy ScenarioG4 ControllerScen
     Unitroller SetPendingImpl ControllerScen
@@ -225,7 +226,7 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
     Assert Equal (Controller PieAccrued Geoff) 0
 
 Test "TransferPie handles running out of PIE in Controller correctly"
-    FlywheelController price:1.0 borrowRate:0.000005 pieInitAmount:1e18
+    FlywheelController price:10.0 borrowRate:0.000005 pieInitAmount:1e18
     InitSpeeds
     Assert Equal (Controller BlockNumber) 0
     Assert Equal (Controller PieSupplyState pZRX "block") 0

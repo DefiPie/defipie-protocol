@@ -4,11 +4,15 @@ Macro NewBorrow borrowAmount mintAmount borrowRate=0.000005 user=Geoff collatera
     Controller LiquidationIncentive liquidationIncentive
     NewPToken ZRX pZRX
     NewPToken BAT pBAT borrowRate
-    Give pBAT 10e18 BAT -- Faucet some bat to borrow
     PriceOracleProxy SetPrice pZRX collateralPrice
     Support pZRX collateralFactor:0.7
     PriceOracleProxy SetPrice pBAT borrowPrice
     Support pBAT collateralFactor:0
+    -- For mint min amount
+    Prep Torrey 10e18 ZRX pZRX
+    Mint Torrey 10e18 pZRX
+    Prep Torrey 10e18 BAT pBAT
+    Mint Torrey 10e18 pBAT
     SimpleBorrow user borrowAmount mintAmount
 
 Macro SimpleBorrow user borrowAmount mintAmount

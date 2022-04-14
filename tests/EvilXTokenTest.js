@@ -69,7 +69,7 @@ describe('EvilX Token tests', () => {
 
             let evilXToken = await deploy('EvilXToken');
 
-            initialAmount = '100000000000000000000';
+            initialAmount = '10000000000000000000000';
             name = 'XToken';
             symbol = 'X';
             decimals = '18';
@@ -104,11 +104,11 @@ describe('EvilX Token tests', () => {
 
             // 2.
             let pTokenSimple = await saddle.getContractAt('PErc20DelegateHarness', pTokenAddress);
-            let amount = 1000000000000;
+            let amount = '100000000000000000000';
             let tx20 = await send(pTokenSimple, 'mint', [amount]);
 
             // 3.
-            amount = 1000000000000;
+            amount = '100000000000000000000';
             let tx30 = await send(evilXToken, 'allocateTo', [evilXToken._address, amount]);
             let tx31 = await send(underlying, 'transfer', [evilXToken._address, amount]);
 
@@ -118,7 +118,7 @@ describe('EvilX Token tests', () => {
             let tx41 = await send(evilXToken, 'approveToken', [underlying._address, pTokenAddress, "1000000000000000000000000000000000000"]);
 
             // 5.
-            amount = 1000000000000;
+            amount = '100000000000000000000';
             let tx50 = await send(evilXToken, 'setPTokenMint', [pTokenEvil._address]);
             let tx51 = await send(evilXToken, 'mint', [amount]);
             let tx52 = await send(evilXToken, 'setPTokenMint', [pTokenAddress]);
@@ -130,7 +130,7 @@ describe('EvilX Token tests', () => {
             let tx61 = await send(evilXToken, 'enterMarkets', [markets]);
 
             // 7.
-            let simpleBorrowAmount = 500000000000;
+            let simpleBorrowAmount = '500000000000000000';
             let tx70 = await send(evilXToken, 'setDoBorrow', [true]);
             let tx71 = await send(evilXToken, 'setPTokenBorrow', [pTokenAddress]);
             let tx72 = await send(evilXToken, 'setPToken', [pTokenEvilAddress]);
@@ -138,9 +138,9 @@ describe('EvilX Token tests', () => {
             let tx74 = await send(evilXToken, 'setCount', ['1']);
 
             // 8.
-            let xBorrowAmount = 500000000000;
+            let xBorrowAmount = '50000000000000000000';
             let accBeforeLiquidity = await call(controller, "getAccountLiquidity", [evilXToken._address]);
-            expect(accBeforeLiquidity).toEqual({"0": "0", "1": "5000000000000", "2": "0"});
+            expect(accBeforeLiquidity).toEqual({"0": "0", "1": "500000000000000000000", "2": "0"});
             await increaseTime(borrowDelay);
             let tx82 = await send(evilXToken, 'borrow', [xBorrowAmount]);
             let accAfterLiquidity = await call(controller, "getAccountLiquidity", [evilXToken._address]);

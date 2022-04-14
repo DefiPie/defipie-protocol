@@ -25,6 +25,13 @@ describe('Controller', () => {
       const collateralFactor = 0.5, underlyingPrice = 1, user = accounts[1], amount = 1e6;
       const simplePriceOracle = await makePriceOracle();
       const pToken = await makePToken({ priceOracle: simplePriceOracle, supportMarket: true, collateralFactor, underlyingPrice});
+      // start add amount for mint amount
+      let minMintAmount = '10000000000000000000';
+      let mintAcc = accounts[6];
+      await send(pToken.underlying, 'harnessSetBalance', [mintAcc, minMintAmount], {mintAcc});
+      await send(pToken.underlying, 'approve', [pToken._address, minMintAmount], {mintAcc});
+      await send(pToken, 'mint', [minMintAmount], {mintAcc});
+      // end
 
       let liquidity, shortfall;
 
@@ -60,6 +67,17 @@ describe('Controller', () => {
       const pToken1 = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, collateralFactor: cf1, underlyingPrice: up1});
       const pToken2 = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, collateralFactor: cf2, underlyingPrice: up2});
       const pToken3 = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, controller: pToken1.controller, pTokenFactory: pToken1.pTokenFactory, collateralFactor: cf3, underlyingPrice: up3});
+      // start add amount for mint amount
+      let minMintAmount = '10000000000000000000';
+      let mintAcc = accounts[6];
+      await send(pToken1.underlying, 'harnessSetBalance', [mintAcc, minMintAmount], {mintAcc});
+      await send(pToken1.underlying, 'approve', [pToken1._address, minMintAmount], {mintAcc});
+      await send(pToken1, 'mint', [minMintAmount], {mintAcc});
+
+      await send(pToken2.underlying, 'harnessSetBalance', [mintAcc, minMintAmount], {mintAcc});
+      await send(pToken2.underlying, 'approve', [pToken2._address, minMintAmount], {mintAcc});
+      await send(pToken2, 'mint', [minMintAmount], {mintAcc});
+      // end
 
       await enterMarkets([pToken1, pToken2, pToken3], user);
       await quickMint(pToken1, user, amount1);
@@ -113,6 +131,13 @@ describe('Controller', () => {
       const collateralFactor = 0.5, exchangeRate = 1, underlyingPrice = 1;
       const simplePriceOracle = await makePriceOracle();
       const pToken = await makePToken({priceOracle: simplePriceOracle, supportMarket: true, collateralFactor, underlyingPrice});
+      // start add amount for mint amount
+      let minMintAmount = '10000000000000000000';
+      let mintAcc = accounts[6];
+      await send(pToken.underlying, 'harnessSetBalance', [mintAcc, minMintAmount], {mintAcc});
+      await send(pToken.underlying, 'approve', [pToken._address, minMintAmount], {mintAcc});
+      await send(pToken, 'mint', [minMintAmount], {mintAcc});
+      // end
       const from = accounts[0], balance = 1e7, amount = 1e6;
       await enterMarkets([pToken], from);
       await send(pToken.underlying, 'harnessSetBalance', [from, balance], {from});

@@ -10,6 +10,9 @@ Test "Calculates hypothetical account liquidity"
     SetPriceCF pBAT 0.0015 0.3
     ListedPToken OMG pOMG initialExchangeRate:1e9
     NewPToken REP pREP
+    -- For mint min amount
+    Prep Jared 5000e18 ZRX pZRX
+    Mint Jared 5000e18 pZRX
     -- Mint some pZRX and pETH
     Prep Geoff 1250e18 ZRX pZRX
     Mint Geoff 1250e18 pZRX -- Liquidity -> 0.4 * 0.002 * 1250e18 = 1.0e18

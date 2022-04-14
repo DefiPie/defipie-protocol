@@ -117,6 +117,10 @@ async function getStartBorrowTimestamp(world: World, pToken: PToken): Promise<Nu
     return new NumberV(await pToken.methods.startBorrowTimestamp().call());
 }
 
+async function getUnderlyingAmountMin(world: World, pToken: PToken): Promise<NumberV> {
+    return new NumberV(await pToken.methods.calcUnderlyingAmountMin().call());
+}
+
 async function ppieGetCurrentVotes(world: World, pToken: PToken, account: string): Promise<NumberV> {
     return new NumberV(await pToken.methods.getCurrentVotes(account).call());
 }
@@ -277,6 +281,19 @@ export function pTokenFetchers() {
       ],
       (world, { pToken }) => getStartBorrowTimestamp(world, pToken),
       { namePos: 1 }
+    ),
+    new Fetcher<{ pToken: PToken }, NumberV>(`
+    #### UnderlyingAmountMin
+    
+    * "PToken <PToken> UnderlyingAmountMin" - Returns the underlying amount min
+      * E.g. "PToken pZRX UnderlyingAmountMin"
+    `,
+          "UnderlyingAmountMin",
+          [
+              new Arg("pToken", getPTokenV)
+          ],
+          (world, { pToken }) => getUnderlyingAmountMin(world, pToken),
+          { namePos: 1 }
     ),
     new Fetcher<{ pToken: PToken }, NumberV>(`
         #### TotalBorrowsCurrent

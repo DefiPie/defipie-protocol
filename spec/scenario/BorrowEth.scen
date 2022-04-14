@@ -1,6 +1,6 @@
 
 Test "Borrow some Eth enters Eth and succeeds when Eth not entered"
-    NewController price:1.0
+    NewController price:10.0
     ListedPToken ZRX pZRX
     ListedEtherToken pETH initialExchangeRate:0.005e9
     SetCollateralFactor pZRX collateralFactor:0.5
@@ -12,7 +12,7 @@ Test "Borrow some Eth enters Eth and succeeds when Eth not entered"
     Expect Changes (EtherBalance Geoff) +0.001e18
     BorrowEth Geoff 0.001e18 pETH
     Assert Equal (EtherBalance pETH) 0.002e18
-    Assert Equal (Controller Liquidity Geoff) 4.99e17
+    Assert Equal (Controller Liquidity Geoff) 4.99e18
     Assert Equal (Controller MembershipLength Geoff) (Exactly 2)
     Assert True (Controller CheckMembership Geoff pETH)
 
@@ -41,9 +41,9 @@ Test "Borrow some ETH from excess cash"
     SetCollateralFactor pETH collateralFactor:0.5
     Donate pETH 0.003e18
     Prep Geoff Some ZRX pZRX
-    Mint Geoff 1e18 pZRX
+    Mint Geoff 10e18 pZRX
     EnterMarkets Geoff pZRX pETH
     Expect Changes (EtherBalance Geoff) +0.001e18
     BorrowEth Geoff 0.001e18 pETH
     Assert Equal (EtherBalance pETH) 0.002e18
-    Assert Equal (Controller Liquidity Geoff) 4.99e17
+    Assert Equal (Controller Liquidity Geoff) 4.999e18

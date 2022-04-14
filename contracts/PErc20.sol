@@ -3,6 +3,7 @@ pragma solidity ^0.7.6;
 
 import "./PToken.sol";
 import "./RegistryInterface.sol";
+import "./SafeMath.sol";
 
 /**
  * @title DeFiPie's PErc20 Contract
@@ -10,6 +11,8 @@ import "./RegistryInterface.sol";
  * @author DeFiPie
  */
 contract PErc20 is PToken, PErc20Interface, PErc20ExtInterface {
+    using SafeMath for uint;
+
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -58,14 +61,20 @@ contract PErc20 is PToken, PErc20Interface, PErc20ExtInterface {
     }
 
     function mintFresh(address minter, uint mintAmount) internal override returns (uint, uint, uint) {
-        (uint error, uint actualMintAmount, uint mintTokens) = super.mintFresh(minter, mintAmount);
+        bool totalSupplyCheck = totalSupply == 0;
+
+        (uint err, uint actualMintAmount, uint mintTokens) = super.mintFresh(minter, mintAmount);
 
         // for fee token only
-        if (error == uint(Error.NO_ERROR) && mintAmount != actualMintAmount) {
+        if (err == uint(Error.NO_ERROR) && mintAmount != actualMintAmount) {
             updateFeeFactor(mintAmount, actualMintAmount);
         }
 
-        return (error, actualMintAmount, mintTokens);
+        if (err == uint(Error.NO_ERROR) && totalSupplyCheck) {
+            require(actualMintAmount >= calcUnderlyingAmountMin(), 'PErc20::mintFresh: mintAmount is small');
+        }
+
+        return (err, actualMintAmount, mintTokens);
     }
 
     /**
@@ -75,7 +84,17 @@ contract PErc20 is PToken, PErc20Interface, PErc20ExtInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external override returns (uint) {
-        (uint err,) = redeemInternal(redeemTokens);
+        (uint err, uint redeemTokensOut, ) = redeemInternal(redeemTokens);
+
+        if (err == uint(Error.NO_ERROR) && redeemTokensOut > 0) {
+            uint underlyingAmountMin = calcUnderlyingAmountMin();
+
+            require(
+                EIP20Interface(this.underlying()).balanceOf(address(this)) >= underlyingAmountMin.add(totalReserves),
+                'PErc20::redeem: underlying balance less than the required balance'
+            );
+        }
+
         return err;
     }
 
@@ -86,8 +105,28 @@ contract PErc20 is PToken, PErc20Interface, PErc20ExtInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external override returns (uint) {
-        (uint err,) = redeemUnderlyingInternal(redeemAmount);
+        (uint err, uint redeemTokensOut,) = redeemUnderlyingInternal(redeemAmount);
+
+        if (err == uint(Error.NO_ERROR) && redeemTokensOut > 0) {
+            uint underlyingAmountMin = calcUnderlyingAmountMin(); // 1 token * $10 / price, for example 1 uni * $10 / $11
+
+            require(
+                EIP20Interface(this.underlying()).balanceOf(address(this)) >= underlyingAmountMin.add(totalReserves),
+                'PErc20::redeemUnderlying: underlying balance less than the required balance'
+            );
+        }
+
         return err;
+    }
+
+    function calcUnderlyingAmountMin() public view returns (uint) {
+        uint price = getOracle().getUnderlyingPrice(address(this));
+        if (price == 0) {
+            return 0;
+        }
+
+        uint underlyingDecimals = EIP20Interface(this.underlying()).decimals();
+        return (10 ** underlyingDecimals).mul(10).mul(1e18).div(price); // 1 token * $10 / price, for example 1 uni * $10 / $11
     }
 
     /**

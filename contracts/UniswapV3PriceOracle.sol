@@ -167,8 +167,7 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
         uint virtualReserves;
 
         uint128 liquidity = IUniswapV3PoolState(pair).liquidity();
-        (uint160 sqrtPriceX96, int24 tick,,,,,) = IUniswapV3PoolState(pair).slot0();
-        int24 tickSpacing = IUniswapV3PoolImmutables(pair).tickSpacing();
+        (uint160 sqrtPriceX96,,,,,,) = IUniswapV3PoolState(pair).slot0();
 
         uint160 sqrtPriceAX96 = sqrtPriceX96 / 4;
         uint160 sqrtPriceBX96 = sqrtPriceX96 * 4;

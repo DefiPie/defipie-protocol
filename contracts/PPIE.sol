@@ -68,7 +68,7 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external override returns (uint) {
-        (uint err, uint amount) = redeemInternal(redeemTokens);
+        (uint err, uint amount, ) = redeemInternal(redeemTokens);
 
         if (err == 0) {
             _moveDelegates(delegates[msg.sender], address(0), uint96(amount));
@@ -84,7 +84,7 @@ contract PPIE is ImplementationStorage, PToken, PErc20Interface, PPIEInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external override returns (uint) {
-        (uint err, uint amount) = redeemUnderlyingInternal(redeemAmount);
+        (uint err, uint amount, ) = redeemUnderlyingInternal(redeemAmount);
 
         if (err == 0) {
             _moveDelegates(delegates[msg.sender], address(0), uint96(amount));

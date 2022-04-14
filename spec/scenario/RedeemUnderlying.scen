@@ -12,9 +12,9 @@ Test "Mint then Redeem All"
     Invariant Static (PToken pZRX ExchangeRateStored)
     -- Now redeem after some time
     FastForward 2 Blocks
-    RedeemUnderlying Geoff 50e18 pZRX
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) Zero
-    Assert Equal (Erc20 ZRX TokenBalance Geoff) 70e18
+    RedeemUnderlying Geoff 40e18 pZRX
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 100e8
+    Assert Equal (Erc20 ZRX TokenBalance Geoff) 60e18
 
 Test "Mint then Redeem Part"
     NewController
@@ -84,12 +84,12 @@ Test "Mint then redeem with interest - no reserves"
     -- Now redeem all with interest
     -- Exchange rate is now 55e18 ÷ 50e9 = 1.1e9
     -- 500e9 * 1.1e9 = 55e18
-    RedeemUnderlying Geoff 55e18 pZRX
-    Assert Equal (Erc20 ZRX TokenBalance Geoff) 55e18
-    Assert Equal (Erc20 ZRX TokenBalance pZRX) 0e18
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) 0e8
-    Assert Equal (PToken pZRX UnderlyingBalance Geoff) 0e18
-    Assert Equal (PToken pZRX ExchangeRate) 1e9
+    RedeemUnderlying Geoff 45e18 pZRX
+    Assert Equal (Erc20 ZRX TokenBalance Geoff) 45e18
+    Assert Equal (Erc20 ZRX TokenBalance pZRX) 10e18
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 90.90909091e8
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) 9.999999999999999999e18
+    Assert Equal (PToken pZRX ExchangeRate) 1.099999999989e9
 
 Test "Mint then redeem part with interest - no reserves"
     NewController
@@ -112,10 +112,11 @@ Test "Mint then redeem part with interest - no reserves"
     -- Now redeem all with interest
     -- Exchange rate is now 55e18 ÷ 50e9 = 1.1e9
     -- 499e9 * 1.1e9 = 54.89e18
-    RedeemUnderlying Geoff 54.89e18 pZRX
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) 1e8
-    Assert Equal (PToken pZRX UnderlyingBalance Geoff) 0.11e18
-    Assert Equal (PToken pZRX ExchangeRate) 1.1e9
+    RedeemUnderlying Geoff 44.89e18 pZRX
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 91.90909091e8
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) 10.109999999999999999e18
+    Assert Equal (PToken pZRX ExchangeRate) 1.0999999999891198e9
+    Assert Equal (Erc20 ZRX TokenBalance pZRX) 10.11e18
 
 Test "Mint then redeem with reserves and interest"
     NewController
@@ -140,30 +141,30 @@ Test "Mint then redeem with reserves and interest"
     -- Now redeem all with interest
     -- Exchange rate is 1.08e9
     -- 500e8 * 1.08e9 = 54e18
-    RedeemUnderlying Geoff 54e18 pZRX
-    Assert Equal (Erc20 ZRX TokenBalance Geoff) 54e18
-    Assert Equal (Erc20 ZRX TokenBalance pZRX) 1e18
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) 0e8
+    RedeemUnderlying Geoff 44e18 pZRX
+    Assert Equal (Erc20 ZRX TokenBalance Geoff) 44e18
+    Assert Equal (Erc20 ZRX TokenBalance pZRX) 11e18
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 92.5925926e8
     Assert Equal (PToken pZRX Reserves) 1e18
-    Assert Equal (PToken pZRX UnderlyingBalance Geoff) 0e18
-    Assert Equal (PToken pZRX ExchangeRate) 1e9
+    Assert Equal (PToken pZRX UnderlyingBalance Geoff) 9.999999999999999999e18
+    Assert Equal (PToken pZRX ExchangeRate) 1.0799999999136e9
 
 Test "Two users Mint, one redeems"
     NewController
     ListedPToken ZRX pZRX initialExchangeRate:1e9
     Prep Geoff Some ZRX pZRX
     Prep Torrey Some ZRX pZRX
-    Mint Geoff 2e18 pZRX
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) 20e8
-    Assert Equal (Erc20 pZRX TotalSupply) 20e8
-    Mint Torrey 2e18 pZRX
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) 20e8
-    Assert Equal (Erc20 pZRX TokenBalance Torrey) 20e8
-    Assert Equal (Erc20 pZRX TotalSupply) 40e8
-    RedeemUnderlying Torrey 1e18 pZRX
-    Assert Equal (Erc20 pZRX TokenBalance Geoff) 20e8
-    Assert Equal (Erc20 pZRX TokenBalance Torrey) 10e8
-    Assert Equal (Erc20 pZRX TotalSupply) 30e8
+    Mint Geoff 20e18 pZRX
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 200e8
+    Assert Equal (Erc20 pZRX TotalSupply) 200e8
+    Mint Torrey 20e18 pZRX
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 200e8
+    Assert Equal (Erc20 pZRX TokenBalance Torrey) 200e8
+    Assert Equal (Erc20 pZRX TotalSupply) 400e8
+    RedeemUnderlying Torrey 10e18 pZRX
+    Assert Equal (Erc20 pZRX TokenBalance Geoff) 200e8
+    Assert Equal (Erc20 pZRX TokenBalance Torrey) 100e8
+    Assert Equal (Erc20 pZRX TotalSupply) 300e8
 
 Test "Mint then Redeem 1 wei of underlying"
     NewController

@@ -48,7 +48,7 @@ Test "ZRX: Exch. Rate:2e9, Cash(51e18) + Borrows(2.0e18) - Reserves(0.5e18) / To
     Assert Equal (PToken pZRX ExchangeRateStored) (Exp 2.1e9)
 
 Test "USDC: Exch. Rate:2e-3, Cash(51e18) + Borrows(2.0e18) - Reserves(0.5e18) / Tokens(2.5e10)"
-    NewController
+    NewController price:1000000000000.0 --1e18 and decimals factor (18 - 6) = 12
     -- Decimals You=6, Decimals Us=8 -> 2e-3 Exchange Rate
     ListedPToken USDC pUSDC initialExchangeRate:2e-3 decimals:8
     Assert Equal (PToken pUSDC ExchangeRateStored) (Exp 2e-3)

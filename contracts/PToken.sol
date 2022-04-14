@@ -579,13 +579,13 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @notice Sender redeems PTokens in exchange for the underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param redeemTokens The number of pTokens to redeem into underlying
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the redeem tokens amount.
+     * @return (uint, uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the redeem tokens amount and redeem underlying amount.
      */
-    function redeemInternal(uint redeemTokens) internal nonReentrant returns (uint, uint) {
+    function redeemInternal(uint redeemTokens) internal nonReentrant returns (uint, uint, uint) {
         uint error = accrueInterest();
         if (error != uint(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted redeem failed
-            return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0);
+            return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0, 0);
         }
         // redeemFresh emits redeem-specific logs on errors, so we don't need to
         return redeemFresh(payable(msg.sender), redeemTokens, 0);
@@ -595,13 +595,13 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @notice Sender redeems pTokens in exchange for a specified amount of underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param redeemAmount The amount of underlying to receive from redeeming pTokens
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the redeem tokens amount.
+     * @return (uint, uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the redeem tokens amount and redeem underlying amount.
      */
-    function redeemUnderlyingInternal(uint redeemAmount) internal nonReentrant returns (uint, uint) {
+    function redeemUnderlyingInternal(uint redeemAmount) internal nonReentrant returns (uint, uint, uint) {
         uint error = accrueInterest();
         if (error != uint(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted redeem failed
-            return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0);
+            return (fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED), 0, 0);
         }
         // redeemFresh emits redeem-specific logs on errors, so we don't need to
         return redeemFresh(payable(msg.sender), 0, redeemAmount);
@@ -623,9 +623,9 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
      * @param redeemer The address of the account which is redeeming the tokens
      * @param redeemTokensIn The number of pTokens to redeem into underlying (only one of redeemTokensIn or redeemAmountIn may be non-zero)
      * @param redeemAmountIn The number of underlying tokens to receive from redeeming pTokens (only one of redeemTokensIn or redeemAmountIn may be non-zero)
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the redeem tokens amount.
+     * @return (uint, uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), the redeem tokens amount and redeem underlying amount.
      */
-    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn) internal returns (uint, uint) {
+    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn) internal returns (uint, uint, uint) {
         require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
 
         RedeemLocalVars memory vars;
@@ -633,7 +633,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* exchangeRate = invoke Exchange Rate Stored() */
         (vars.mathErr, vars.exchangeRateMantissa) = exchangeRateStoredInternal();
         if (vars.mathErr != MathError.NO_ERROR) {
-            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_RATE_READ_FAILED, uint(vars.mathErr)), 0);
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_RATE_READ_FAILED, uint(vars.mathErr)), 0, 0);
         }
 
         /* If redeemTokensIn > 0: */
@@ -647,7 +647,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
             (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(Exp({mantissa: vars.exchangeRateMantissa}), redeemTokensIn);
             if (vars.mathErr != MathError.NO_ERROR) {
-                return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED, uint(vars.mathErr)), 0);
+                return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED, uint(vars.mathErr)), 0, 0);
             }
         } else {
             /*
@@ -658,7 +658,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
 
             (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(redeemAmountIn, Exp({mantissa: vars.exchangeRateMantissa}));
             if (vars.mathErr != MathError.NO_ERROR) {
-                return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr)), 0);
+                return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr)), 0, 0);
             }
 
             vars.redeemAmount = redeemAmountIn;
@@ -667,12 +667,12 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* Fail if redeem not allowed */
         uint allowed = controller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
         if (allowed != 0) {
-            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.REDEEM_CONTROLLER_REJECTION, allowed), 0);
+            return (failOpaque(Error.CONTROLLER_REJECTION, FailureInfo.REDEEM_CONTROLLER_REJECTION, allowed), 0, 0);
         }
 
         /* Verify market's block number equals current block number */
         if (accrualBlockNumber != getBlockNumber()) {
-            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REDEEM_FRESHNESS_CHECK), 0);
+            return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REDEEM_FRESHNESS_CHECK), 0, 0);
         }
 
         /*
@@ -682,17 +682,17 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
          */
         (vars.mathErr, vars.totalSupplyNew) = subUInt(totalSupply, vars.redeemTokens);
         if (vars.mathErr != MathError.NO_ERROR) {
-            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint(vars.mathErr)), 0);
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint(vars.mathErr)), 0, 0);
         }
 
         (vars.mathErr, vars.accountTokensNew) = subUInt(accountTokens[redeemer], vars.redeemTokens);
         if (vars.mathErr != MathError.NO_ERROR) {
-            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED, uint(vars.mathErr)), 0);
+            return (failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED, uint(vars.mathErr)), 0, 0);
         }
 
         /* Fail gracefully if protocol has insufficient cash */
         if (getCashPrior() < vars.redeemAmount) {
-            return (fail(Error.TOKEN_INSUFFICIENT_CASH, FailureInfo.REDEEM_TRANSFER_OUT_NOT_POSSIBLE), 0);
+            return (fail(Error.TOKEN_INSUFFICIENT_CASH, FailureInfo.REDEEM_TRANSFER_OUT_NOT_POSSIBLE), 0, 0);
         }
 
         /////////////////////////
@@ -718,7 +718,7 @@ abstract contract PToken is PTokenInterface, Exponential, TokenErrorReporter {
         /* We call the defense hook */
         controller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
 
-        return (uint(Error.NO_ERROR), vars.redeemTokens);
+        return (uint(Error.NO_ERROR), vars.redeemTokens, vars.redeemAmount);
     }
 
     /**

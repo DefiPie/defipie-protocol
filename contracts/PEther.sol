@@ -55,7 +55,7 @@ contract PEther is ImplementationStorage, PToken {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external returns (uint) {
-        (uint err, ) = redeemInternal(redeemTokens);
+        (uint err,,) = redeemInternal(redeemTokens);
 
         return err;
     }
@@ -67,7 +67,7 @@ contract PEther is ImplementationStorage, PToken {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external returns (uint) {
-        (uint err, ) = redeemUnderlyingInternal(redeemAmount);
+        (uint err,,) = redeemUnderlyingInternal(redeemAmount);
 
         return err;
     }

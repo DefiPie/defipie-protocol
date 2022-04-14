@@ -1,10 +1,11 @@
 -- Tests for the grants and math patch
 
-Macro FlywheelController price=1.0 borrowRate=0.000005 pieInitAmount=5000000e18
+Macro FlywheelController price=10.0 borrowRate=0.000005 pieInitAmount=5000000e18
     NewRegistryProxy
     Unitroller Deploy RegistryProxy
     PriceOracle Deploy Fixed price
     PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address)
+    PriceOracleProxy SetPrice (PriceOracle Address) price -- fixed oracle, set price for all assets
     ----g2
     ControllerImpl Deploy ScenarioG2 ControllerScenG2
     Unitroller SetPendingImpl ControllerScenG2

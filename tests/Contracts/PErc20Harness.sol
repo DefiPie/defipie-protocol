@@ -96,7 +96,7 @@ contract PErc20Harness is PErc20 {
     }
 
     function harnessRedeemFresh(address payable account, uint pTokenAmount, uint underlyingAmount) public returns (uint) {
-        (uint err,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        (uint err,,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
         return err;
     }
 
@@ -277,6 +277,10 @@ contract PErc20DelegatorScenario is PErc20Delegator, PTokenStorage {
     }
 
     function startBorrowTimestamp() public view returns (uint) {
+        delegateToViewAndReturn();
+    }
+
+    function calcUnderlyingAmountMin() public view returns (uint) {
         delegateToViewAndReturn();
     }
 
@@ -486,7 +490,7 @@ contract PErc20DelegateHarness is PErc20Delegate {
     }
 
     function harnessRedeemFresh(address payable account, uint pTokenAmount, uint underlyingAmount) public returns (uint) {
-        (uint err,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
+        (uint err,,) = super.redeemFresh(account, pTokenAmount, underlyingAmount);
         return err;
     }
 
