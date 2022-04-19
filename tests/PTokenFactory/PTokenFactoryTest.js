@@ -2,7 +2,7 @@ const BigNumber = require('bignumber.js');
 
 const {
     blockNumber
-} = require('./Utils/Ethereum');
+} = require('../Utils/Ethereum');
 
 const {
     makeToken,
@@ -10,7 +10,7 @@ const {
     makeController,
     makePTokenFactory,
     makeRegistryProxy
-} = require('./Utils/DeFiPie');
+} = require('../Utils/DeFiPie');
 
 describe('PToken Factory tests', () => {
     let root, admin, accounts;
@@ -154,14 +154,14 @@ describe('PToken Factory tests', () => {
         });
     });
 
-    describe("check minUniswapLiquidity", () => {
-        it("set minUniswapLiquidity", async () => {
-            await send(pTokenFactory, '_setMinUniswapLiquidity', [1]);
-            expect(await call(pTokenFactory, 'minUniswapLiquidity')).toEqual('1');
+    describe("check minOracleLiquidity", () => {
+        it("set minOracleLiquidity", async () => {
+            await send(pTokenFactory, '_setMinOracleLiquidity', [1]);
+            expect(await call(pTokenFactory, 'minOracleLiquidity')).toEqual('1');
         });
 
         it("set minUniswapLiquidity, not UNAUTHORIZED", async () => {
-            let result = await send(pTokenFactory, '_setMinUniswapLiquidity', [1], {from: accounts[1]});
+            let result = await send(pTokenFactory, '_setMinOracleLiquidity', [1], {from: accounts[1]});
             expect(result).toHaveFactoryFailure('UNAUTHORIZED', 'SET_MIN_LIQUIDITY_OWNER_CHECK');
         });
     });
@@ -175,7 +175,7 @@ describe('PToken Factory tests', () => {
             let reserve1 = new BigNumber(reserves[1]);
 
             await send(mockUniswapV2Pool, 'setData', [underlying._address, WETHToken._address, reserve0.minus(1), reserve1.minus(1)]);
-            await send(pTokenFactory, '_setMinUniswapLiquidity', [reserve1]);
+            await send(pTokenFactory, '_setMinOracleLiquidity', [reserve1]);
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 

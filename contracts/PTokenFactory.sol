@@ -12,22 +12,10 @@ import "./PPIEDelegator.sol";
 import "./Controller.sol";
 import "./PriceOracle.sol";
 import "./PTokenInterfaces.sol";
+import "./PTokenFactoryStorage.sol";
 
-contract PTokenFactory is FactoryErrorReporter {
+contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
     using SafeMath for uint;
-
-    uint public minUniswapLiquidity;
-
-    // decimals for pToken
-    uint8 public decimals = 8;
-
-    // default parameters for pToken
-    address public controller;
-    address public interestRateModel;
-    uint256 public initialExchangeRateMantissa;
-    uint256 public initialReserveFactorMantissa;
-
-    mapping (address => bool) public isUnderlyingBlackListed;
 
     /**
      * Fired on creation new pToken proxy
@@ -39,22 +27,22 @@ contract PTokenFactory is FactoryErrorReporter {
     event AddedBlackList(address _underlying);
     event RemovedBlackList(address _underlying);
 
-    RegistryInterface public registry;
-
-    constructor(
-        RegistryInterface registry_,
-        uint minUniswapLiquidity_,
-        address _controller,
-        address _interestRateModel,
-        uint256 _initialExchangeRateMantissa,
-        uint256 _initialReserveFactorMantissa
-    ) {
+    function initialize(
+        address registry_,
+        address controller_,
+        address interestRateModel_,
+        uint256 initialExchangeRateMantissa_,
+        uint256 initialReserveFactorMantissa_,
+        uint256 minOracleLiquidity_
+    ) public {
         registry = registry_;
-        minUniswapLiquidity = minUniswapLiquidity_;
-        controller = _controller;
-        interestRateModel = _interestRateModel;
-        initialExchangeRateMantissa = _initialExchangeRateMantissa;
-        initialReserveFactorMantissa = _initialReserveFactorMantissa;
+        controller = controller_;
+        interestRateModel = interestRateModel_;
+        initialExchangeRateMantissa = initialExchangeRateMantissa_;
+        initialReserveFactorMantissa = initialReserveFactorMantissa_;
+        minOracleLiquidity = minOracleLiquidity_;
+
+        decimals = 8;
     }
 
     /**
@@ -75,19 +63,23 @@ contract PTokenFactory is FactoryErrorReporter {
         uint power = EIP20Interface(underlying_).decimals();
         uint exchangeRateMantissa = calcExchangeRate(power);
 
-        PErc20Delegator newPToken = new PErc20Delegator(underlying_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
+        PErc20Delegator newPToken = new PErc20Delegator(underlying_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, registry);
 
         uint256 result = Controller(controller)._supportMarket(address(newPToken));
         if (result != 0) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
 
-        registry.addPToken(underlying_, address(newPToken));
+        RegistryInterface(registry).addPToken(underlying_, address(newPToken));
 
         uint startBorrowTimestamp = PErc20ExtInterface(address(newPToken)).startBorrowTimestamp();
         emit PTokenCreated(address(newPToken), startBorrowTimestamp);
 
         getOracle().update(underlying_);
+
+        if (createPoolFeeAmount > 0) {
+            EIP20Interface(PErc20Interface(RegistryInterface(registry).pPIE()).underlying()).transferFrom(msg.sender, address(this), createPoolFeeAmount);
+        }
 
         return uint(Error.NO_ERROR);
     }
@@ -110,7 +102,7 @@ contract PTokenFactory is FactoryErrorReporter {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
 
-        registry.addPETH(address(newPETH));
+        RegistryInterface(registry).addPETH(address(newPETH));
 
         emit PTokenCreated(address(newPETH), block.timestamp);
 
@@ -135,7 +127,7 @@ contract PTokenFactory is FactoryErrorReporter {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
 
-        registry.addPPIE(address(newPPIE));
+        RegistryInterface(registry).addPPIE(address(newPPIE));
 
         emit PTokenCreated(address(newPPIE), block.timestamp);
 
@@ -147,15 +139,15 @@ contract PTokenFactory is FactoryErrorReporter {
     function checkPair(address asset) public view returns (bool) {
         (, address pair, uint112 ethEquivalentReserves) = getOracle().searchPair(asset);
 
-        return bool(pair != address(0) && ethEquivalentReserves >= minUniswapLiquidity);
+        return bool(pair != address(0) && ethEquivalentReserves >= minOracleLiquidity);
     }
 
-    function _setMinUniswapLiquidity(uint minUniswapLiquidity_) public returns (uint) {
+    function _setMinOracleLiquidity(uint minOracleLiquidity_) public returns (uint) {
         if (msg.sender != getAdmin()) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_MIN_LIQUIDITY_OWNER_CHECK);
         }
 
-        minUniswapLiquidity = minUniswapLiquidity_;
+        minOracleLiquidity = minOracleLiquidity_;
 
         return uint(Error.NO_ERROR);
     }
@@ -245,16 +237,39 @@ contract PTokenFactory is FactoryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function getBlackListStatus(address _underlying) public view returns (bool) {
-        return isUnderlyingBlackListed[_underlying];
+    function getBlackListStatus(address underlying_) public view returns (bool) {
+        return isUnderlyingBlackListed[underlying_];
+    }
+
+    /**
+     *  Sets fee for create pool in pies
+     *  @return uint 0 = success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _setCreatePoolFeeAmount(uint createPoolFeeAmount_) external returns(uint) {
+        if (msg.sender != getAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_CREATE_POOL_FEE_AMOUNT);
+        }
+        createPoolFeeAmount = createPoolFeeAmount_;
+
+        return(uint(Error.NO_ERROR));
+    }
+
+    function _withdrawERC20(address token_, address recipient_) external returns(uint) {
+        if (msg.sender != getAdmin()) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.WITHDRAW_ERC20);
+        }
+
+        EIP20Interface(token_).transfer(recipient_, EIP20Interface(token_).balanceOf(address(this)));
+
+        return(uint(Error.NO_ERROR));
     }
 
     function getAdmin() public view returns(address payable) {
-        return registry.admin();
+        return RegistryInterface(registry).admin();
     }
 
     function getOracle() public view returns (PriceOracle) {
-        return PriceOracle(registry.oracle());
+        return PriceOracle(RegistryInterface(registry).oracle());
     }
 
     function _createPTokenNameAndSymbol(address underlying_) internal view returns (string memory, string memory) {

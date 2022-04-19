@@ -190,11 +190,11 @@ async function makePToken(opts = {}) {
 
   pTokenFactory = opts.pTokenFactory || await deploy('PTokenFactoryHarness', [
     registryProxy._address,
-    0,
     controller._address,
     interestRateModel._address,
     exchangeRate,
-    reserveFactor
+    reserveFactor,
+    0
   ]);
 
   tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
@@ -419,11 +419,11 @@ async function makePTokenFactory(opts = {}) {
 
     pTokenFactory = await deploy('PTokenFactoryHarness', [
         registryProxy._address,
-        0,
         controller._address,
         interestRateModel._address,
         exchangeRate,
-        reserveFactor
+        reserveFactor,
+        0
     ]);
 
     let tx2 = await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);

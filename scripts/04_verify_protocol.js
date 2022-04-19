@@ -214,19 +214,30 @@ async function main() {
         }
     }
 
-    // 11. PToken factory contract verify
+    // 11. PToken factory contracts verify
     try {
         await hre.run("verify:verify", {
-            address: data.pTokenFactory,
+            address: data.pTokenFactoryImpl,
+            constructorArguments: [],
+            contract: "contracts/PTokenFactory.sol:PTokenFactory"
+        });
+    } catch (e) {
+        console.log(e);
+    }
+
+    try {
+        await hre.run("verify:verify", {
+            address: data.pTokenFactoryProxy,
             constructorArguments: [
+                data.pTokenFactoryImpl,
                 data.registryProxy,
-                process.env.MIN_LIQUIDITY_IN_POOL,
                 data.unitroller,
                 data.baseInterestRateModel,
                 process.env.INITIAL_EXCHANGE_RATE_MANTISSA,
-                process.env.INITIAL_RESERVE_FACTOR_MANTISSA
+                process.env.INITIAL_RESERVE_FACTOR_MANTISSA,
+                process.env.MIN_LIQUIDITY_IN_POOL
             ],
-            contract: "contracts/PTokenFactory.sol:PTokenFactory"
+            contract: "contracts/PTokenFactoryProxy.sol:PTokenFactoryProxy"
         });
     } catch (e) {
         console.log(e);

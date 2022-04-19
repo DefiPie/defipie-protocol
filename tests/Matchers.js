@@ -338,7 +338,6 @@ expect.extend({
     return hasFailure.call(this, result, err, info, detail, RegistryErr, 'toHaveRegistryFailure');
   },
 
-
   toHaveTokenMathFailure(result, info, detail) {
     return hasFailure.call(this, result, 'MATH_ERROR', info, detail && (MathErr.Error[detail] || -1), TokenErr, 'toHaveTokenMathFailure');
   },
