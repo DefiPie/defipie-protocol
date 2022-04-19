@@ -209,19 +209,26 @@ async function main() {
     console.log('tx4 hash', tx4.transactionHash);
 
     // 12. PToken Factory deploy
-    const PTokenFactory = await hre.ethers.getContractFactory("PTokenFactory");
-    const pTokenFactory = await PTokenFactory.deploy(
+    const PTokenFactoryImpl = await hre.ethers.getContractFactory("PTokenFactory");
+    const pTokenFactoryImpl = await PTokenFactoryImpl.deploy();
+
+    console.log(`PTokenFactory smart contract has been deployed to: ${pTokenFactoryImpl.address}`);
+
+    namesAndAddresses.pTokenFactoryImpl = pTokenFactoryImpl.address;
+
+    const pTokenFactoryProxy = await PTokenFactory.deploy(
+        pTokenFactoryImpl.address,
         registryProxy.address,
-        process.env.MIN_LIQUIDITY_IN_POOL,
         unitroller.address,
         baseInterestRateModel.address,
         process.env.INITIAL_EXCHANGE_RATE_MANTISSA,
-        process.env.INITIAL_RESERVE_FACTOR_MANTISSA
+        process.env.INITIAL_RESERVE_FACTOR_MANTISSA,
+        process.env.MIN_LIQUIDITY_IN_POOL
     );
 
-    console.log(`PTokenFactory smart contract has been deployed to: ${pTokenFactory.address}`);
+    console.log(`PTokenFactoryProxy smart contract has been deployed to: ${pTokenFactoryProxy.address}`);
 
-    namesAndAddresses.pTokenFactory = pTokenFactory.address;
+    namesAndAddresses.pTokenFactoryProxy = pTokenFactoryProxy.address;
 
     // 13. Deploy Governor
     const Governor = await hre.ethers.getContractFactory("Governor");
