@@ -3,9 +3,9 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 
 import "../SafeMath.sol";
-import "../UniswapV2PriceOracle.sol";
-import "../Interfaces/IPriceFeeds.sol";
-import "../UniswapV3PriceOracle.sol";
+import "../Oracles/UniswapV2PriceOracle.sol";
+import "../Oracles/Interfaces/IPriceFeeds.sol";
+import "../Oracles/UniswapV3PriceOracle.sol";
 
 contract CalcPoolPrice {
     uint224 constant Q112 = 2**112;

@@ -95,7 +95,17 @@ async function main() {
         await hre.run("verify:verify", {
             address: data.controller,
             constructorArguments: [],
-            contract: "contracts/Controller.sol:Controller"
+            contract: "contracts/Control/Controller.sol:Controller"
+        });
+    } catch (e) {
+        console.log(e);
+    }
+
+    try {
+        await hre.run("verify:verify", {
+            address: data.controller,
+            constructorArguments: [],
+            contract: "contracts/Control/Distributor.sol:Distributor"
         });
     } catch (e) {
         console.log(e);
@@ -108,7 +118,21 @@ async function main() {
             constructorArguments: [
                 data.registryProxy
             ],
-            contract: "contracts/Unitroller.sol:Unitroller"
+            contract: "contracts/Control/Unitroller.sol:Unitroller"
+        });
+    } catch (e) {
+        console.log(e);
+    }
+
+    try {
+        await hre.run("verify:verify", {
+            address: data.unitroller,
+            constructorArguments: [
+                data.distributor,
+                data.registryProxy,
+                data.unitroller
+            ],
+            contract: "contracts/Control/DistributorProxy.sol:DistributorProxy"
         });
     } catch (e) {
         console.log(e);

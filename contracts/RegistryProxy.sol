@@ -30,6 +30,11 @@ contract RegistryProxy is RegistryStorage, RegistryErrorReporter {
         delegateTo(implementation, abi.encodeWithSignature("initialize(address)", pTokenImplementation));
     }
 
+    /**
+      * @notice Set new implementation
+      * @param newImplementation New implementation.
+      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+      */
     function _setImplementation(address newImplementation) external returns(uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_NEW_IMPLEMENTATION);
@@ -49,7 +54,7 @@ contract RegistryProxy is RegistryStorage, RegistryErrorReporter {
       * @param newPendingAdmin New pending admin.
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _setPendingAdmin(address payable newPendingAdmin) external returns (uint) {
+    function _setPendingAdmin(address newPendingAdmin) external returns (uint) {
         // Check caller = admin
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_ADMIN_OWNER_CHECK);

@@ -1,19 +1,5 @@
 const BigNumber = require('bignumber.js');
 
-const mine = (timestamp) => {
-    return new Promise((resolve, reject) => {
-        saddle.web3.currentProvider.send({
-            jsonrpc: '2.0',
-            method: 'evm_mine',
-            id: Date.now(),
-            params: [timestamp],
-        }, (err, res) => {
-            if (err) return reject(err);
-            resolve(res)
-        })
-    })
-};
-
 const {
     makeToken,
     makePToken,

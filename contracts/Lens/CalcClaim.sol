@@ -3,14 +3,17 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 
 import "../Exponential.sol";
-import "../Controller.sol";
-import "../PToken.sol";
+import "../Control/Controller.sol";
+import "../Control/Distributor.sol";
+import "../Tokens/PToken.sol";
 
 contract ClaimCalc is Exponential {
     Controller public controller;
+    Distributor public distributor;
 
-    constructor(address _controller) {
+    constructor(address _controller, address _distributor) {
         controller = Controller(_controller);
+        distributor = Distributor(_distributor);
     }
 
     function allMarkets() public view returns (address[] memory) {
@@ -22,11 +25,11 @@ contract ClaimCalc is Exponential {
     }
 
     function updatePieBorrowIndex(address pToken, Exp memory marketBorrowIndex) public view returns (Double memory) {
-        (uint224 index, uint32 stateBlock) = controller.pieBorrowState(pToken);
+        (uint224 index, uint32 stateBlock) = distributor.pieBorrowState(pToken);
 
         Double memory newBorrowindex = Double({mantissa: index});
 
-        uint borrowSpeed = controller.pieSpeeds(pToken);
+        uint borrowSpeed = distributor.pieSpeeds(pToken);
         uint blockNumber = getBlockNumber();
         uint deltaBlocks = sub_(blockNumber, uint(stateBlock));
         if (deltaBlocks > 0 && borrowSpeed > 0) {
@@ -40,11 +43,11 @@ contract ClaimCalc is Exponential {
     }
 
     function updatePieSupplyIndex(address pToken)  public view returns (Double memory) {
-        (uint224 index, uint32 stateBlock) = controller.pieSupplyState(pToken);
+        (uint224 index, uint32 stateBlock) = distributor.pieSupplyState(pToken);
 
         Double memory newSupplyIndex = Double({mantissa: index});
 
-        uint supplySpeed = controller.pieSpeeds(pToken);
+        uint supplySpeed = distributor.pieSpeeds(pToken);
         uint blockNumber = getBlockNumber();
         uint deltaBlocks = sub_(blockNumber, uint(stateBlock));
         if (deltaBlocks > 0 && supplySpeed > 0) {
@@ -64,7 +67,7 @@ contract ClaimCalc is Exponential {
     function calcClaimPie(address holder, address[] memory pTokens) public view returns (uint) {
         uint claimAmount = calcClaimPieWithoutAccrued(holder, pTokens);
 
-        uint accrued = controller.pieAccrued(holder);
+        uint accrued = distributor.pieAccrued(holder);
         return claimAmount + accrued;
     }
 
@@ -77,7 +80,7 @@ contract ClaimCalc is Exponential {
             Exp memory marketBorrowIndex = Exp({mantissa: PTokenInterface(pToken).borrowIndex()});
             Double memory borrowIndex = updatePieBorrowIndex(pToken, marketBorrowIndex);
 
-            Double memory borrowerIndex = Double({mantissa: controller.pieBorrowerIndex(pToken, holder)});
+            Double memory borrowerIndex = Double({mantissa: distributor.pieBorrowerIndex(pToken, holder)});
 
             if (borrowerIndex.mantissa > 0) {
                 Double memory borrowDeltaIndex = sub_(borrowIndex, borrowerIndex);
@@ -88,10 +91,10 @@ contract ClaimCalc is Exponential {
 
             Double memory supplyIndex = updatePieSupplyIndex(pToken);
 
-            Double memory supplierIndex = Double({mantissa:  controller.pieSupplierIndex(pToken, holder)});
+            Double memory supplierIndex = Double({mantissa:  distributor.pieSupplierIndex(pToken, holder)});
 
             if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
-                supplierIndex.mantissa =  controller.pieInitialIndex();
+                supplierIndex.mantissa = distributor.pieInitialIndex();
             }
 
             Double memory supplyDeltaIndex = sub_(supplyIndex, supplierIndex);
@@ -117,7 +120,7 @@ contract ClaimCalc is Exponential {
             Exp memory marketBorrowIndex = Exp({mantissa: PTokenInterface(pTokens[i]).borrowIndex()});
             Double memory index = updatePieBorrowIndex(pTokens[i], marketBorrowIndex);
 
-            Double memory borrowerIndex = Double({mantissa: controller.pieBorrowerIndex(pTokens[i], holder)});
+            Double memory borrowerIndex = Double({mantissa: distributor.pieBorrowerIndex(pTokens[i], holder)});
 
             if (borrowerIndex.mantissa > 0) {
                 uint borrowerAmount = div_(PTokenInterface(pTokens[i]).borrowBalanceStored(holder), marketBorrowIndex);
@@ -126,10 +129,10 @@ contract ClaimCalc is Exponential {
 
             index = updatePieSupplyIndex(pTokens[i]);
 
-            Double memory supplierIndex = Double({mantissa: controller.pieSupplierIndex(pTokens[i], holder)});
+            Double memory supplierIndex = Double({mantissa: distributor.pieSupplierIndex(pTokens[i], holder)});
 
             if (supplierIndex.mantissa == 0 && index.mantissa > 0) {
-                supplierIndex.mantissa =  controller.pieInitialIndex();
+                supplierIndex.mantissa =  distributor.pieInitialIndex();
             }
 
             uint supplierTokens = PTokenInterface(pTokens[i]).balanceOf(holder);

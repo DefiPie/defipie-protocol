@@ -152,16 +152,16 @@ async function setLiquidateGuardian(world: World, from: string, controller: Cont
     return world;
 }
 
-async function setPieAddress(world: World, from: string, controller: Controller, pieAddress: string): Promise<World> {
-    let invokation = await invoke(world, controller.methods._setPieAddress(pieAddress), from, ControllerErrorReporter);
+async function setDistributor(world: World, from: string, controller: Controller, distributorAddr: string): Promise<World> {
+  let invokation = await invoke(world, controller.methods._setDistributor(distributorAddr), from, ControllerErrorReporter);
 
-    world = addAction(
-        world,
-        `Set pie address for to ${pieAddress} as ${describeUser(world, from)}`,
-        invokation
-    );
+  world = addAction(
+      world,
+      `Controller: ${describeUser(world, from)} sets distributor to ${distributorAddr}`,
+      invokation
+  );
 
-    return world;
+  return world;
 }
 
 async function setCollateralFactor(world: World, from: string, controller: Controller, pToken: PToken, collateralFactor: NumberV): Promise<World> {
@@ -232,78 +232,6 @@ async function sendAny(world: World, from:string, controller: Controller, signat
       from: from
     });
   return world;
-}
-
-async function addPieMarkets(world: World, from: string, controller: Controller, pTokens: PToken[]): Promise<World> {
-  let invokation = await invoke(world, controller.methods._addPieMarkets(pTokens.map(c => c._address)), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Added PIE markets ${pTokens.map(c => c.name)}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function dropPieMarket(world: World, from: string, controller: Controller, pToken: PToken): Promise<World> {
-  let invokation = await invoke(world, controller.methods._dropPieMarket(pToken._address), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Drop PIE market ${pToken.name}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function refreshPieSpeeds(world: World, from: string, controller: Controller): Promise<World> {
-  let invokation = await invoke(world, controller.methods.refreshPieSpeeds(), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Refreshed PIE speeds`,
-    invokation
-  );
-
-  return world;
-}
-
-async function claimPie(world: World, from: string, controller: Controller, holder: string): Promise<World> {
-  let invokation = await invoke(world, controller.methods.claimPie(holder), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Pie claimed by ${holder}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function setPieRate(world: World, from: string, controller: Controller, rate: NumberV): Promise<World> {
-  let invokation = await invoke(world, controller.methods._setPieRate(rate.encode()), from, ControllerErrorReporter);
-
-  world = addAction(
-    world,
-    `Pie rate set to ${rate.show()}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function setPieSpeed(world: World, from: string, controller: Controller, pToken: PToken, speed: NumberV): Promise<World> {
-    let invokation = await invoke(world, controller.methods._setPieSpeed(pToken._address, speed.encode()), from, ControllerErrorReporter);
-
-    world = addAction(
-        world,
-        `Pie speed for market ${pToken._address} set to ${speed.show()}`,
-        invokation
-    );
-
-    return world;
 }
 
 async function printLiquidity(world: World, controller: Controller): Promise<World> {
@@ -497,18 +425,18 @@ export function controllerCommands() {
       ],
       (world, from, {controller, liquidateGuardian}) => setLiquidateGuardian(world, from, controller, liquidateGuardian.val)
     ),
-    new Command<{controller: Controller, pieAddress: AddressV}>(`
-        #### SetPieAddress
-    
-        * "Controller SetPieAddress:<Address>" - Sets the pie address
-          * E.g. "Controller SetPieAddress 0x..."
-        `,
-      "SetPieAddress",
-      [
+    new Command<{controller: Controller, distributor: AddressV}>(`
+        #### SetDistributor
+
+        * "Controller SetDistributor distributor:<Address>" - Sets the distributor address
+          * E.g. "Controller SetDistributor 0x..."
+      `,
+        "SetDistributor",
+        [
           new Arg("controller", getController, {implicit: true}),
-          new Arg("pieAddress", getAddressV)
-      ],
-      (world, from, {controller, pieAddress}) => setPieAddress(world, from, controller, pieAddress.val)
+          new Arg("distributor", getAddressV)
+        ],
+        (world, from, {controller, distributor}) => setDistributor(world, from, controller, distributor.val)
     ),
     new Command<{controller: Controller, pToken: PToken, collateralFactor: NumberV}>(`
         #### SetCollateralFactor
@@ -661,84 +589,6 @@ export function controllerCommands() {
       ],
       (world, from, {controller, signature, callArgs}) => sendAny(world, from, controller, signature.val, rawValues(callArgs))
     ),
-    new Command<{controller: Controller, pTokens: PToken[]}>(`
-      #### AddPieMarkets
-
-      * "Controller AddPieMarkets (<Address> ...)" - Makes a market PIE-enabled
-      * E.g. "Controller AddPieMarkets (pZRX cBAT)
-      `,
-      "AddPieMarkets",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("pTokens", getPTokenV, {mapped: true})
-      ],
-      (world, from, {controller, pTokens}) => addPieMarkets(world, from, controller, pTokens)
-     ),
-    new Command<{controller: Controller, pToken: PToken}>(`
-      #### DropPieMarket
-
-      * "Controller DropPieMarket <Address>" - Makes a market PIE
-      * E.g. "Controller DropPieMarket pZRX
-      `,
-      "DropPieMarket",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("pToken", getPTokenV)
-      ],
-      (world, from, {controller, pToken}) => dropPieMarket(world, from, controller, pToken)
-     ),
-
-    new Command<{controller: Controller}>(`
-      #### RefreshPieSpeeds
-
-      * "Controller RefreshPieSpeeds" - Recalculates all the PIE market speeds
-      * E.g. "Controller RefreshPieSpeeds
-      `,
-      "RefreshPieSpeeds",
-      [
-        new Arg("controller", getController, {implicit: true})
-      ],
-      (world, from, {controller}) => refreshPieSpeeds(world, from, controller)
-    ),
-    new Command<{controller: Controller, holder: AddressV}>(`
-      #### ClaimPie
-
-      * "Controller ClaimPie <holder>" - Claims pie
-      * E.g. "Controller ClaimPie Geoff
-      `,
-      "ClaimPie",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("holder", getAddressV)
-      ],
-      (world, from, {controller, holder}) => claimPie(world, from, controller, holder.val)
-    ),
-    new Command<{controller: Controller, rate: NumberV}>(`
-      #### SetPieRate
-
-      * "Controller SetPieRate <rate>" - Sets PIE rate
-      * E.g. "Controller SetPieRate 1e18
-      `,
-      "SetPieRate",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("rate", getNumberV)
-      ],
-      (world, from, {controller, rate}) => setPieRate(world, from, controller, rate)
-    ),
-      new Command<{controller: Controller, pToken: PToken, speed: NumberV}>(`
-      #### SetPieSpeed
-      * "Controller SetPieSpeed <pToken> <rate>" - Sets PIE speed for market
-      * E.g. "Controller SetPieSpeed pToken 1000
-      `,
-          "SetPieSpeed",
-          [
-              new Arg("controller", getController, {implicit: true}),
-              new Arg("pToken", getPTokenV),
-              new Arg("speed", getNumberV)
-          ],
-          (world, from, {controller, pToken, speed}) => setPieSpeed(world, from, controller, pToken, speed)
-      ),
   ];
 }
 

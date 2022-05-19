@@ -3,15 +3,14 @@ import { addAction, World } from '../World';
 import { ControllerImpl } from '../Contract/ControllerImpl';
 import { Unitroller } from '../Contract/Unitroller';
 import { invoke } from '../Invokation';
-import { getAddressV, getArrayV, getEventV, getNumberV, getStringV } from '../CoreValue';
-import { ArrayV, AddressV, EventV, NumberV, StringV } from '../Value';
+import { getEventV, getStringV } from '../CoreValue';
+import { EventV, StringV } from '../Value';
 import { Arg, Command, View, processCommandEvent } from '../Command';
 import { buildControllerImpl } from '../Builder/ControllerImplBuilder';
 import { ControllerErrorReporter } from '../ErrorReporter';
 import { getControllerImpl, getControllerImplData, getUnitroller } from '../ContractLookup';
 import { verify } from '../Verify';
 import { mergeContractABI } from '../Networks';
-import { encodedNumber } from '../Encoding';
 
 async function genControllerImpl(world: World, from: string, params: Event): Promise<World> {
   let { world: nextWorld, controllerImpl, controllerImplData } = await buildControllerImpl(

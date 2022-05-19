@@ -22,6 +22,8 @@ import { controllerFetchers, getControllerValue } from './Value/ControllerValue'
 import { registryFetchers, getRegistryValue } from './Value/RegistryValue';
 import { registryProxyFetchers, getRegistryProxyValue } from './Value/RegistryProxyValue';
 import { controllerImplFetchers, getControllerImplValue } from './Value/ControllerImplValue';
+import { distributorFetchers, getDistributorValue } from './Value/DistributorValue';
+import { distributorProxyFetchers, getDistributorProxyValue } from './Value/DistributorProxyValue';
 import { getUnitrollerValue, unitrollerFetchers } from './Value/UnitrollerValue';
 import { pTokenFetchers, getPTokenValue } from './Value/PTokenValue';
 import { pTokenDelegateFetchers, getPTokenDelegateValue } from './Value/PTokenDelegateValue';
@@ -867,6 +869,28 @@ const fetchers = [
     [new Arg('res', getControllerImplValue, { variadic: true })],
     async (world, { res }) => res,
     { subExpressions: controllerImplFetchers() }
+  ),
+  new Fetcher<{ res: Value }, Value>(
+      `
+      #### Distributor
+
+      * "Distributor ...distributorArgs" - Returns distributor value
+    `,
+      'Distributor',
+      [new Arg('res', getDistributorValue, { variadic: true })],
+      async (world, { res }) => res,
+      { subExpressions: distributorFetchers() }
+  ),
+  new Fetcher<{ res: Value }, Value>(
+      `
+      #### DistributorProxy
+
+      * "DistributorProxy ...distributorProxyArgs" - Returns distributor proxy value
+    `,
+      'DistributorProxy',
+      [new Arg('res', getDistributorProxyValue, { variadic: true })],
+      async (world, { res }) => res,
+      { subExpressions: distributorProxyFetchers() }
   ),
   new Fetcher<{ res: Value }, Value>(
     `

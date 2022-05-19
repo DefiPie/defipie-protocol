@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import "../../contracts/Timelock.sol";
+import "../../contracts/Governance/Timelock.sol";
 
 interface Administered {
     function _acceptAdmin() external returns (uint);

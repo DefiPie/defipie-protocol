@@ -1,4 +1,4 @@
-const { address, both, etherMantissa } = require('../Utils/Ethereum');
+const { address } = require('../Utils/Ethereum');
 const { makeController, makePToken } = require('../Utils/DeFiPie');
 
 describe('Controller', () => {
@@ -123,26 +123,65 @@ describe('Controller', () => {
 
       marketMethods.forEach(async (method) => {
         it(`only pause guardian or admin can pause ${method}`, async () => {
-          await expect(send(controller, `_set${method}Paused`, [pToken._address, true], {from: accounts[2]})).rejects.toRevert("revert only pause guardian and admin can pause");
-          await expect(send(controller, `_set${method}Paused`, [pToken._address, false], {from: accounts[2]})).rejects.toRevert("revert only pause guardian and admin can pause");
+          switch (method) {
+            case "Mint":
+              await expect(send(controller, `_set${method}Paused`, [pToken._address, true], {from: accounts[2]})).rejects.toRevert("revert only pause guardian and admin can pause");
+              await expect(send(controller, `_set${method}Paused`, [pToken._address, false], {from: accounts[2]})).rejects.toRevert("revert only pause guardian and admin can pause");
+              break;
+
+            case "Borrow":
+              await send(controller, '_setUserModeratePoolData', [1, 1]);
+              await expect(send(controller, `_set${method}Paused`, [pToken._address, true], {from: accounts[2]})).rejects.toRevert("revert Pie::transferFrom: transfer amount exceeds spender allowance");
+              await expect(send(controller, `_set${method}Paused`, [pToken._address, false], {from: accounts[2]})).rejects.toRevert("revert only pause");
+              break;
+
+            default:
+              break;
+          }
         });
 
         it(`PauseGuardian can pause of ${method}GuardianPaused`, async () => {
-          result = await send(controller, `_set${method}Paused`, [pToken._address, true], {from: pauseGuardian});
-          expect(result).toHaveLog(`ActionPaused`, {pToken: pToken._address, action: method, pauseState: true});
+          let result, state, camelCase;
+          switch (method) {
+            case "Mint":
+              result = await send(controller, `_set${method}Paused`, [pToken._address, true], {from: pauseGuardian});
+              expect(result).toHaveLog(`ActionPaused`, {pToken: pToken._address, action: method, pauseState: true});
 
-          let camelCase = method.charAt(0).toLowerCase() + method.substring(1);
+              camelCase = method.charAt(0).toLowerCase() + method.substring(1);
 
-          state = await call(controller, `${camelCase}GuardianPaused`, [pToken._address]);
-          expect(state).toEqual(true);
+              state = await call(controller, `${camelCase}GuardianPaused`, [pToken._address]);
+              expect(state).toEqual(true);
 
-          await expect(send(controller, `_set${method}Paused`, [pToken._address, false], {from: pauseGuardian})).rejects.toRevert("revert only admin can unpause");
-          result = await send(controller, `_set${method}Paused`, [pToken._address, false]);
+              await expect(send(controller, `_set${method}Paused`, [pToken._address, false], {from: pauseGuardian})).rejects.toRevert("revert only admin can unpause");
+              result = await send(controller, `_set${method}Paused`, [pToken._address, false]);
 
-          expect(result).toHaveLog(`ActionPaused`, {pToken: pToken._address, action: method, pauseState: false});
+              expect(result).toHaveLog(`ActionPaused`, {pToken: pToken._address, action: method, pauseState: false});
 
-          state = await call(controller, `${camelCase}GuardianPaused`, [pToken._address]);
-          expect(state).toEqual(false);
+              state = await call(controller, `${camelCase}GuardianPaused`, [pToken._address]);
+              expect(state).toEqual(false);
+              break;
+
+            case "Borrow":
+              result = await send(controller, `_set${method}Paused`, [pToken._address, true], {from: pauseGuardian});
+              expect(result).toHaveLog(`ActionPaused`, {pToken: pToken._address, action: method, pauseState: true});
+
+              camelCase = method.charAt(0).toLowerCase() + method.substring(1);
+
+              state = await call(controller, `${camelCase}GuardianPaused`, [pToken._address]);
+              expect(state).toEqual(true);
+
+              await expect(send(controller, `_set${method}Paused`, [pToken._address, false], {from: pauseGuardian})).rejects.toRevert("revert bad reward state");
+              result = await send(controller, `_set${method}Paused`, [pToken._address, false]);
+
+              expect(result).toHaveLog(`ActionPaused`, {pToken: pToken._address, action: method, pauseState: false});
+
+              state = await call(controller, `${camelCase}GuardianPaused`, [pToken._address]);
+              expect(state).toEqual(false);
+              break;
+
+            default:
+              break;
+          }
         });
 
         it(`pauses ${method}`, async() => {

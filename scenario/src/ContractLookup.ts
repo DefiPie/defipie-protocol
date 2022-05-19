@@ -9,6 +9,8 @@ import { PErc20Delegate } from './Contract/PErc20Delegate';
 import { Pie } from './Contract/Pie';
 import { Controller } from './Contract/Controller';
 import { ControllerImpl } from './Contract/ControllerImpl';
+import { Distributor } from './Contract/Distributor';
+import { DistributorProxy } from './Contract/DistributorProxy';
 import { PToken } from './Contract/PToken';
 import { Governor } from './Contract/Governor';
 import { Erc20 } from './Contract/Erc20';
@@ -17,7 +19,6 @@ import { PriceOracle } from './Contract/PriceOracle';
 import { Timelock } from './Contract/Timelock';
 import { Registry } from './Contract/Registry';
 import { RegistryProxy } from './Contract/RegistryProxy';
-
 
 type ContractDataEl = string | Map<string, object> | undefined;
 
@@ -91,6 +92,10 @@ export async function getController(world: World): Promise<Controller> {
     return getWorldContract(world, [['Contracts', 'Controller']]);
 }
 
+export async function getControllerImpl(world: World, controllerImplArg: Event): Promise<ControllerImpl> {
+  return getWorldContract(world, [['Controller', mustString(controllerImplArg), 'address']]);
+}
+
 export async function getRegistry(world: World): Promise<Registry> {
     return getWorldContract(world, [['Contracts', 'Registry']]);
 }
@@ -99,8 +104,12 @@ export async function getRegistryProxy(world: World): Promise<RegistryProxy> {
     return getWorldContract(world, [['Contracts', 'RegistryProxy']]);
 }
 
-export async function getControllerImpl(world: World, controllerImplArg: Event): Promise<ControllerImpl> {
-  return getWorldContract(world, [['Controller', mustString(controllerImplArg), 'address']]);
+export async function getDistributor(world: World): Promise<Distributor> {
+  return getWorldContract(world, [['Contracts', 'Distributor']]);
+}
+
+export async function getDistributorProxy(world: World): Promise<DistributorProxy> {
+  return getWorldContract(world, [['Contracts', 'DistributorProxy']]);
 }
 
 export function getPTokenAddress(world: World, pTokenArg: string): string {
@@ -238,6 +247,8 @@ export function getAddress(world: World, addressArg: string): string {
     ['PTokenDelegate', addressArg, 'address'],
     ['Tokens', addressArg, 'address'],
     ['Controller', addressArg, 'address'],
+    ['Distributor', addressArg, 'address'],
+    ['DistributorProxy', addressArg, 'address'],
     ['Registry', addressArg, 'address'],
     ['RegistryProxy', addressArg, 'address']
   ]);

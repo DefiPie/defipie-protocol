@@ -2,14 +2,14 @@
 pragma solidity ^0.7.6;
 pragma abicoder v2;
 
-import "../PErc20.sol";
-import "../PriceOracle.sol";
-import "../EIP20Interface.sol";
+import "../Tokens/PErc20.sol";
+import "../Oracles/PriceOracle.sol";
+import "../Tokens/EIP20Interface.sol";
 import "../Governance/Governor.sol";
-import "../PPIE.sol";
-import "../PTokenInterfaces.sol";
-import "../ControllerInterface.sol";
-import "../Controller.sol";
+import "../Tokens/PPIE.sol";
+import "../Tokens/PTokenInterfaces.sol";
+import "../Control/Controller.sol";
+import "../Control/Distributor.sol";
 
 contract DeFiPieLens {
     struct PTokenMetadata {
@@ -81,7 +81,7 @@ contract DeFiPieLens {
         uint tokenAllowance;
     }
 
-    function pTokenBalances(address pToken, address payable account) public returns (PTokenBalances memory) {
+    function pTokenBalances(address pToken, address account) public returns (PTokenBalances memory) {
         uint balanceOf = EIP20Interface(pToken).balanceOf(account);
         uint borrowBalanceCurrent = PTokenInterface(pToken).borrowBalanceCurrent(account);
         uint balanceOfUnderlying = PTokenInterface(pToken).balanceOfUnderlying(account);
@@ -110,7 +110,7 @@ contract DeFiPieLens {
 
     function pTokenBalancesAll(
         address[] calldata pTokens,
-        address payable account
+        address account
     ) external returns (PTokenBalances[] memory) {
         uint pTokenCount = pTokens.length;
         PTokenBalances[] memory res = new PTokenBalances[](pTokenCount);
@@ -122,7 +122,7 @@ contract DeFiPieLens {
 
     function pTokenBalancesAllMarkets(
         address controller,
-        address payable account
+        address account
     ) external returns (PTokenBalances[] memory) {
         address[] memory pTokens = Controller(controller).getAllMarkets();
         PTokenBalances[] memory res = new PTokenBalances[](pTokens.length);
@@ -296,13 +296,13 @@ contract DeFiPieLens {
 
     function getPPieBalanceMetadataExt(
         PPIE pPIE,
-        Controller controller,
+        Distributor distributor,
         address account
     ) external returns (PPieBalanceMetadataExt memory) {
         uint balance = pPIE.balanceOf(account);
-        controller.claimPie(account);
+        distributor.claimPie(account);
         uint newBalance = pPIE.balanceOf(account);
-        uint accrued = controller.pieAccrued(account);
+        uint accrued = distributor.pieAccrued(account);
         uint total = add(accrued, newBalance, "sum pPIE total");
         uint allocated = sub(total, balance, "sub allocated");
 

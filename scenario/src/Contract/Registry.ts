@@ -4,6 +4,7 @@ import {Callable, Sendable} from '../Invokation';
 interface RegistryMethods {
     initialize(address: string): Sendable<void>
     _setPTokenImplementation(address: string): Sendable<number>
+
     implementaion(): Callable<string>
     admin(): Callable<string>
     pendingAdmin(): Callable<string>

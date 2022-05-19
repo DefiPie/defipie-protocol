@@ -16,7 +16,7 @@ import {
 import {Arg, Command, processCommandEvent} from '../Command';
 import {getRegistryProxy} from "../ContractLookup";
 
-async function genToken(world: World, from: string, params: Event): Promise<World> {
+async function genRegistryProxy(world: World, from: string, params: Event): Promise<World> {
     let {world: newWorld, registryProxy, registryProxyData} = await buildRegistryProxy(world, from, params);
     world = newWorld;
 
@@ -70,7 +70,7 @@ async function setImplementation(world: World, from: string, registryProxy: Regi
 
     world = addAction(
         world,
-        `Called set PToken Implementation ${newImplementation} as ${describeUser(world, from)}`,
+        `Called set new Implementation ${newImplementation} as ${describeUser(world, from)}`,
         invokation
     );
 
@@ -138,30 +138,34 @@ async function removePTokenFromRegistry(world: World, from: string, registryProx
 }
 
 export function registryProxyCommands() {
-    return [
-        new Command<{registryProxyParams: EventV}>(`
-        #### Deploy
-        * "RegistryProxy Deploy ...registryProxyParams" - Generates a new RegistryProxy
-          * E.g. "RegistryProxy Deploy ..."
-      `,
-            "Deploy",
-            [new Arg("registryProxyParams", getEventV, {variadic: true})],
-            (world, from, {registryProxyParams}) => genToken(world, from, registryProxyParams.val)
-        ),
+  return [
+    new Command<{registryProxyParams: EventV}>(`
+      #### Deploy
 
-        new Command<{registryProxy: RegistryProxy, newImplementation: AddressV}>(`
-        #### SetImplementation
-
-        * "RegistryProxy SetImplementation newImplementation:<Address>" - Sets the implementation for the RegistryProxy
-          * E.g. "RegistryProxy SetImplementation 0x.."
+      * "RegistryProxy Deploy ...registryProxyParams" - Generates a new RegistryProxy
+      * E.g. "RegistryProxy Deploy ..."
       `,
-            "SetImplementation",
-            [
-                new Arg("registryProxy", getRegistryProxy, {implicit: true}),
-                new Arg("newImplementation", getAddressV)
-            ],
-            (world, from, {registryProxy, newImplementation}) => setImplementation(world, from, registryProxy, newImplementation.val)
-        ),
+      "Deploy",
+      [new Arg("registryProxyParams", getEventV, {variadic: true})],
+      (world, from, {registryProxyParams}) => genRegistryProxy(world, from, registryProxyParams.val)
+    ),
+    new Command<{registryProxy: RegistryProxy, newImplementation: AddressV}>(`
+      #### SetImplementation
+
+      * "RegistryProxy SetImplementation newImplementation:<Address>" - Sets the implementation for the RegistryProxy
+      * E.g. "RegistryProxy SetImplementation 0x.."
+      `,
+      "SetImplementation",
+      [
+        new Arg("registryProxy", getRegistryProxy, {implicit: true}),
+        new Arg("newImplementation", getAddressV)
+      ],
+      (
+          world,
+          from,
+          {registryProxy, newImplementation}
+      ) => setImplementation(world, from, registryProxy, newImplementation.val)
+    ),
         new Command<{registryProxy: RegistryProxy, newPendingAdmin: AddressV}>(`
         #### SetPendingAdmin
 

@@ -18,7 +18,7 @@ async function pieBalance(controller, user) {
 }
 
 async function pieAccrued(controller, user) {
-    return etherUnsigned(await call(controller, 'pieAccrued', [user]));
+    return etherUnsigned(await call(controller.distributor, 'pieAccrued', [user]));
 }
 
 async function fastForwardPatch(patch, controller, blocks) {
@@ -78,7 +78,7 @@ async function mint(pToken, minter, mintAmount, exchangeRate) {
 }
 
 async function claimPie(controller, holder) {
-    return send(controller, 'claimPie', [holder], { from: holder });
+    return send(controller.distributor, 'claimPie', [holder], { from: holder });
 }
 
 /// GAS PROFILER: saves a digest of the gas prices of common pToken operations
@@ -184,15 +184,16 @@ describe('Gas report', () => {
         beforeEach(async () => {
             [root, minter, redeemer, ...accounts] = saddle.accounts;
             controller = await makeController({ kind: patch });
+
             let interestRateModelOpts = {borrowRate: 0.000001};
             pToken = await makePToken({kind: 'ppie', controller: controller, priceOracle: controller.priceOracle, registryProxy: controller.registryProxy, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
             if (patch == 'unitroller') {
-                await send(controller, '_setPieSpeed', [pToken._address, etherExp(0.05)]);
+                await send(controller.distributor, '_setPieSpeed', [pToken._address, etherExp(0.05)]);
             } else {
-                await send(controller, 'harnessAddPieMarkets', [[pToken].map(c => c._address)]);
-                await send(controller, 'setPieSpeed', [pToken._address, etherExp(0.05)]);
+                await send(controller.distributor, 'harnessAddPieMarkets', [[pToken].map(c => c._address)]);
+                await send(controller.distributor, '_setPieSpeed', [pToken._address, etherExp(0.05)]);
             }
-            await send(controller.pie, 'transfer', [controller._address, etherUnsigned(50e18)], {from: root});
+            await send(controller.pie, 'transfer', [controller.distributor._address, etherUnsigned(50e18)], {from: root});
         });
 
         it(`${patch} second mint with pie accrued`, async () => {

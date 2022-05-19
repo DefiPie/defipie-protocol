@@ -50,12 +50,12 @@ async function getRegistry(world: World, controller: Controller): Promise<Addres
     return new AddressV(await controller.methods.registry().call());
 }
 
-async function getLiquidateGuardian(world: World, controller: Controller): Promise<AddressV> {
-    return new AddressV(await controller.methods.liquidateGuardian().call());
+async function getDistributor(world: World, controller: Controller): Promise<AddressV> {
+  return new AddressV(await controller.methods.distributor().call());
 }
 
-async function getPieAddress(world: World, controller: Controller): Promise<AddressV> {
-    return new AddressV(await controller.methods.getPieAddress().call());
+async function getLiquidateGuardian(world: World, controller: Controller): Promise<AddressV> {
+    return new AddressV(await controller.methods.liquidateGuardian().call());
 }
 
 async function getCloseFactor(world: World, controller: Controller): Promise<NumberV> {
@@ -103,16 +103,14 @@ async function checkMembership(world: World, controller: Controller, user: strin
   return new BoolV(await controller.methods.checkMembership(user, pToken._address).call());
 }
 
+async function checkIsListed(world: World, controller: Controller, pToken: PToken): Promise<BoolV> {
+  return new BoolV(await controller.methods.checkIsListed(pToken._address).call());
+}
+
 async function getAssetsIn(world: World, controller: Controller, user: string): Promise<ListV> {
   let assetsList = await controller.methods.getAssetsIn(user).call();
 
   return new ListV(assetsList.map((a) => new AddressV(a)));
-}
-
-async function getPieMarkets(world: World, controller: Controller): Promise<ListV> {
-  let mkts = await controller.methods.getPieMarkets().call();
-
-  return new ListV(mkts.map((a) => new AddressV(a)));
 }
 
 async function checkListed(world: World, controller: Controller, pToken: PToken): Promise<BoolV> {
@@ -196,26 +194,16 @@ export function controllerFetchers() {
       [new Arg("controller", getController, {implicit: true})],
       (world, {controller}) => getAdmin(world, controller)
     ),
-      new Fetcher<{controller: Controller}, AddressV>(`
-        #### LiquidateGuardian
+    new Fetcher<{controller: Controller}, AddressV>(`
+      #### LiquidateGuardian
 
-        * "Controller LiquidateGuardian" - Returns the Controllers's liquidate guardian
-          * E.g. "Controller LiquidateGuardian"
+      * "Controller LiquidateGuardian" - Returns the Controllers's liquidate guardian
+      * E.g. "Controller LiquidateGuardian"
       `,
-          "LiquidateGuardian",
-          [new Arg("controller", getController, {implicit: true})],
-          (world, {controller}) => getLiquidateGuardian(world, controller)
-      ),
-      new Fetcher<{controller: Controller}, AddressV>(`
-        #### PieAddress
-
-        * "Controller PieAddress" - Returns the Controllers's pie address
-          * E.g. "Controller PieAddress"
-      `,
-          "PieAddress",
-          [new Arg("controller", getController, {implicit: true})],
-          (world, {controller}) => getPieAddress(world, controller)
-      ),
+      "LiquidateGuardian",
+      [new Arg("controller", getController, {implicit: true})],
+      (world, {controller}) => getLiquidateGuardian(world, controller)
+    ),
     new Fetcher<{controller: Controller}, NumberV>(`
         #### CloseFactor
 
@@ -331,6 +319,19 @@ export function controllerFetchers() {
       ],
       (world, {controller, account, pToken}) => checkMembership(world, controller, account.val, pToken)
     ),
+    new Fetcher<{controller: Controller, pToken: PToken}, BoolV>(`
+      #### CheckIsListed
+
+      * "Controller CheckIsListed <PToken>" - Returns one if asset is listed, zero otherwise.
+      * E.g. "Controller CheckIsListed pZRX"
+      `,
+      "CheckIsListed",
+      [
+        new Arg("controller", getController, {implicit: true}),
+        new Arg("pToken", getPTokenV)
+      ],
+      (world, {controller, pToken}) => checkIsListed(world, controller, pToken)
+    ),
     new Fetcher<{controller: Controller, account: AddressV}, ListV>(`
         #### AssetsIn
 
@@ -382,27 +383,36 @@ export function controllerFetchers() {
         ],
         async (world, {controller}) => new AddressV(await controller.methods.pauseGuardian().call())
     ),
-      new Fetcher<{controller: Controller}, AddressV>(`
+    new Fetcher<{controller: Controller}, AddressV>(`
       #### Oracle
 
-        * "Controller Oracle" - Returns the Controllers's Oracle
-        * E.g. "Controller Oracle"
-        `,
-          "Oracle",
-          [new Arg("controller", getController, {implicit: true})],
-          (world, {controller}) => getPriceOracle(world, controller)
-      ),
-      new Fetcher<{controller: Controller}, AddressV>(`
+      * "Controller Oracle" - Returns the Controllers's Oracle
+      * E.g. "Controller Oracle"
+      `,
+      "Oracle",
+      [new Arg("controller", getController, {implicit: true})],
+      (world, {controller}) => getPriceOracle(world, controller)
+    ),
+    new Fetcher<{controller: Controller}, AddressV>(`
       #### Registry
 
-        * "Controller Registry" - Returns the Controllers's Oracle
-        * E.g. "Controller Registry"
-        `,
-          "Registry",
-          [new Arg("controller", getController, {implicit: true})],
-          (world, {controller}) => getRegistry(world, controller)
-      ),
+      * "Controller Registry" - Returns the Controllers's Registry
+      * E.g. "Controller Registry"
+      `,
+     "Registry",
+     [new Arg("controller", getController, {implicit: true})],
+     (world, {controller}) => getRegistry(world, controller)
+    ),
+    new Fetcher<{controller: Controller}, AddressV>(`
+      #### Distributor
 
+      * "Controller Distributor" - Returns the Controllers's Distributor
+      * E.g. "Controller Distributor"
+      `,
+      "Distributor",
+      [new Arg("controller", getController, {implicit: true})],
+      (world, {controller}) => getDistributor(world, controller)
+    ),
     new Fetcher<{controller: Controller}, BoolV>(`
         #### _MintGuardianPaused
 
@@ -471,29 +481,6 @@ export function controllerFetchers() {
         ],
         async (world, {controller, pToken}) => new BoolV(await controller.methods.borrowGuardianPaused(pToken._address).call())
     ),
-
-    new Fetcher<{controller: Controller}, ListV>(`
-      #### GetPieMarkets
-
-      * "GetPieMarkets" - Returns an array of the currently enabled Pie markets. To use the auto-gen array getter pieMarkets(uint), use PieMarkets
-      * E.g. "Controller GetPieMarkets"
-      `,
-      "GetPieMarkets",
-      [new Arg("controller", getController, {implicit: true})],
-      async(world, {controller}) => await getPieMarkets(world, controller)
-     ),
-
-    new Fetcher<{controller: Controller}, NumberV>(`
-      #### PieRate
-
-      * "PieRate" - Returns the current pie rate.
-      * E.g. "Controller PieRate"
-      `,
-      "PieRate",
-      [new Arg("controller", getController, {implicit: true})],
-      async(world, {controller}) => new NumberV(await controller.methods.pieRate().call())
-    ),
-
     new Fetcher<{controller: Controller, signature: StringV, callArgs: StringV[]}, NumberV>(`
         #### CallNum
 
@@ -516,97 +503,6 @@ export function controllerFetchers() {
         return new NumberV(resNum);
       }
     ),
-    new Fetcher<{controller: Controller, PToken: PToken, key: StringV}, NumberV>(`
-        #### PieSupplyState(address)
-
-        * "Controller PieBorrowState pZRX "index"
-      `,
-      "PieSupplyState",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("PToken", getPTokenV),
-        new Arg("key", getStringV),
-      ],
-      async (world, {controller, PToken, key}) => {
-        const result = await controller.methods.pieSupplyState(PToken._address).call();
-        return new NumberV(result[key.val]);
-      }
-    ),
-    new Fetcher<{controller: Controller, PToken: PToken, key: StringV}, NumberV>(`
-        #### PieBorrowState(address)
-
-        * "Controller PieBorrowState pZRX "index"
-      `,
-      "PieBorrowState",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("PToken", getPTokenV),
-        new Arg("key", getStringV),
-      ],
-      async (world, {controller, PToken, key}) => {
-        const result = await controller.methods.pieBorrowState(PToken._address).call();
-        return new NumberV(result[key.val]);
-      }
-    ),
-    new Fetcher<{controller: Controller, account: AddressV, key: StringV}, NumberV>(`
-        #### PieAccrued(address)
-
-        * "Controller PieAccrued Coburn
-      `,
-      "PieAccrued",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("account", getAddressV),
-      ],
-      async (world, {controller,account}) => {
-        const result = await controller.methods.pieAccrued(account.val).call();
-        return new NumberV(result);
-      }
-    ),
-    new Fetcher<{controller: Controller, PToken: PToken, account: AddressV}, NumberV>(`
-        #### pieSupplierIndex
-
-        * "Controller PieSupplierIndex pZRX Coburn
-      `,
-      "PieSupplierIndex",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("PToken", getPTokenV),
-        new Arg("account", getAddressV),
-      ],
-      async (world, {controller, PToken, account}) => {
-        return new NumberV(await controller.methods.pieSupplierIndex(PToken._address, account.val).call());
-      }
-    ),
-    new Fetcher<{controller: Controller, PToken: PToken, account: AddressV}, NumberV>(`
-        #### PieBorrowerIndex
-
-        * "Controller PieBorrowerIndex pZRX Coburn
-      `,
-      "PieBorrowerIndex",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("PToken", getPTokenV),
-        new Arg("account", getAddressV),
-      ],
-      async (world, {controller, PToken, account}) => {
-        return new NumberV(await controller.methods.pieBorrowerIndex(PToken._address, account.val).call());
-      }
-    ),
-    new Fetcher<{controller: Controller, PToken: PToken}, NumberV>(`
-        #### PieSpeed
-
-        * "Controller PieSpeed pZRX
-      `,
-      "PieSpeed",
-      [
-        new Arg("controller", getController, {implicit: true}),
-        new Arg("PToken", getPTokenV),
-      ],
-      async (world, {controller, PToken}) => {
-        return new NumberV(await controller.methods.pieSpeeds(PToken._address).call());
-      }
-    )
   ];
 }
 

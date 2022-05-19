@@ -2,11 +2,11 @@ import {Contract} from '../Contract';
 import {Callable, Sendable} from '../Invokation';
 
 interface RegistryProxyMethods {
-    _setPTokenImplementation(address: string): Sendable<number>
     _setImplementation(address: string): Sendable<number>
-
     _setPendingAdmin(string): Sendable<number>
     _acceptAdmin(): Sendable<void>
+
+    _setPTokenImplementation(address: string): Sendable<number>
 
     implementaion(): Callable<string>
     admin(): Callable<string>
@@ -15,7 +15,6 @@ interface RegistryProxyMethods {
 
     pPIE(): Callable<string>
     addPPIE(address: string): Sendable<number>
-
     pETH(): Callable<string>
     addPETH(address: string): Sendable<number>
 

@@ -5,7 +5,7 @@ const {
 } = require('../Utils/Ethereum');
 const {
   makeController,
-  makePToken,
+  makePToken, makeDistributor,
 } = require('../Utils/DeFiPie');
 
 const BigNumber = require('bignumber.js');
@@ -335,11 +335,11 @@ describe('DeFiPieLens', () => {
 
     describe('getPPieBalanceMetadataExt', () => {
       it('gets correct values', async () => {
-        let controller = await makeController();
-        await send(controller, 'setPieAccrued', [acct, 5]); // harness only
+        let distributor = await makeDistributor();
+        await send(distributor, 'setPieAccrued', [acct, 5]); // harness only
 
         expect(
-          cullTuple(await call(defipieLens, 'getPPieBalanceMetadataExt', [ppie._address, controller._address, acct]))
+          cullTuple(await call(defipieLens, 'getPPieBalanceMetadataExt', [ppie._address, distributor._address, acct]))
         ).toEqual({
           balance: "1000000000000000",
           delegate: "0x0000000000000000000000000000000000000000",

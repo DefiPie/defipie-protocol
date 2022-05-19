@@ -32,11 +32,6 @@ describe('Controller', () => {
       await send(controller, '_setMaxAssets', [5000]);
       expect(await call(controller, 'maxAssets')).toEqualNumber(5000);
     });
-
-    it("on success it pieAddress is unset", async () => {
-        const controller = await makeController({kind: 'unitroller-g3'});
-        expect(await call(controller, 'pieAddress')).toEqual("0x0000000000000000000000000000000000000000");
-    });
   });
 
   describe('_setLiquidationIncentive', () => {
@@ -100,24 +95,6 @@ describe('Controller', () => {
       ).toHaveRegistryFailure('UNAUTHORIZED', 'SET_NEW_ORACLE');
       expect(await controller.methods.getOracle().call()).toEqual(currentOracle);
     });
-  });
-
-  describe('_setPieAddress', () => {
-      let controller, newPie;
-      beforeEach(async () => {
-          controller = await makeController({kind: 'unitroller-g3'});
-          newPie = await makeToken();
-      });
-
-      it("accepts a valid price oracle and emits a NewPriceOracle event", async () => {
-          await send(controller, '_setPieAddress', [newPie._address]);
-          expect(await call(controller, 'pieAddress')).toEqual(newPie._address);
-      });
-
-      it("fails if called twice", async () => {
-          await send(controller, '_setPieAddress', [newPie._address]);
-          await expect(send(controller, '_setPieAddress', [newPie._address])).rejects.toRevert("revert pie address may only be initialized once");
-      });
   });
 
   describe('_setCloseFactor', () => {

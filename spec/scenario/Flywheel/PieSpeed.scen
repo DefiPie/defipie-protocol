@@ -23,10 +23,15 @@ Macro FlywheelController price=10.0 borrowRate=0.000005 pieInitAmount=5000000e18
     ControllerImpl Deploy ScenarioG3 ControllerScen
     Unitroller SetPendingImpl ControllerScen
     ControllerImpl ControllerScen Become
-    Controller SetPieSpeed pZRX 1
-    Controller SetPieSpeed pBAT 1
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Unitroller Address)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
+    DistributorProxy SetPieSpeed pZRX 1
+    DistributorProxy SetPieSpeed pBAT 1
     Erc20 Deploy Standard PIE "PIE Token" 18
-    Give (Address Controller) pieInitAmount PIE
+    Give (Address DistributorProxy) pieInitAmount PIE
+    Assert Equal (Erc20 PIE TokenBalance (Address DistributorProxy)) pieInitAmount
 
 Macro GrantsController
     FlywheelController
@@ -42,50 +47,51 @@ Macro InitSpeeds
     Mint Coburn 6e18 pBAT--tokenbalance = 6e18 / 2e9 = 3e9
     EnterMarkets Coburn pBAT
     Borrow Coburn 1e18 pZRX
-    Controller SetPieSpeed pZRX 1
-    Controller SetPieSpeed pBAT 1
-    Controller RefreshPieSpeeds
-    Controller Send "setPieAddress(address)" (Address PIE)
+    DistributorProxy SetPieSpeed pZRX 1
+    DistributorProxy SetPieSpeed pBAT 1
+    DistributorProxy RefreshPieSpeeds
+    DistributorProxy SetPieAddress (Address PIE)
+    Assert Equal (DistributorProxy PieAddress) (Address PIE)
 
 Test "PIE speed can be set per market"
     GrantsController
     InitSpeeds
     -- Baseline pie amounts
-    Assert Equal (Controller PieAccrued Geoff) 0
+    Assert Equal (DistributorProxy PieAccrued Geoff) 0
     Assert Equal (Erc20 PIE TokenBalance Geoff) 0
     -- Pie speed can be set
-    Controller SetPieSpeed pZRX 2
+    DistributorProxy SetPieSpeed pZRX 2
     FastForward 1000 Blocks
-    Controller ClaimPie Geoff
-    Assert Equal (Controller PieAccrued Geoff) 0
+    DistributorProxy ClaimPie Geoff
+    Assert Equal (DistributorProxy PieAccrued Geoff) 0
     Assert Equal (Erc20 PIE TokenBalance Geoff) 2000
     -- Pie speed can be changed
-    Controller SetPieSpeed pZRX 4
+    DistributorProxy SetPieSpeed pZRX 4
     FastForward 1000 Blocks
-    Controller ClaimPie Geoff
-    Assert Equal (Controller PieAccrued Geoff) 0
+    DistributorProxy ClaimPie Geoff
+    Assert Equal (DistributorProxy PieAccrued Geoff) 0
     Assert Equal (Erc20 PIE TokenBalance Geoff) 6000
     -- Pie speed can be removed
-    Controller SetPieSpeed pZRX 0
+    DistributorProxy SetPieSpeed pZRX 0
     FastForward 1000 Blocks
-    Controller ClaimPie Geoff
-    Assert Equal (Controller PieAccrued Geoff) 0
+    DistributorProxy ClaimPie Geoff
+    Assert Equal (DistributorProxy PieAccrued Geoff) 0
     Assert Equal (Erc20 PIE TokenBalance Geoff) 6000
 
 Test "Set pie rate is removed"
     GrantsController
     InitSpeeds
     AllowFailures
-    Controller SetPieRate 5
+    DistributorProxy SetPieRate 5
 
 Test "Pie is not claimed automatically"
     GrantsController
     InitSpeeds
-    Controller SetPieSpeed pZRX 2
+    DistributorProxy SetPieSpeed pZRX 2
     FastForward 100000 Blocks
     -- Check pie is not claimed automatically
     Mint Geoff 50e18 pZRX
     Assert Equal (Erc20 PIE TokenBalance Geoff) 0
     -- Confirm there was pie to claim
-    Controller ClaimPie Geoff
+    DistributorProxy ClaimPie Geoff
     Assert Equal (Erc20 PIE TokenBalance Geoff) 200000

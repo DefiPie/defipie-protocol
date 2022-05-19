@@ -52,8 +52,15 @@ async function main() {
     console.log("Tx7 hash: ", tx.hash);
     tx = await unitrollerWithControllerInterface._setPauseGuardian(process.env.CONTROLLER_PAUSE_GUARDIAN);
     console.log("Tx8 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setUserModeratePoolData(
+        process.env.CONTROLLER_USET_PAUSE_DEPOSIT_AMOUNT,
+        process.env.CONTROLLER_GUARDIAN_MODERATE_TIME
+    );
+    console.log("Tx8_ hash: ", tx.hash);
     tx = await unitrollerWithControllerInterface._setBorrowDelay(process.env.CONTROLLER_BORROW_DELAY);
     console.log("Tx9 hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface._setDistributor(data.distributorProxy);
+    console.log("Tx9_ hash: ", tx.hash);
 
     // 2. Registry transactions
     const RegistryInterface = await hre.ethers.getContractFactory("Registry");
@@ -93,6 +100,9 @@ async function main() {
     tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
     console.log("Tx13 hash", tx.hash);
     await tx.wait();
+
+    tx = await pTokenFactoryInterface._setCreatePoolFeeAmount(process.env.FACTORY_POOL_FEE_AMOUNT);
+    console.log("Tx14 hash: ", tx.hash);
 
     console.log('Finish!');
 }

@@ -55,6 +55,13 @@ async function main() {
 
     namesAndAddresses.controller = controller.address;
 
+    const Distributor = await hre.ethers.getContractFactory("Distributor");
+    const distributor = await Distributor.deploy();
+
+    console.log(`Distributor smart contract has been deployed to: ${distributor.address}`);
+
+    namesAndAddresses.distributor = distributor.address;
+
     // 4. Base Interest Rate model
     const BaseInterestRateModel = await hre.ethers.getContractFactory("BaseInterestRateModel");
     const baseInterestRateModel = await BaseInterestRateModel.deploy(
@@ -207,6 +214,20 @@ async function main() {
 
     let tx4 = await unitroller.deployTransaction.wait();
     console.log('tx4 hash', tx4.transactionHash);
+
+    const DistributorProxy = await hre.ethers.getContractFactory("DistributorProxy");
+    const distributorProxy = await DistributorProxy.deploy(
+        distributor.address,
+        registryProxy.address,
+        unitroller.address
+    );
+
+    console.log(`DistributorProxy smart contract has been deployed to: ${distributorProxy.address}`);
+
+    namesAndAddresses.distributorProxy = distributorProxy.address;
+
+    let tx4_ = await distributorProxy.deployTransaction.wait();
+    console.log('tx4_ hash', tx4_.transactionHash);
 
     // 12. PToken Factory deploy
     const PTokenFactoryImpl = await hre.ethers.getContractFactory("PTokenFactory");

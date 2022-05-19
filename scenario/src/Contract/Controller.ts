@@ -7,10 +7,12 @@ interface ControllerMethods {
   getHypotheticalAccountLiquidity(account: string, asset: string, redeemTokens: encodedNumber, borrowAmount: encodedNumber): Callable<{0: number, 1: number, 2: number}>
   membershipLength(string): Callable<string>
   checkMembership(user: string, pToken: string): Callable<string>
+  checkIsListed(pToken: string): Callable<string>
   getAssetsIn(string): Callable<string[]>
   getAdmin(): Callable<string>
   getOracle(): Callable<string>
   registry(): Callable<string>
+  distributor(): Callable<string>
   liquidateGuardian(): Callable<string>
   maxAssets(): Callable<number>
   liquidationIncentiveMantissa(): Callable<number>
@@ -23,7 +25,6 @@ interface ControllerMethods {
   _setLiquidationIncentive(encodedNumber): Sendable<number>
   _supportMarket(string): Sendable<number>
   _setLiquidateGuardian(string): Sendable<number>
-  _setPieAddress(string): Sendable<number>
   _setCollateralFactor(string, encodedNumber): Sendable<number>
   _setFeeFactor(string, encodedNumber): Sendable<number>
   _setFeeFactorMaxMantissa(encodedNumber): Sendable<number>
@@ -46,24 +47,9 @@ interface ControllerMethods {
   seizeGuardianPaused(): Callable<boolean>
   mintGuardianPaused(market: string): Callable<boolean>
   borrowGuardianPaused(market: string): Callable<boolean>
-  _addPieMarkets(markets: string[]): Sendable<void>
-  _dropPieMarket(market: string): Sendable<void>
-  getPieMarkets(): Callable<string[]>
-  refreshPieSpeeds(): Sendable<void>
-  pieRate(): Callable<number>
-  pieSupplyState(string): Callable<string>
-  pieBorrowState(string): Callable<string>
-  pieAccrued(string): Callable<string>
-  pieSupplierIndex(market: string, account: string): Callable<string>
-  pieBorrowerIndex(market: string, account: string): Callable<string>
-  pieSpeeds(string): Callable<string>
-  claimPie(string): Sendable<void>
-  _grantPie(account: string, encodedNumber): Sendable<void>
-  _setPieRate(encodedNumber): Sendable<void>
-  _setPieSpeed(pToken: string, encodedNumber): Sendable<void>
-  getPieAddress(): Callable<string>
   getFeeFactorMantissa(string): Callable<number>
   getBorrowDelay(): Callable<number>
+  _setDistributor(string): Sendable<number>
 }
 
 export interface Controller extends Contract {
