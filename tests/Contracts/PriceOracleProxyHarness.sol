@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import '../../contracts/PriceOracleProxy.sol';
+import '../../contracts/Oracles/PriceOracleProxy.sol';
 
 contract PriceOracleProxyHarness is PriceOracleProxy {
     constructor(

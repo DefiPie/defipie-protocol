@@ -7,7 +7,7 @@ interface RegistryInterface {
      *  Returns admin address for pToken contracts
      *  @return admin address
      */
-    function admin() external view returns (address payable);
+    function admin() external view returns (address);
 
     /**
      *  Returns pToken factory address of protocol

@@ -2,9 +2,9 @@
 pragma solidity ^0.7.6;
 pragma abicoder v2;
 
-import '../../contracts/UniswapV2PriceOracle.sol';
-import '../../contracts/UniswapV3PriceOracle.sol';
-import '../../contracts/PriceOracle.sol';
+import '../../contracts/Oracles/UniswapV2PriceOracle.sol';
+import '../../contracts/Oracles/UniswapV3PriceOracle.sol';
+import '../../contracts/Oracles/PriceOracle.sol';
 
 contract UniswapV2PriceOracleHarness is UniswapV2PriceOracle {
 

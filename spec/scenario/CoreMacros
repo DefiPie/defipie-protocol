@@ -14,7 +14,10 @@ Macro PricedController closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     Unitroller SetPendingImpl ScenControllerG1
     PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address) -- if listing pEther use ListedEtherToken to replace proxy
     ControllerImpl ScenControllerG1 Become
-    Controller SetPieRate 1e18
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Controller Address)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor closeFactor
     Controller SetFeeFactorMax feeFactorMax
@@ -22,7 +25,6 @@ Macro PricedController closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     ControllerImpl Deploy Scenario ScenController
     Unitroller SetPendingImpl ScenController
     ControllerImpl ScenController Become
-    Controller SetPieRate 1e18
 
 Macro NewController price=1.0 closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     --g1
@@ -34,7 +36,10 @@ Macro NewController price=1.0 closeFactor=0.1 feeFactorMax=0.1 maxAssets=20
     PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address) -- if listing pEther use ListedEtherToken to replace proxy
     PriceOracleProxy SetPrice (PriceOracle Address) price -- fixed oracle, set price for all assets in proxy after initialize
     ControllerImpl ScenControllerG1 Become
-    Controller SetPieRate 1e18
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Controller Address)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor closeFactor
     Controller SetFeeFactorMax feeFactorMax
@@ -207,6 +212,7 @@ Macro ReduceReserves amount token
 
 Macro FastForward n blocks
     Controller FastForward n blocks
+    DistributorProxy FastForward n blocks
 
 Macro EnterMarkets user ...markets
     From user (Controller EnterMarkets markets)

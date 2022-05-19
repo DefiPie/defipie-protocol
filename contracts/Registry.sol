@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import "./PTokenInterfaces.sol";
+import "./Tokens/PTokenInterfaces.sol";
 import './RegistryStorage.sol';
 import "./ErrorReporter.sol";
-import "./Controller.sol";
+import "./Control/Controller.sol";
 import "./PTokenFactory.sol";
 
 contract Registry is RegistryStorage, RegistryErrorReporter {
@@ -18,16 +18,6 @@ contract Registry is RegistryStorage, RegistryErrorReporter {
     address public pPIE;
 
     /*** Admin Events ***/
-
-    /**
-     * @notice Event emitted when pendingAdmin is changed
-     */
-    event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
-
-    /**
-     * @notice Event emitted when pendingAdmin is accepted, which means admin is updated
-     */
-    event NewAdmin(address oldAdmin, address newAdmin);
 
     /**
       * @notice Emitted when PTokenImplementation is changed

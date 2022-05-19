@@ -1,6 +1,8 @@
 Test "Initialize"
-    NewController
     NewRegistryProxy
+    NewController
     Assert Equal (Controller Admin) (Address Root)
     Assert Equal (Registry Admin) (0x0000000000000000000000000000000000000000)
     Assert Equal (RegistryProxy Admin) (Address Root)
+    Assert Equal (Controller Distributor) (DistributorProxy Address)
+    Assert Equal (DistributorProxy Controller) (Controller Address)

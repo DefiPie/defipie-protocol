@@ -20,6 +20,8 @@ import { pTokenDelegateCommands, processPTokenDelegateEvent } from './Event/PTok
 import { erc20Commands, processErc20Event } from './Event/Erc20Event';
 import { registryCommands, processRegistryEvent } from './Event/RegistryEvent';
 import { registryProxyCommands, processRegistryProxyEvent } from './Event/RegistryProxyEvent';
+import { distributorCommands, processDistributorEvent } from './Event/DistributorEvent';
+import { distributorProxyCommands, processDistributorProxyEvent } from './Event/DistributorProxyEvent';
 import { interestRateModelCommands, processInterestRateModelEvent } from './Event/InterestRateModelEvent';
 import { priceOracleCommands, processPriceOracleEvent } from './Event/PriceOracleEvent';
 import { priceOracleProxyCommands, processPriceOracleProxyEvent } from './Event/PriceOracleProxyEvent';
@@ -707,31 +709,46 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
     (world, from, { event }) => processErc20Event(world, event.val, from),
     { subExpressions: erc20Commands() }
   ),
-
-    new Command<{ event: EventV }>(
-        `
-      #### Registry
-      * "Registry ...event" - Runs given Registry event
-        * E.g. "Registry Deploy"
+  new Command<{ event: EventV }>(`
+    #### Registry
+    * "Registry ...event" - Runs given Registry event
+    * E.g. "Registry Deploy"
     `,
-        'Registry',
-        [new Arg('event', getEventV, { variadic: true })],
-        (world, from, { event }) => processRegistryEvent(world, event.val, from),
-        { subExpressions: registryCommands() }
-    ),
-
-    new Command<{ event: EventV }>(
-        `
-      #### RegistryProxy
-      * "RegistryProxy ...event" - Runs given Registry event
-        * E.g. "RegistryProxy Deploy"
+    'Registry',
+    [new Arg('event', getEventV, { variadic: true })],
+    (world, from, { event }) => processRegistryEvent(world, event.val, from),
+    { subExpressions: registryCommands() }
+  ),
+  new Command<{ event: EventV }>(`
+    #### RegistryProxy
+    * "RegistryProxy ...event" - Runs given Registry event
+    * E.g. "RegistryProxy Deploy"
     `,
-        'RegistryProxy',
-        [new Arg('event', getEventV, { variadic: true })],
-        (world, from, { event }) => processRegistryProxyEvent(world, event.val, from),
-        { subExpressions: registryProxyCommands() }
-    ),
-
+    'RegistryProxy',
+    [new Arg('event', getEventV, { variadic: true })],
+    (world, from, { event }) => processRegistryProxyEvent(world, event.val, from),
+    { subExpressions: registryProxyCommands() }
+  ),
+  new Command<{ event: EventV }>(`
+    #### Distributor
+    * "Distributor ...event" - Runs given Distributor event
+    * E.g. "Distributor Deploy"
+    `,
+      'Distributor',
+      [new Arg('event', getEventV, { variadic: true })],
+      (world, from, { event }) => processDistributorEvent(world, event.val, from),
+      { subExpressions: distributorCommands() }
+  ),
+  new Command<{ event: EventV }>(`
+    #### DistributorProxy
+    * "DistributorProxy ...event" - Runs given Distributor event
+    * E.g. "DistributorProxy Deploy"
+    `,
+      'DistributorProxy',
+      [new Arg('event', getEventV, { variadic: true })],
+      (world, from, { event }) => processDistributorProxyEvent(world, event.val, from),
+      { subExpressions: distributorProxyCommands() }
+  ),
   new Command<{ event: EventV }>(
     `
       #### InterestRateModel

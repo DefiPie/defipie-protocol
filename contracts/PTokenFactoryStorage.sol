@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import './PErc20Delegator.sol';
+import './Tokens/PErc20Delegator.sol';
 import './RegistryInterface.sol';
-import './EIP20Interface.sol';
-import "./Interfaces/IPriceFeeds.sol";
+import './Tokens/EIP20Interface.sol';
+import "./Oracles/Interfaces/IPriceFeeds.sol";
 import "./ErrorReporter.sol";
 import "./SafeMath.sol";
-import "./PEtherDelegator.sol";
-import "./PPIEDelegator.sol";
-import "./Controller.sol";
-import "./PriceOracle.sol";
-import "./PTokenInterfaces.sol";
+import "./Tokens/PEtherDelegator.sol";
+import "./Tokens/PPIEDelegator.sol";
+import "./Control/Controller.sol";
+import "./Oracles/PriceOracle.sol";
+import "./Tokens/PTokenInterfaces.sol";
 
 contract PTokenFactoryStorage {
     address public implementation;

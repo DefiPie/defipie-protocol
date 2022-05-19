@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import "../../contracts/PriceOracle.sol";
+import "../../contracts/Oracles/PriceOracle.sol";
 
 contract FixedPriceOracle is PriceOracleProxyStorage, PriceOracleCore {
     uint public price;
@@ -39,7 +39,7 @@ contract FixedPriceOracleV2 is PriceOracleCore {
     mapping(address => uint) public underlyingPrice;
     mapping(address => uint) public price;
     uint112 public reserves = 1000000000000000000;
-    address public pair;
+    address public pair = address(1);
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
         return underlyingPrice[pToken];

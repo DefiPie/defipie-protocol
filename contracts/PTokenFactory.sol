@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import './PErc20Delegator.sol';
+import './Tokens/PErc20Delegator.sol';
 import './RegistryInterface.sol';
-import './EIP20Interface.sol';
-import "./Interfaces/IPriceFeeds.sol";
+import './Tokens/EIP20Interface.sol';
+import "./Oracles/Interfaces/IPriceFeeds.sol";
 import "./ErrorReporter.sol";
 import "./SafeMath.sol";
-import "./PEtherDelegator.sol";
-import "./PPIEDelegator.sol";
-import "./Controller.sol";
-import "./PriceOracle.sol";
-import "./PTokenInterfaces.sol";
+import "./Tokens/PEtherDelegator.sol";
+import "./Tokens/PPIEDelegator.sol";
+import "./Control/Controller.sol";
+import "./Oracles/PriceOracle.sol";
+import "./Tokens/PTokenInterfaces.sol";
 import "./PTokenFactoryStorage.sol";
 
 contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
@@ -78,7 +78,8 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
         getOracle().update(underlying_);
 
         if (createPoolFeeAmount > 0) {
-            EIP20Interface(PErc20Interface(RegistryInterface(registry).pPIE()).underlying()).transferFrom(msg.sender, address(this), createPoolFeeAmount);
+            EIP20Interface(PErc20Interface(RegistryInterface(registry).pPIE()).underlying()).transferFrom(msg.sender, controller, createPoolFeeAmount);
+            ControllerInterface(controller).setFreezePoolAmount(address(newPToken), createPoolFeeAmount);
         }
 
         return uint(Error.NO_ERROR);
@@ -264,7 +265,7 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
         return(uint(Error.NO_ERROR));
     }
 
-    function getAdmin() public view returns(address payable) {
+    function getAdmin() public view returns(address) {
         return RegistryInterface(registry).admin();
     }
 

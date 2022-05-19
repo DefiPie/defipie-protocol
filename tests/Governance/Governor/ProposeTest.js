@@ -151,7 +151,7 @@ describe('Governor#propose/5', () => {
       await send(ppie, 'delegate', [accounts[3]], {from: accounts[3]});
       await mineBlock();
       let nextProposalId = await gov.methods['propose'](targets, values, signatures, callDatas, "yoot").call({ from: accounts[3] });
-      let startBlock = 54;
+      let startBlock = 62;
       
       expect(
         await send(gov, 'propose', [targets, values, signatures, callDatas, "second proposal"], { from: accounts[3] })

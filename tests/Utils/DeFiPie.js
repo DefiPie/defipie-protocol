@@ -103,10 +103,25 @@ async function makeController(opts = {}) {
     await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, '_setBorrowDelay', [borrowDelay]);
     await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
-    await send(unitroller, 'harnessSetPieRate', [pieRate]);
-    await send(unitroller, 'setPieAddress', [pie._address]); // harness only
 
-    return Object.assign(unitroller, { priceOracle, pie, registryProxy });
+    if (opts.distributorOpts === 'isNotSet') {
+        return Object.assign(unitroller, { priceOracle, pie, registryProxy });
+    }
+
+    if (opts.distributorOpts === undefined) {
+      opts.distributorOpts = {
+          registryProxy: registryProxy,
+          controller: unitroller
+      }
+    }
+
+    const distributor = opts.distributor || await makeDistributor(opts.distributorOpts);
+
+    await send(distributor, 'harnessSetPieRate', [pieRate]);
+    await send(distributor, 'setPieAddress', [pie._address]); // harness only
+    await send(unitroller, '_setDistributor', [distributor._address]);
+
+    return Object.assign(unitroller, { priceOracle, pie, registryProxy, distributor });
   }
 
   if (kind == 'unitroller') {
@@ -120,7 +135,6 @@ async function makeController(opts = {}) {
     const borrowDelay = etherUnsigned(dfn(opts.borrowDelay, 86400));
     const liquidationIncentive = etherMantissa(1);
     const pie = opts.pie || await deploy('Pie', [opts.pieOwner || root]);
-    const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
 
     await send(unitroller, '_setPendingImplementation', [controller._address]);
     await send(controller, '_become', [unitroller._address]);
@@ -130,10 +144,27 @@ async function makeController(opts = {}) {
     await send(unitroller, '_setFeeFactorMaxMantissa', [feeFactorMax]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, '_setBorrowDelay', [borrowDelay]);
-    await send(unitroller, 'setPieAddress', [pie._address]); // harness only
-    await send(unitroller, '_setPieRate', [pieRate]);
 
-    return Object.assign(unitroller, { priceOracle, pie, registryProxy });
+    if (opts.distributorOpts === 'isNotSet') {
+      return Object.assign(unitroller, { priceOracle, pie, registryProxy });
+    }
+
+    const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
+
+    if (opts.distributorOpts === undefined) {
+      opts.distributorOpts = {
+          registryProxy: registryProxy,
+          controller: unitroller
+      }
+    }
+
+    const distributor = opts.distributor || await makeDistributor(opts.distributorOpts);
+
+    await send(distributor, 'harnessSetPieRate', [pieRate]);
+    await send(distributor, 'setPieAddress', [pie._address]); // harness only
+    await send(unitroller, '_setDistributor', [distributor._address]);
+
+    return Object.assign(unitroller, { priceOracle, pie, registryProxy, distributor });
   }
 }
 
@@ -158,6 +189,7 @@ async function makePToken(opts = {}) {
           registryProxy: registryProxy
       }
   }
+
   const controller = opts.controller || await makeController(opts.controllerOpts);
   const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
   const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
@@ -456,6 +488,39 @@ async function makeRegistryProxy(opts = {}) {
     return registryProxy;
 }
 
+async function makeDistributor(opts = {}) {
+    const {
+        root = saddle.account
+    } = opts || {};
+
+    // console.log('opts', opts)
+    const implementation = opts.implementation || await deploy('Distributor');
+    const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
+
+    if (opts.controllerOpts === undefined) {
+        opts.controllerOpts = {
+            registryProxy: registryProxy
+        }
+    }
+
+    if (opts.controllerOpts.distributorOpts === undefined) {
+        opts.controllerOpts.distributorOpts = 'isNotSet';
+    }
+
+    const controller = opts.controller || await makeController(opts.controllerOpts);
+    let distributor = await deploy('DistributorHarness');
+
+    const pieRate = etherUnsigned(dfn(opts.pieRate, 1e18));
+    const pie = opts.pie || controller.pie || await deploy('Pie', [opts.pieOwner || root]);
+
+    await send(distributor, 'harnessSetPieRate', [pieRate]);
+    await send(distributor, 'setPieAddress', [pie._address]); // harness only
+    await send(distributor, 'init', [implementation._address, registryProxy._address, controller._address]); // harness only
+    await send(controller, '_setDistributor', [distributor._address]);
+
+    return Object.assign(distributor, { controller, pie, registryProxy });
+}
+
 async function makeProxyProtocol(opts = {}) {
     const {
         root = saddle.account
@@ -649,6 +714,7 @@ module.exports = {
   makePTokenFactory,
   makeRegistryProxy,
   makeProxyProtocol,
+  makeDistributor,
 
   balanceOf,
   totalSupply,

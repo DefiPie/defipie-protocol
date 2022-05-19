@@ -1,4 +1,4 @@
-import {ControllerErr, TokenErr, OracleErr, FactoryErr, RegistryErr} from './ErrorReporterConstants';
+import {ControllerErr, DistributorErr, TokenErr, OracleErr, FactoryErr, RegistryErr} from './ErrorReporterConstants';
 
 export interface ErrorReporter {
   getError(error: any): string | null
@@ -81,6 +81,38 @@ class ControllerErrorReporterType implements ErrorReporter {
 
     return detail.toString();
   }
+}
+
+class DistributorErrorReporterType implements ErrorReporter {
+    getError(error: any): string | null {
+        if (error === null) {
+            return null;
+        } else {
+            // TODO: This probably isn't right...
+            return DistributorErr.ErrorInv[Number(error)];
+        }
+    }
+
+    getInfo(info: any): string | null {
+        if (info === null) {
+            return null;
+        } else {
+            // TODO: This probably isn't right...
+            return DistributorErr.FailureInfoInv[Number(info)];
+        }
+    }
+
+    getDetail(error: any, detail: number): string {
+        if (this.getError(error) === "REJECTION") {
+            let distributorError = DistributorErrorReporter.getError(detail);
+
+            if (distributorError) {
+                return distributorError;
+            }
+        }
+
+        return detail.toString();
+    }
 }
 
 class OracleErrorReporterType implements ErrorReporter {
@@ -192,6 +224,7 @@ export function formatResult(errorReporter: ErrorReporter, result: any): string 
 export const NoErrorReporter = new NoErrorReporterType();
 export const PTokenErrorReporter = new PTokenErrorReporterType();
 export const ControllerErrorReporter = new ControllerErrorReporterType();
+export const DistributorErrorReporter = new DistributorErrorReporterType();
 export const OracleErrorReporter = new OracleErrorReporterType();
 export const FactoryErrorReporter = new FactoryErrorReporterType();
 export const RegistryErrorReporter = new RegistryErrorReporterType();

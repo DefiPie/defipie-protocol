@@ -8,7 +8,13 @@ Test "Standard Upgrade"
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
-    Controller SetPieRate 1e18
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Unitroller Address)
+    Assert Equal (DistributorProxy Registry) (RegistryProxy Address)
+    Assert Equal (DistributorProxy Admin) (RegistryProxy Admin)
+    Assert Equal (DistributorProxy Admin) (Address Root)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -28,9 +34,14 @@ Test "Standard Upgrade"
     ControllerImpl Deploy ScenarioG3 ScenControllerG3
     Unitroller SetPendingImpl ScenControllerG3
     ControllerImpl ScenControllerG3 Become
-    Controller SetPieSpeed pZRX 1
-    Controller SetPieSpeed pDAI 1
-    Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pDAI)]
+    Assert Equal (DistributorProxy Registry) (RegistryProxy Address)
+    Assert Equal (DistributorProxy Controller) (Unitroller Address)
+    Assert Equal (DistributorProxy Admin) (RegistryProxy Admin)
+    Assert Equal (DistributorProxy Admin) (Address Root)
+    Assert Equal (DistributorProxy Admin) (Unitroller Admin)
+    DistributorProxy SetPieSpeed pZRX 1
+    DistributorProxy SetPieSpeed pDAI 1
+    Assert Equal (DistributorProxy GetPieMarkets) [(Address pZRX) (Address pDAI)]
     -- Not checks allMarkets array
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (Controller MaxAssets) 20
@@ -45,7 +56,10 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
-    Controller SetPieRate 1e18
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Controller Address)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -84,9 +98,9 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     ControllerImpl ScenControllerG4 Become
     ListedPToken ZRX pZRX
     ListedPToken DAI pDAI
-    Controller SetPieSpeed pZRX 1
-    Controller SetPieSpeed pDAI 1
-    Assert Equal (Controller GetPieMarkets) [(Address pZRX) (Address pDAI)]
+    DistributorProxy SetPieSpeed pZRX 1
+    DistributorProxy SetPieSpeed pDAI 1
+    Assert Equal (DistributorProxy GetPieMarkets) [(Address pZRX) (Address pDAI)]
     Assert Equal (Controller PauseGuardian) (Address Coburn)
     Assert Equal (Controller CloseFactor) 0.2
     Assert Equal (Controller MaxAssets) 20
@@ -101,7 +115,10 @@ Test "Once become, can become again"
     ControllerImpl Deploy ScenarioG1 ScenControllerG1
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
-    Controller SetPieRate 1e18
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Controller Address)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20
@@ -140,7 +157,10 @@ Test "Bork and unbork"
     -- Set a normal impl
     Unitroller SetPendingImpl ScenControllerG1
     ControllerImpl ScenControllerG1 Become
-    Controller SetPieRate 1e18
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Controller Address)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.2
     Controller SetMaxAssets 20

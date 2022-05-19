@@ -6,8 +6,8 @@ import '../../contracts/ProxyProtocol/ProxyProtocol.sol';
 contract ProxyProtocolHarness is ProxyProtocol {
     constructor(
         address factory_,
-        address payable pETH_,
-        address payable maximillion_,
+        address pETH_,
+        address maximillion_,
         address admin_,
         address feeToken_,
         address feeRecipient_,

@@ -55,6 +55,17 @@ const ControllerErrorReporter = {
     ]
 };
 
+const DistributorErrorReporter = {
+    Error: [
+        'NO_ERROR',
+        'UNAUTHORIZED',
+    ],
+
+    FailureInfo: [
+        'SET_NEW_IMPLEMENTATION',
+    ]
+};
+
 const TokenErrorReporter = {
     Error: [
         'NO_ERROR',
@@ -222,6 +233,7 @@ function parseEnum(reporterEnum: ErrorReporterEnum): ErrorTypes {
 }
 
 export const ControllerErr = parseEnum(ControllerErrorReporter);
+export const DistributorErr = parseEnum(DistributorErrorReporter);
 export const TokenErr = parseEnum(TokenErrorReporter);
 export const OracleErr = parseEnum(OracleErrorReporter);
 export const FactoryErr = parseEnum(FactoryErrorReporter);

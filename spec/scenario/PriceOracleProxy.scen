@@ -7,7 +7,10 @@ Macro SetupPriceOracleProxy
     Unitroller SetPendingImpl ScenControllerG1
     PriceOracleProxy Deploy (PriceOracle Address) (RegistryProxy Address) (RegistryProxy Address)
     ControllerImpl ScenControllerG1 Become
-    Controller SetPieRate 1e18
+    Distributor Deploy
+    DistributorProxy Deploy (Distributor Address) (RegistryProxy Address) (Controller Address)
+    DistributorProxy SetPieRate 1e18
+    Controller SetDistributor (DistributorProxy Address)
     RegistryProxy SetPriceOracle (PriceOracleProxy Address)
     Controller SetCloseFactor 0.1
     Controller SetMaxAssets 20

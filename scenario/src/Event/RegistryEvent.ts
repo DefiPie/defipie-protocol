@@ -16,7 +16,7 @@ import {
 import {Arg, Command, processCommandEvent} from '../Command';
 import {getRegistry} from "../ContractLookup";
 
-async function genToken(world: World, from: string, params: Event): Promise<World> {
+async function genRegistry(world: World, from: string, params: Event): Promise<World> {
     let {world: newWorld, registry, registryData} = await buildRegistry(world, from, params);
     world = newWorld;
 
@@ -114,109 +114,110 @@ async function initialize(world: World, from: string, registry: Registry, pToken
 }
 
 export function registryCommands() {
-    return [
-        new Command<{registryParams: EventV}>(`
-        #### Deploy
-        * "Registry Deploy ...registryParams" - Generates a new Registry
-          * E.g. "Registry Deploy ..."
+  return [
+    new Command<{registryParams: EventV}>(`
+      #### Deploy
+    
+      * "Registry Deploy ...registryParams" - Generates a new Registry
+      * E.g. "Registry Deploy ..."
       `,
-            "Deploy",
-            [new Arg("registryParams", getEventV, {variadic: true})],
-            (world, from, {registryParams}) => genToken(world, from, registryParams.val)
-        ),
-        new Command<{registry: Registry, newImplementation: AddressV}>(`
-        #### SetPTokenImplementation
+      "Deploy",
+      [new Arg("registryParams", getEventV, {variadic: true})],
+      (world, from, {registryParams}) => genRegistry(world, from, registryParams.val)
+    ),
+    new Command<{registry: Registry, newImplementation: AddressV}>(`
+      #### SetPTokenImplementation
 
-        * "Registry SetPTokenImplementation newImplementation:<Address>" - Sets the PToken implementation for the Registry
-          * E.g. "Registry SetPTokenImplementation 0x.."
+      * "Registry SetPTokenImplementation newImplementation:<Address>" - Sets the PToken implementation for the Registry
+      * E.g. "Registry SetPTokenImplementation 0x.."
       `,
-            "SetPTokenImplementation",
-            [
-                new Arg("registry", getRegistry, {implicit: true}),
-                new Arg("newImplementation", getAddressV)
-            ],
-            (world, from, {registry, newImplementation}) => setPTokenImplementation(world, from, registry, newImplementation.val)
-        ),
-        new Command<{registry: Registry, pTokenImplementation: AddressV}>(`
-        #### Initialize
+      "SetPTokenImplementation",
+      [
+        new Arg("registry", getRegistry, {implicit: true}),
+        new Arg("newImplementation", getAddressV)
+      ],
+     (world, from, {registry, newImplementation}) => setPTokenImplementation(world, from, registry, newImplementation.val)
+    ),
+    new Command<{registry: Registry, pTokenImplementation: AddressV}>(`
+      #### Initialize
 
-        * "Registry Initialize pTokenImplementation:<Address>" - Init the PToken implementation for the Registry
-          * E.g. "Registry Initialize 0x.."
+      * "Registry Initialize pTokenImplementation:<Address>" - Init the PToken implementation for the Registry
+      * E.g. "Registry Initialize 0x.."
       `,
-            "Initialize",
-            [
-                new Arg("registry", getRegistry, {implicit: true}),
-                new Arg("pTokenImplementation", getAddressV)
-            ],
-            (world, from, {registry, pTokenImplementation}) => initialize(world, from, registry, pTokenImplementation.val)
-        ),
-        new Command<{registry: Registry, newUnderlying: AddressV, newPToken: AddressV}>(`
-        #### AddPToken
+      "Initialize",
+      [
+        new Arg("registry", getRegistry, {implicit: true}),
+        new Arg("pTokenImplementation", getAddressV)
+      ],
+     (world, from, {registry, pTokenImplementation}) => initialize(world, from, registry, pTokenImplementation.val)
+    ),
+    new Command<{registry: Registry, newUnderlying: AddressV, newPToken: AddressV}>(`
+      #### AddPToken
 
-        * "Registry AddPToken newUnderlying:<Address> newPToken:<Address>" - Sets the PToken address for the Registry
-          * E.g. "Registry AddPToken 0x.. 0x.."
+      * "Registry AddPToken newUnderlying:<Address> newPToken:<Address>" - Sets the PToken address for the Registry
+      * E.g. "Registry AddPToken 0x.. 0x.."
       `,
-            "AddPToken",
-            [
-                new Arg("registry", getRegistry, {implicit: true}),
-                new Arg("newUnderlying", getAddressV),
-                new Arg("newPToken", getAddressV)
-            ],
-            (world, from, {registry, newUnderlying, newPToken}) => setAddPToken(world, from, registry, newUnderlying.val, newPToken.val)
-        ),
-        new Command<{registry: Registry, newPPIE: AddressV}>(`
-        #### AddPPIE
+      "AddPToken",
+      [
+        new Arg("registry", getRegistry, {implicit: true}),
+        new Arg("newUnderlying", getAddressV),
+        new Arg("newPToken", getAddressV)
+      ],
+      (world, from, {registry, newUnderlying, newPToken}) => setAddPToken(world, from, registry, newUnderlying.val, newPToken.val)
+    ),
+    new Command<{registry: Registry, newPPIE: AddressV}>(`
+      #### AddPPIE
 
-        * "Registry AddPPIE newPPIE:<Address>" - Sets the PPIE address for the Registry
-          * E.g. "Registry AddPPIE 0x.."
+      * "Registry AddPPIE newPPIE:<Address>" - Sets the PPIE address for the Registry
+      * E.g. "Registry AddPPIE 0x.."
       `,
-            "AddPPIE",
-            [
-                new Arg("registry", getRegistry, {implicit: true}),
-                new Arg("newPPIE", getAddressV)
-            ],
-            (world, from, {registry, newPPIE}) => setAddPPIE(world, from, registry, newPPIE.val)
-        ),
-        new Command<{registry: Registry, newPETH: AddressV}>(`
-        #### AddPETH
+      "AddPPIE",
+      [
+        new Arg("registry", getRegistry, {implicit: true}),
+        new Arg("newPPIE", getAddressV)
+      ],
+      (world, from, {registry, newPPIE}) => setAddPPIE(world, from, registry, newPPIE.val)
+    ),
+    new Command<{registry: Registry, newPETH: AddressV}>(`
+      #### AddPETH
 
-        * "Registry AddPETH newPETH:<Address>" - Sets the PETH address for the Registry
-          * E.g. "Registry AddPETH 0x.."
+      * "Registry AddPETH newPETH:<Address>" - Sets the PETH address for the Registry
+      * E.g. "Registry AddPETH 0x.."
       `,
-            "AddPETH",
-            [
-                new Arg("registry", getRegistry, {implicit: true}),
-                new Arg("newPETH", getAddressV)
-            ],
-            (world, from, {registry, newPETH}) => setAddPETH(world, from, registry, newPETH.val)
-        ),
-        new Command<{registry: Registry, pToken: AddressV}>(`
-        #### RemovePToken
+      "AddPETH",
+      [
+        new Arg("registry", getRegistry, {implicit: true}),
+        new Arg("newPETH", getAddressV)
+      ],
+     (world, from, {registry, newPETH}) => setAddPETH(world, from, registry, newPETH.val)
+    ),
+    new Command<{registry: Registry, pToken: AddressV}>(`
+      #### RemovePToken
 
-        * "Registry RemovePToken pToken:<Address>" - Remove the pToken from the Registry
-          * E.g. "Registry RemovePToken 0x.."
+      * "Registry RemovePToken pToken:<Address>" - Remove the pToken from the Registry
+      * E.g. "Registry RemovePToken 0x.."
       `,
-            "RemovePToken",
-            [
-                new Arg("registry", getRegistry, {implicit: true}),
-                new Arg("pToken", getAddressV)
-            ],
-            (world, from, {registry, pToken}) => removePTokenFromRegistry(world, from, registry, pToken.val)
-        ),
-        new Command<{registry: Registry, priceOracle: AddressV}>(`
-        #### SetPriceOracle
+      "RemovePToken",
+      [
+        new Arg("registry", getRegistry, {implicit: true}),
+        new Arg("pToken", getAddressV)
+      ],
+      (world, from, {registry, pToken}) => removePTokenFromRegistry(world, from, registry, pToken.val)
+    ),
+    new Command<{registry: Registry, priceOracle: AddressV}>(`
+      #### SetPriceOracle
 
-        * "Registry SetPriceOracle oracle:<Address>" - Sets the price oracle address
-          * E.g. "Registry SetPriceOracle 0x..."
+      * "Registry SetPriceOracle oracle:<Address>" - Sets the price oracle address
+      * E.g. "Registry SetPriceOracle 0x..."
       `,
-            "SetPriceOracle",
-            [
-                new Arg("registry", getRegistry, {implicit: true}),
-                new Arg("priceOracle", getAddressV)
-            ],
-            (world, from, {registry, priceOracle}) => setPriceOracle(world, from, registry, priceOracle.val)
-        ),
-    ];
+      "SetPriceOracle",
+      [
+        new Arg("registry", getRegistry, {implicit: true}),
+        new Arg("priceOracle", getAddressV)
+      ],
+     (world, from, {registry, priceOracle}) => setPriceOracle(world, from, registry, priceOracle.val)
+    ),
+  ];
 }
 
 export async function processRegistryEvent(world: World, event: Event, from: string | null): Promise<World> {

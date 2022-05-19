@@ -34,9 +34,6 @@ const CarefulMath = solparse.parseFile(carefulMathPath).body.find(k => k.type ==
 const MathErrorInv = CarefulMath.body.find(k => k.name == 'MathError').members;
 const MathError = invert(MathErrorInv);
 
-const baseModelPath = path.join(__dirname, '..', 'contracts', 'BaseInterestRateModel.sol');
-const baseModel = solparse.parseFile(baseModelPath).body.find(k => k.type === 'ContractStatement');
-
 module.exports = {
   ControllerErr: parse(ControllerErrorReporter),
   TokenErr: parse(TokenErrorReporter),

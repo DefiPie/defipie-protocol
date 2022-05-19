@@ -32,9 +32,9 @@ export async function getPriceOracle(world: World, registryProxy: RegistryProxy)
 export function registryProxyFetchers() {
   return [
     new Fetcher<{registryProxy: RegistryProxy}, AddressV>(`
-        #### Address
+      #### Address
 
-        * "RegistryProxy Address" - Returns address of registry proxy
+      * "RegistryProxy Address" - Returns address of registry proxy
       `,
       "Address",
       [new Arg("registryProxy", getRegistryProxy, {implicit: true})],

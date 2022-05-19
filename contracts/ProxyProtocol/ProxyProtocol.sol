@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 
-import "../PErc20.sol";
-import "../PEther.sol";
-import "../Maximillion.sol";
+import "../Tokens/PErc20.sol";
+import "../Tokens/PEther.sol";
+import "../Tokens/Maximillion.sol";
 import "../PTokenFactory.sol";
-import "../PriceOracle.sol";
+import "../Oracles/PriceOracle.sol";
 import "../SafeMath.sol";
-import "../EIP20Interface.sol";
+import "../Tokens/EIP20Interface.sol";
 
 import "./IERC20.sol";
 import "./SafeERC20.sol";
@@ -27,16 +27,16 @@ contract ProxyProtocol {
 
     address public pTokenFactory;
     PriceOracle public oracle;
-    address payable public pETH;
-    address payable public maximillion;
+    address public pETH;
+    address public maximillion;
 
     event NewAdmin(address oldAdmin, address newAdmin);
     event NewFee(uint newFee);
 
     constructor(
         address pTokenFactory_,
-        address payable pETH_,
-        address payable maximillion_,
+        address pETH_,
+        address maximillion_,
         address admin_,
         address feeToken_,
         address feeRecipient_,
@@ -159,7 +159,7 @@ contract ProxyProtocol {
 
         uint beforeBalance = EIP20Interface(pETH).balanceOf(address(this));
 
-        PEther(pETH).mint{value: msg.value}();
+        PEther(payable(pETH)).mint{value: msg.value}();
 
         uint afterBalance = EIP20Interface(pETH).balanceOf(address(this));
         uint amount = afterBalance.sub(beforeBalance);
@@ -202,8 +202,8 @@ contract ProxyProtocol {
     }
 
     function getETHBorrows(address borrower) public returns (uint) {
-        uint borrows = PEther(pETH).borrowBalanceCurrent(borrower);
-        uint totalBorrows = PEther(pETH).totalBorrows();
+        uint borrows = PEther(payable(pETH)).borrowBalanceCurrent(borrower);
+        uint totalBorrows = PEther(payable(pETH)).totalBorrows();
 
         if (borrows > totalBorrows) {
             borrows = totalBorrows;
@@ -353,10 +353,10 @@ contract ProxyProtocol {
         ERC20Interface.safeTransfer(to, amount);
     }
 
-    function withdraw(address payable to) external {
+    function withdraw(address to) external {
         require(msg.sender == admin, "ProxyProtocol: Only admin can withdraw ether from contract");
 
         uint amount = address(this).balance;
-        to.transfer(amount);
+        payable(to).transfer(amount);
     }
 }
