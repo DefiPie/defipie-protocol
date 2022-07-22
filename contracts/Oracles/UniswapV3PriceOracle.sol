@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.15;
 
 import './Interfaces/uniswapV3/OracleLibrary.sol';
 import './Interfaces/uniswapV3/PoolAddress.sol';

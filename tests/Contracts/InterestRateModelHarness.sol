@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.15;
 
 import "../../contracts/Models/InterestRateModel.sol";
 
@@ -24,18 +24,12 @@ contract InterestRateModelHarness is InterestRateModel {
         borrowRate = borrowRate_;
     }
 
-    function getBorrowRate(uint _cash, uint _borrows, uint _reserves) public view override returns (uint) {
-        _cash;     // unused
-        _borrows;  // unused
-        _reserves; // unused
+    function getBorrowRate(uint, uint, uint) public view override returns (uint) {
         require(!failBorrowRate, "INTEREST_RATE_MODEL_ERROR");
         return borrowRate;
     }
 
-    function getSupplyRate(uint _cash, uint _borrows, uint _reserves, uint _reserveFactor) external view override returns (uint) {
-        _cash;     // unused
-        _borrows;  // unused
-        _reserves; // unused
-        return borrowRate * (1 - _reserveFactor);
+    function getSupplyRate(uint, uint, uint, uint _reserveFactor) external view override returns (uint) {
+        return borrowRate * (1e18 - _reserveFactor) / 1e18;
     }
 }

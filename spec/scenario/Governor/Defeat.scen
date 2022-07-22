@@ -5,18 +5,21 @@ Macro DeployGov
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 150000002e18)
-    From Bank (PToken pPIE Mint 150000002e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian 19710
+    VotingEscrow Deploy VE (Address RegistryProxy) (Pie Address) (Address LegitGov)
+    From Guardian (Governor LegitGov SetVotingEscrow (VotingEscrow Address VE))
+    From Bank (Pie Approve VotingEscrow 700000e18)
+    From Bank (VotingEscrow CreateLock 700000e18 125798400)
     Timelock SetAdmin (Address LegitGov)
-    Enfranchise Root 15000001e8
-    Enfranchise Jared 30000001e8
-    Enfranchise Torrey 90000001e8
-    Enfranchise Geoff 105000001e8
+    Enfranchise Root 700000e18
+    Enfranchise Jared 1400000e18
+    Enfranchise Torrey 4200000e18
+    Enfranchise Geoff 4900000e18
 
 Macro Enfranchise user amount
-    From Bank (PToken pPIE Transfer user amount)
-    From user (PToken pPIE Delegate user)
+    From Bank (Pie Transfer user amount)
+    From user (Pie Approve VotingEscrow amount)
+    From user (VotingEscrow CreateLock amount 125798400)
 
 Macro GivenPendingProposal
     DeployGov

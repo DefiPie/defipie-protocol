@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.15;
 
 import '../Registry.sol';
+import './VotingEscrow.sol';
 
 contract Governor {
     /// @notice The name of this contract
     string public constant name = "DeFiPie Governor";
 
-    uint public threshold = 15_000_000e8; // 15M pPIE or ~300K PIE
-    uint public quorum = 150_000_000e8; // 150M pPIE or ~3M PIE
+    uint public threshold = 600_000e18; // 600K PIE
+    uint public quorum = 6_000_000e18; // 6M PIE
     uint public delay = 1; // 1 block
 
     uint public period;
@@ -34,6 +34,9 @@ contract Governor {
 
     /// @notice The address of the Registry
     Registry public registry;
+
+    /// @notice The address of the VotingEscrow
+    VotingEscrow public votingEscrow;
 
     /// @notice The address of the Governor Guardian
     address public guardian;
@@ -145,6 +148,12 @@ contract Governor {
         period = period_;
     }
 
+    function setVotingEscrow(address _votingEscrow) public {
+        require(msg.sender == guardian, "Governor::setVotingEscrow: only guardian");
+
+        votingEscrow = VotingEscrow(_votingEscrow);
+    }
+
     function propose(
         address[] memory targets,
         uint[] memory values,
@@ -152,10 +161,11 @@ contract Governor {
         bytes[] memory calldatas,
         string memory description
     ) public returns (uint) {
-        require(PPieInterface(registry.pPIE()).getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "Governor::propose: proposer votes below proposal threshold");
+        require(votingEscrow.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "Governor::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "Governor::propose: proposal function information parity mismatch");
         require(targets.length != 0, "Governor::propose: must provide actions");
         require(targets.length <= proposalMaxOperations(), "Governor::propose: too many actions");
+        
 
         uint latestProposalId = latestProposalIds[msg.sender];
         if (latestProposalId != 0) {
@@ -215,7 +225,7 @@ contract Governor {
         require(state_ != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(msg.sender == guardian || PPieInterface(registry.pPIE()).getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
+        require(msg.sender == guardian || votingEscrow.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -285,7 +295,7 @@ contract Governor {
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "Governor::_castVote: voter already voted");
-        uint96 votes = PPieInterface(registry.pPIE()).getPriorVotes(voter, proposal.startBlock);
+        uint96 votes = uint96(votingEscrow.getPriorVotes(voter, proposal.startBlock));
 
         if (support) {
             proposal.forVotes = add256(proposal.forVotes, votes);
@@ -349,9 +359,11 @@ contract Governor {
     }
 
     function add256(uint256 a, uint256 b) internal pure returns (uint) {
-        uint c = a + b;
-        require(c >= a, "addition overflow");
-        return c;
+        unchecked {
+            uint c = a + b;
+            require(c >= a, "addition overflow");
+            return c;
+        }
     }
 
     function sub256(uint256 a, uint256 b) internal pure returns (uint) {

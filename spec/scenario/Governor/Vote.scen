@@ -5,33 +5,34 @@ Macro GivenProposal
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 150000002e18)
-    From Bank (PToken pPIE Mint 150000002e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian 19710
+    VotingEscrow Deploy VE (Address RegistryProxy) (Pie Address) (Address LegitGov)
+    From Guardian (Governor LegitGov SetVotingEscrow (VotingEscrow Address VE))
     Timelock SetAdmin (Address LegitGov)
-    Enfranchise Root 150000001e18
-    Enfranchise Geoff 100
+    From Bank (Pie Approve VotingEscrow 7000000e18)
+    From Bank (VotingEscrow CreateLock 7000000e18 125798400)
+    Enfranchise Root 7000000e18
+    Enfranchise Geoff 7000000e18
     Governor LegitGov Propose "Add 5" [(Address Counter)] [1] ["increment(uint256)"] [["0x5"]]
     MineBlock
 
 Macro Enfranchise user amount
-    From Bank (PToken pPIE Transfer user amount)
-    From user (PToken pPIE Delegate user)
+    From Bank (Pie Transfer user amount)
+    From user (Pie Approve VotingEscrow amount)
+    From user (VotingEscrow CreateLock amount 125798400)
 
 Test "Successfully Cast For Vote"
     GivenProposal
     From Geoff (Governor LegitGov Proposal LastProposal Vote For)
-    Assert Log VoteCast (voter (Address Geoff)) (proposalId 1) (support true) (votes 100)
-    Assert Equal (Governor LegitGov Proposal LastProposal ForVotes) 100
+    Assert Log VoteCast (voter (Address Geoff)) (proposalId 1) (support true) (votes (Governor LegitGov Proposal LastProposal ForVotes))
     Assert Equal (Governor LegitGov Proposal LastProposal AgainstVotes) 0
     Assert True (Governor LegitGov Proposal LastProposal HasVoted Geoff)
 
 Test "Successfully Cast Against Vote"
     GivenProposal
     From Geoff (Governor LegitGov Proposal LastProposal Vote Against)
-    Assert Log VoteCast (support false) (votes 100)
+    Assert Log VoteCast (support false) (votes (Governor LegitGov Proposal LastProposal AgainstVotes))
     Assert Equal (Governor LegitGov Proposal LastProposal ForVotes) 0
-    Assert Equal (Governor LegitGov Proposal LastProposal AgainstVotes) 100
     Assert True (Governor LegitGov Proposal LastProposal HasVoted Geoff)
 
 Test "Successfully Cast Zero Vote"
@@ -45,13 +46,13 @@ Test "Successfully Cast Zero Vote"
 Test "Fail to vote twice"
     GivenProposal
     Governor LegitGov Proposal LastProposal Vote For
+    Invariant Static (Governor LegitGov Proposal LastProposal ForVotes)
+    Invariant Static (Governor LegitGov Proposal LastProposal AgainstVotes)
     AllowFailures
     Governor LegitGov Proposal LastProposal Vote For
     Assert Revert "revert Governor::_castVote: voter already voted"
     Governor LegitGov Proposal LastProposal Vote Against
     Assert Revert "revert Governor::_castVote: voter already voted"
-    Assert Equal (Governor LegitGov Proposal LastProposal ForVotes) 150000001e18
-    Assert Equal (Governor LegitGov Proposal LastProposal AgainstVotes) 0
     Assert False (Governor LegitGov Proposal LastProposal HasVoted Geoff)
 
 Test "Cannot vote before vote starts"

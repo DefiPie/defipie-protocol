@@ -45,12 +45,14 @@ export async function buildDistributor(
     world,
     event
   );
+
   let invokation = distributorData.invokation;
   delete distributorData.invokation;
 
   if (invokation.error) {
     throw invokation.error;
   }
+  
   const distributor = invokation.value!;
   distributorData.address = distributor._address;
 

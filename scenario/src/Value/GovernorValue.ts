@@ -35,6 +35,10 @@ export async function getGovernorGuardian(world: World, governor: Governor): Pro
   return new AddressV(await governor.methods.guardian().call());
 }
 
+export async function getGovernorVotingEscrow(world: World, governor: Governor): Promise<AddressV> {
+  return new AddressV(await governor.methods.votingEscrow().call());
+}
+
 export function governorFetchers() {
   return [
     new Fetcher<{ governor: Governor }, AddressV>(`
@@ -62,6 +66,20 @@ export function governorFetchers() {
         new Arg("governor", getGovernorV)
       ],
       (world, { governor }) => getGovernorGuardian(world, governor),
+      { namePos: 1 }
+    ),
+
+    new Fetcher<{ governor: Governor}, AddressV>(`
+        #### VotingEscrow
+
+        * "Governor <Governor> VotingEscrow" - Returns the address of governor's VotingEscrow
+          * E.g. "Governor GovernorScenario VotingEscrow"
+      `,
+      "VotingEscrow",
+      [
+        new Arg("governor", getGovernorV),
+      ],
+      (world, { governor }) => getGovernorVotingEscrow(world, governor),
       { namePos: 1 }
     ),
 

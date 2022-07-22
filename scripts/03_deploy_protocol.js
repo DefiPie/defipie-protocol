@@ -16,7 +16,7 @@ async function main() {
     console.log('Deploying contracts with the account:', deployer.address);
     console.log('Account balance:', (await deployer.getBalance()).toString());
 
-    let BLOCKS_PER_YEAR, EXCHANGE_FACTORY, WNATIVE_ADDRESS, PRICE_FEED_ADDRESS, GOVERNANCE_PERIOD;
+    let BLOCKS_PER_YEAR, EXCHANGE_FACTORY, WNATIVE_ADDRESS, PRICE_FEED_ADDRESS, GOVERNANCE_PERIOD, PIE_ADDRESS;
     let prefix = network.toUpperCase();
 
     BLOCKS_PER_YEAR = process.env[prefix + '_BLOCKS_PER_YEAR'];
@@ -24,12 +24,14 @@ async function main() {
     WNATIVE_ADDRESS = process.env[prefix + '_WNATIVE_ADDRESS'];
     PRICE_FEED_ADDRESS = process.env[prefix + '_PRICE_FEED_ADDRESS'];
     GOVERNANCE_PERIOD = process.env[prefix + '_GOVERNANCE_PERIOD'];
+    PIE_ADDRESS = process.env[prefix + '_PIE_ADDRESS'];
 
     console.log('BLOCKS_PER_YEAR: ', BLOCKS_PER_YEAR);
     console.log('EXCHANGE_FACTORY: ', EXCHANGE_FACTORY);
     console.log('WNATIVE_ADDRESS: ', WNATIVE_ADDRESS);
     console.log('PRICE_FEED_ADDRESS: ', PRICE_FEED_ADDRESS);
     console.log('GOVERNANCE_PERIOD: ', GOVERNANCE_PERIOD);
+    console.log('PIE_ADDRESS: ', PIE_ADDRESS);
 
     // 1. PERC20 delegate deploy
     const PErc20Delegate = await hre.ethers.getContractFactory("PErc20Delegate");
@@ -112,7 +114,7 @@ async function main() {
     // 7. Deploy Timelock
     const Timelock = await hre.ethers.getContractFactory("Timelock");
     const timelock = await Timelock.deploy(
-        process.env.TIMELOCK_ADMIN,
+        deployer.address,
         process.env.TIMELOCK_DELAY
     );
 
@@ -237,7 +239,11 @@ async function main() {
 
     namesAndAddresses.pTokenFactoryImpl = pTokenFactoryImpl.address;
 
-    const pTokenFactoryProxy = await PTokenFactory.deploy(
+    let tx4_1 = await pTokenFactoryImpl.deployTransaction.wait();
+    console.log('tx4_1 hash', tx4_1.transactionHash);
+
+    const PTokenFactoryProxy = await hre.ethers.getContractFactory("PTokenFactoryProxy");
+    const pTokenFactoryProxy = await PTokenFactoryProxy.deploy(
         pTokenFactoryImpl.address,
         registryProxy.address,
         unitroller.address,
@@ -264,20 +270,54 @@ async function main() {
 
     namesAndAddresses.governor = governor.address;
 
-    // 14. Deploy Calc pool Price
+    // 14. Deploy VotingEscrow
+    const VotingEscrow = await hre.ethers.getContractFactory("VotingEscrow");
+    const votingEscrow = await VotingEscrow.deploy();
+
+    console.log(`VotingEscrow smart contract has been deployed to: ${votingEscrow.address}`);
+
+    namesAndAddresses.votingEscrow = votingEscrow.address;
+
+    let tx5_ = await votingEscrow.deployTransaction.wait();
+    console.log('tx5_ hash', tx5_.transactionHash);
+
+    // 14a. Deploy VotingEscrow Proxy
+    const VotingEscrowProxy = await hre.ethers.getContractFactory("VotingEscrowProxy");
+    const votingEscrowProxy = await VotingEscrowProxy.deploy(
+        votingEscrow.address,
+        registryProxy.address,
+        PIE_ADDRESS,
+        process.env.VE_NAME,
+        process.env.VE_SYMBOL,
+        process.env.VE_INTERVAL,
+        process.env.VE_MIN_DURATION,
+        process.env.VE_MAX_DURATION,
+        process.env.VE_MIN_LOCK_AMOUNT,
+        governor.address
+    );
+
+    console.log(`VotingEscrowProxy smart contract has been deployed to: ${votingEscrowProxy.address}`);
+
+    namesAndAddresses.votingEscrowProxy = votingEscrowProxy.address;
+
+    let tx5 = await votingEscrowProxy.deployTransaction.wait();
+    console.log('tx5 hash', tx5.transactionHash);
+
+    // 15. Deploy Calc pool Price
     const CalcPoolPrice = await hre.ethers.getContractFactory("CalcPoolPrice");
     const calcPoolPrice = await CalcPoolPrice.deploy(
-        PriceOracleProxy.address
+        priceOracleProxy.address
     );
 
     console.log(`CalcPoolPrice smart contract has been deployed to: ${calcPoolPrice.address}`);
 
     namesAndAddresses.calcPoolPrice = calcPoolPrice.address;
 
-    // 15. Deploy Claim calc
+    // 16. Deploy Claim calc
     const ClaimCalc = await hre.ethers.getContractFactory("ClaimCalc");
     const claimCalc = await ClaimCalc.deploy(
-        unitroller.address
+        unitroller.address,
+        distributorProxy.address
     );
 
     console.log(`ClaimCalc smart contract has been deployed to: ${claimCalc.address}`);

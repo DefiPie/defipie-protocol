@@ -390,7 +390,7 @@ async function makeToken(opts = {}) {
   } = opts || {};
 
   if (kind == 'erc20') {
-    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e26));
     const decimals = etherUnsigned(dfn(opts.decimals, 18));
     const symbol = opts.symbol || 'OMG';
     const name = opts.name || `Erc20 ${symbol}`;
@@ -486,6 +486,40 @@ async function makeRegistryProxy(opts = {}) {
     registryProxy = await saddle.getContractAt('RegistryProxyHarness', registryProxy._address);
 
     return registryProxy;
+}
+
+async function makeVotingEscrow(opts = {}) {
+    const {
+        root = saddle.account
+    } = opts || {};
+
+    const registryProxy = opts.registryProxy || await makeRegistryProxy();
+    const token = opts.token || await makeToken();
+    const name = opts.name || 'Voting Escrow PIE token';
+    const symbol = opts.symbol || "VEPIE";
+    const interval = opts.interval || etherUnsigned(604800);
+    const minDuration = opts.minDuration || etherUnsigned(604800);
+    const maxDuration = opts.maxDuration || etherUnsigned(125798400);
+    const minLockAmount = opts.minLockAmount || etherUnsigned(1e21);
+    const governor = opts.governor || root;
+
+    let votingEscrow;
+
+    votingEscrow = await deploy('VotingEscrowHarness', [
+        registryProxy._address,
+        token._address,
+        name,
+        symbol,
+        interval,
+        minDuration,
+        maxDuration,
+        minLockAmount,
+        governor
+    ]);
+
+    votingEscrow = await saddle.getContractAt('VotingEscrowHarness', votingEscrow._address);
+
+    return Object.assign(votingEscrow, { token, registryProxy });
 }
 
 async function makeDistributor(opts = {}) {
@@ -715,6 +749,7 @@ module.exports = {
   makeRegistryProxy,
   makeProxyProtocol,
   makeDistributor,
+  makeVotingEscrow,
 
   balanceOf,
   totalSupply,

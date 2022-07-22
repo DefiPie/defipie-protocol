@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.15;
 
 contract ControllerErrorReporter {
     enum Error {
@@ -279,6 +279,32 @@ contract RegistryErrorReporter {
         SET_PENDING_ADMIN_OWNER_CHECK,
         SET_NEW_FACTORY,
         SET_NEW_ORACLE
+    }
+
+    /**
+      * @dev `error` corresponds to enum Error; `info` corresponds to enum FailureInfo, and `detail` is an arbitrary
+      * contract-specific code that enables us to report opaque error codes from upgradeable contracts.
+      **/
+    event Failure(uint error, uint info, uint detail);
+
+    /**
+      * @dev use this when reporting a known error from the money market or a non-upgradeable collaborator
+      */
+    function fail(Error err, FailureInfo info) internal returns (uint) {
+        emit Failure(uint(err), uint(info), 0);
+
+        return uint(err);
+    }
+}
+
+contract VotingEscrowErrorReporter {
+    enum Error {
+        NO_ERROR,
+        UNAUTHORIZED
+    }
+
+    enum FailureInfo {
+        SET_NEW_IMPLEMENTATION
     }
 
     /**

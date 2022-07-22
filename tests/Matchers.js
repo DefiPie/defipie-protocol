@@ -1,7 +1,7 @@
 const { last } = require('./Utils/JS');
 const { address, etherUnsigned } = require('./Utils/Ethereum');
 const { default: diff } = require('jest-diff');
-const { ControllerErr, TokenErr, OracleErr, FactoryErr, RegistryErr, MathErr } = require('./Errors');
+const { ControllerErr, TokenErr, OracleErr, FactoryErr, RegistryErr, VotingEscrowErr, MathErr } = require('./Errors');
 
 function opts(comment) {
   return {
@@ -336,6 +336,10 @@ expect.extend({
 
   toHaveRegistryFailure(result, err, info, detail=undefined) {
     return hasFailure.call(this, result, err, info, detail, RegistryErr, 'toHaveRegistryFailure');
+  },
+
+  toHaveVotingEscrowFailure(result, err, info, detail=undefined) {
+    return hasFailure.call(this, result, err, info, detail, VotingEscrowErr, 'toHaveVotingEscrowFailure');
   },
 
   toHaveTokenMathFailure(result, info, detail) {

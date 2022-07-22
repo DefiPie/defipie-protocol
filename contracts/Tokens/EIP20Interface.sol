@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.15;
 
 /**
  * @title ERC 20 Token Standard Interface

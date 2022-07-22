@@ -5,8 +5,8 @@ Macro GivenGov
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 10000000e18)
-    From Bank (PToken pPIE Mint 10000000e18)
+    From Bank (Pie Approve pPIE 7000000e18)
+    From Bank (PToken pPIE Mint 7000000e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian 19710
     Timelock SetAdmin (Address LegitGov)
 

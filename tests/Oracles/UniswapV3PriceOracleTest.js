@@ -1691,6 +1691,7 @@ describe('UniswapV3PriceOracle', () => {
             expect(result).toSucceed();
 
             fee = '100';
+
             mockUniswapPool2 = await deploy('MockUniswapV3Pool', [WETHToken._address, updateAsset._address, fee]);
 
             result = await send(mockUniswapPool2, 'setObserves', [

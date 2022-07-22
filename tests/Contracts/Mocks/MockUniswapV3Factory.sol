@@ -1,7 +1,7 @@
 // https://etherscan.io/address/0x1f98431c8ad98523631ae4a59f267346ea31f984
 // https://rinkeby.etherscan.io/address/0x1f98431c8ad98523631ae4a59f267346ea31f984#code
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.15;
 
 import "./MockUniswapV3Pool.sol";
 

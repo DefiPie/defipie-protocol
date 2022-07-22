@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.7.6;
+pragma solidity ^0.8.15;
 
 /// @title pool state that can change
 /// @notice These methods compose the pool's state, and can change with any frequency including multiple times

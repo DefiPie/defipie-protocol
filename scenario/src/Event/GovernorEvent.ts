@@ -83,6 +83,19 @@ async function setBlockTimestamp(
   );
 }
 
+async function setVotingEscrow(
+  world: World,
+  from: string,
+  governor: Governor,
+  votingEscrow: string
+): Promise<World> {
+  return addAction(
+    world,
+    `Set Governor VotingEscrow to ${votingEscrow}`,
+    await invoke(world, governor.methods.setVotingEscrow(votingEscrow), from)
+  );
+}
+
 export function governorCommands() {
   return [
     new Command<{ params: EventV }>(`
@@ -199,6 +212,20 @@ export function governorCommands() {
         new Arg('blockTimestamp', getNumberV)
       ],
       (world, from, { governor, blockTimestamp }) => setBlockTimestamp(world, from, governor, blockTimestamp),
+      { namePos: 1 }
+    ),
+    new Command<{ governor: Governor, votingEscrow: AddressV }>(`
+        #### SetBlockTimestamp
+
+        * "Governor <Governor> SetVotingEscrow VE" - Sets the VotingEscrow of the Governance Harness
+        * E.g. "Governor GovernorScenario SetVotingEscrow (address VE)"
+    `,
+      'SetVotingEscrow',
+      [
+        new Arg('governor', getGovernorV),
+        new Arg('votingEscrow', getAddressV)
+      ],
+      (world, from, { governor, votingEscrow }) => setVotingEscrow(world, from, governor, votingEscrow.val),
       { namePos: 1 }
     )
   ];

@@ -8,14 +8,15 @@ const {
 } = require('../../Utils/Ethereum');
 
 const {
-    makePToken
+    makePToken,
+    makeRegistryProxy,
+    makeVotingEscrow
 } = require('../../Utils/DeFiPie');
 
-async function enfranchise(pie, ppie, actor, amount) {
-  await send(pie, 'transfer', [actor, etherMantissa(amount)]);
-  await send(pie, 'approve', [ppie._address, etherMantissa(amount)], {from: actor});
-  await send(ppie, 'mint', [etherMantissa(amount)], {from: actor});
-  await send(ppie, 'delegate', [actor], {from: actor});
+async function enfranchise(pie, votingEscrow, actor, amount, duration) {
+  await send(pie, 'transfer', [actor, amount]);
+  await send(pie, 'approve', [votingEscrow._address, amount], {from: actor});
+  await send(votingEscrow, 'createLock', [amount, duration], {from: actor});
 }
 
 describe('Governor#queue/1', () => {
@@ -26,15 +27,20 @@ describe('Governor#queue/1', () => {
 
   describe("overlapping actions", () => {
     it("reverts on queueing overlapping actions in same proposal", async () => {
-      const timelock = await deploy('TimelockHarness', [root, 86400 * 2]);
-      const pie = await deploy('Pie', [root]);
-      const ppie = await makePToken({ kind: 'ppie', underlying: pie});
-      const registryAddress = await call(ppie, 'registry');
-      const period = '19710';
-      const gov = await deploy('Governor', [timelock._address, registryAddress, root, period]);
-      const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
+      let amount = '8000000000000000000000000';
+      let maxDuration = '125798400';
 
-      await enfranchise(pie, ppie, a1, 3e6);
+      const timelock = await deploy('TimelockHarness', [root, 86400 * 2]);
+      registryProxy = await makeRegistryProxy();
+      registryAddress = registryProxy._address;
+      ppie = await makePToken({registryProxy: registryProxy, kind: 'ppie', exchangeRate: 1});
+      pie = ppie.underlying;
+      gov = await deploy('Governor', [timelock._address, registryAddress, root, '19710']);
+      const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
+      votingEscrow = await makeVotingEscrow({token: pie, registryProxy: registryProxy, governor: gov._address});
+      await send(gov, 'setVotingEscrow', [votingEscrow._address]);
+
+      await enfranchise(pie, votingEscrow, a1, amount, maxDuration);
       await mineBlock();
 
       const targets = [pie._address, pie._address];
@@ -53,16 +59,22 @@ describe('Governor#queue/1', () => {
     });
 
     it("reverts on queueing overlapping actions in different proposals, works if waiting", async () => {
-      const timelock = await deploy('TimelockHarness', [root, 86400 * 2]);
-      const pie = await deploy('Pie', [root]);
-      const ppie = await makePToken({ kind: 'ppie', underlying: pie});
-      const registryAddress = await call(ppie, 'registry');
-      const period = '19710';
-      const gov = await deploy('Governor', [timelock._address, registryAddress, root, period]);
-      const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
+      let amount = '8000000000000000000000000';
+      let maxDuration = '125798400';
 
-      await enfranchise(pie, ppie, a1, 3e6);
-      await enfranchise(pie, ppie, a2, 3e6);
+      const timelock = await deploy('TimelockHarness', [root, 86400 * 2]);
+      registryProxy = await makeRegistryProxy();
+      registryAddress = registryProxy._address;
+      ppie = await makePToken({registryProxy: registryProxy, kind: 'ppie', exchangeRate: 1});
+      pie = ppie.underlying;
+      gov = await deploy('Governor', [timelock._address, registryAddress, root, '19710']);
+      const txAdmin = await send(timelock, 'harnessSetAdmin', [gov._address]);
+      votingEscrow = await makeVotingEscrow({token: pie, registryProxy: registryProxy, governor: gov._address});
+      await send(gov, 'setVotingEscrow', [votingEscrow._address]);
+
+      await enfranchise(pie, votingEscrow, a1, amount, maxDuration);
+      await enfranchise(pie, votingEscrow, a2, amount, maxDuration);
+
       await mineBlock();
 
       const targets = [pie._address];

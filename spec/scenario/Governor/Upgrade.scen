@@ -7,19 +7,17 @@ Macro DeployGov
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 150000002e18)
-    From Bank (PToken pPIE Mint 150000002e18)
     Governor Deploy Governor Alpha (Address Timelock) (Address RegistryProxy) Guardian 19710
+    VotingEscrow Deploy VE (Address RegistryProxy) (Pie Address) (Address Alpha)
+    From Guardian (Governor Alpha SetVotingEscrow (VotingEscrow Address VE))
     Timelock SetAdmin (Address Alpha)
-    Enfranchise Root 150000001e18
-    Assert Equal (Timelock Admin) (Address Alpha)
+    Enfranchise Root 7000000e18
 
 Macro SucceedQueueExecuteLastProposal gov
     MineBlock
     Governor gov Proposal LastProposal Vote For
     AdvanceBlocks 20000
     MineBlock
-    Enfranchise Root 600001e18
     Assert Equal ("Succeeded") (Governor gov Proposal LastProposal State)
     Governor gov Proposal LastProposal Queue
     Assert Equal ("Queued") (Governor gov Proposal LastProposal State)
@@ -28,8 +26,14 @@ Macro SucceedQueueExecuteLastProposal gov
     Assert Equal ("Executed") (Governor gov Proposal LastProposal State)
 
 Macro Enfranchise user amount
-    From Bank (PToken pPIE Transfer user amount)
-    From user (PToken pPIE Delegate user)
+    From Bank (Pie Transfer user amount)
+    From user (Pie Approve VotingEscrow amount)
+    From user (VotingEscrow CreateLock amount 125798400)
+
+Macro Deposit user amount
+    From Bank (Pie Transfer user amount)
+    From user (Pie Approve VotingEscrow amount)
+    From user (VotingEscrow DepositFor user amount)
 
 Test "Governor can switch to a new governor"
     DeployGov
@@ -40,6 +44,8 @@ Test "Governor can switch to a new governor"
     From Guardian (Governor Beta Guardian AcceptAdmin)
     Assert Equal (Timelock Admin) (Address Beta)
     Assert Equal (Timelock PendingAdmin) (Address Zero)
+    Assert Equal (Governor Beta VotingEscrow) (Address Zero)
+    From Guardian (Governor Beta SetVotingEscrow (VotingEscrow Address VE))
     Governor Beta Propose "Add 2" [(Address CNT1)] [0] ["increment(uint256)"] [["2"]]
     SucceedQueueExecuteLastProposal Beta
     Assert Log ProposalExecuted (id 1)
@@ -54,6 +60,8 @@ Test "Guardian can switch to a new governor"
     From Guardian (Governor Beta Guardian AcceptAdmin)
     Assert Equal (Timelock Admin) (Address Beta)
     Assert Equal (Timelock PendingAdmin) (Address Zero)
+    Assert Equal (Governor Beta VotingEscrow) (Address Zero)
+    From Guardian (Governor Beta SetVotingEscrow (VotingEscrow Address VE))
     Governor Beta Propose "Add 2" [(Address CNT1)] [0] ["increment(uint256)"] [["2"]]
     IncreaseTime 604901
     From Root (Governor Beta Proposal LastProposal Vote For)
