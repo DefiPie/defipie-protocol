@@ -20,6 +20,7 @@ import { Arg, Fetcher, getFetcherValue } from './Command';
 import { getUserValue, userFetchers } from './Value/UserValue';
 import { controllerFetchers, getControllerValue } from './Value/ControllerValue';
 import { registryFetchers, getRegistryValue } from './Value/RegistryValue';
+import { votingEscrowFetchers, getVotingEscrowValue } from './Value/VotingEscrowValue';
 import { registryProxyFetchers, getRegistryProxyValue } from './Value/RegistryProxyValue';
 import { controllerImplFetchers, getControllerImplValue } from './Value/ControllerImplValue';
 import { distributorFetchers, getDistributorValue } from './Value/DistributorValue';
@@ -148,12 +149,6 @@ function strToNumberV(str: string): NumberV {
   }
 
   return new NumberV(str);
-}
-
-function strToExpNumberV(str: string): NumberV {
-  const r = new BigNumber(str);
-
-  return new NumberV(r.multipliedBy(expMantissa).toFixed());
 }
 
 export async function getNumberV(world: World, event: Event): Promise<NumberV> {
@@ -837,28 +832,39 @@ const fetchers = [
     async (world, { res }) => res,
     { subExpressions: controllerFetchers() }
   ),
-    new Fetcher<{ res: Value }, Value>(
-        `
+  new Fetcher<{ res: Value }, Value>(
+    `
       #### Registry
 
       * "Registry ...registryArgs" - Returns registry value
     `,
-        'Registry',
-        [new Arg('res', getRegistryValue, { variadic: true })],
-        async (world, { res }) => res,
-        { subExpressions: registryFetchers() }
-    ),
-    new Fetcher<{ res: Value }, Value>(
-        `
+    'Registry',
+    [new Arg('res', getRegistryValue, { variadic: true })],
+    async (world, { res }) => res,
+    { subExpressions: registryFetchers() }
+  ),
+  new Fetcher<{ res: Value }, Value>(
+    `
+      #### VotingEscrow
+
+      * "VotingEscrow ...VotingEscrow" - Returns VotingEscrow value
+    `,
+    'VotingEscrow',
+    [new Arg('res', getVotingEscrowValue, { variadic: true })],
+    async (world, { res }) => res,
+    { subExpressions: votingEscrowFetchers() }
+  ),
+  new Fetcher<{ res: Value }, Value>(
+    `
       #### RegistryProxy
 
       * "RegistryProxy ...registryProxyArgs" - Returns registryProxy value
     `,
-        'RegistryProxy',
-        [new Arg('res', getRegistryProxyValue, { variadic: true })],
-        async (world, { res }) => res,
-        { subExpressions: registryProxyFetchers() }
-    ),
+    'RegistryProxy',
+    [new Arg('res', getRegistryProxyValue, { variadic: true })],
+    async (world, { res }) => res,
+    { subExpressions: registryProxyFetchers() }
+  ),
   new Fetcher<{ res: Value }, Value>(
     `
       #### ControllerImpl
@@ -871,26 +877,26 @@ const fetchers = [
     { subExpressions: controllerImplFetchers() }
   ),
   new Fetcher<{ res: Value }, Value>(
-      `
+    `
       #### Distributor
 
       * "Distributor ...distributorArgs" - Returns distributor value
     `,
-      'Distributor',
-      [new Arg('res', getDistributorValue, { variadic: true })],
-      async (world, { res }) => res,
-      { subExpressions: distributorFetchers() }
+    'Distributor',
+    [new Arg('res', getDistributorValue, { variadic: true })],
+    async (world, { res }) => res,
+    { subExpressions: distributorFetchers() }
   ),
   new Fetcher<{ res: Value }, Value>(
-      `
+    `
       #### DistributorProxy
 
       * "DistributorProxy ...distributorProxyArgs" - Returns distributor proxy value
     `,
-      'DistributorProxy',
-      [new Arg('res', getDistributorProxyValue, { variadic: true })],
-      async (world, { res }) => res,
-      { subExpressions: distributorProxyFetchers() }
+    'DistributorProxy',
+    [new Arg('res', getDistributorProxyValue, { variadic: true })],
+    async (world, { res }) => res,
+    { subExpressions: distributorProxyFetchers() }
   ),
   new Fetcher<{ res: Value }, Value>(
     `

@@ -146,13 +146,23 @@ describe('PToken Factory tests', () => {
         });
 
         it("create token with bad decimals", async () => {
-            let decimals100 = await makeToken({decimals: 100});
-            expect(await call(decimals100, 'decimals')).toEqual('100');
+            let decimals100 = await makeToken({decimals: 85});
+            expect(await call(decimals100, 'decimals')).toEqual('85');
             await send(mockUniswapV2Pool, 'setData', [decimals100._address, WETHToken._address]);
 
             await expect(
                 send(pTokenFactory, 'createPToken', [decimals100._address])
             ).rejects.toRevert('revert SafeMath: multiplication overflow');
+        });
+
+        it("create token with bad decimals with overflow uint256", async () => {
+            let decimals100 = await makeToken({decimals: 86});
+            expect(await call(decimals100, 'decimals')).toEqual('86');
+            await send(mockUniswapV2Pool, 'setData', [decimals100._address, WETHToken._address]);
+
+            await expect(
+                send(pTokenFactory, 'createPToken', [decimals100._address])
+            ).rejects.toRevert('revert');
         });
     });
 });

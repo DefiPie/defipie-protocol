@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.15;
 
 import "../ErrorReporter.sol";
 import "../Exponential.sol";
@@ -1115,16 +1114,11 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         if (msg.sender == getAdmin()) {
             // nothing
         } else if (msg.sender == pauseGuardian) {
-            uint startBorrowTimestamp = PErc20ExtInterface(pToken).startBorrowTimestamp();
-
-            if (block.timestamp > startBorrowTimestamp + guardianModerateTime) {
-                require(state == true, "only pause after start borrow and moderate time");
+            if (state == true) {
+                // nothing
             } else {
-                if (state == true) {
-                    // nothing
-                } else {
-                    ModerateData storage pool = moderatePools[pToken];
-                    require(pool.rewardState == RewardState.PENDING, "bad reward state"); // only admin can unpause after pause guardian
+                ModerateData storage pool = moderatePools[pToken];
+                if (pool.rewardState == RewardState.PENDING) {
                     pool.rewardState = RewardState.REJECTED;
                 }
             }

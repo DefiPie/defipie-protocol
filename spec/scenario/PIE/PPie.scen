@@ -286,14 +286,14 @@ Test "Delegate from address(0) to account after mint and from account to address
     Redeem Jared 10 pPIE
     Assert Equal (PToken pPIE TokenBalance Geoff) 499999999999999999990 --5000e18 - 10
     Assert Equal (PToken pPIE TokenBalance Jared) 0
-    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "500e18") (newBalance "499999999999999999990")
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance 500e18) (newBalance 499999999999999999990)
     Assert Equal (PToken pPIE VotesLength Geoff) 5
     Assert Equal (PToken pPIE GetCurrentVotes Geoff) 499999999999999999990
     FastForward 10 Blocks
     Redeem Geoff 499999999999999999990 pPIE
     Assert Equal (PToken pPIE TokenBalance Geoff) 0
     Assert Equal (PToken pPIE TokenBalance Jared) 0
-    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "499999999999999999990") (newBalance "0")
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance 499999999999999999990) (newBalance 0)
     Assert Equal (PToken pPIE VotesLength Geoff) 6
     Assert Equal (PToken pPIE GetCurrentVotes Geoff) 0
 
@@ -319,7 +319,7 @@ Test "Delegate from borrow to liquidator after liquidate"
     Assert Equal (Controller Liquidity Geoff) 0e18 -- ( ( 1.0 * 100e18 * 0.5 ) - ( 1.0 * 50e18 ) )
     From Geoff (PToken pPIE Delegate Geoff)
     Assert Log DelegateChanged (delegator (Address Geoff)) (fromDelegate (Address Zero)) (toDelegate (Address Geoff))
-    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "0") (newBalance "5000000000000000000000") -- 100e18 pie mint -> 50 * 100e18 ppie = 5000e18
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance 0) (newBalance 5000000000000000000000) -- 100e18 pie mint -> 50 * 100e18 ppie = 5000e18
     From Torrey (PToken pPIE Delegate Torrey)
     Assert Log DelegateChanged (delegator (Address Torrey)) (fromDelegate (Address Zero)) (toDelegate (Address Torrey))
     -- Prices are 1:1 (in-kind) and collateral factor is 0.5, thus supplying 100e18 pPIE gives the user 50e18
@@ -352,8 +352,8 @@ Test "Delegate from borrow to liquidator after liquidate"
     Liquidate Torrey "->" Geoff 6.25e14 pPIE "Seizing" pPIE -- should now take twice as much collateral
     --
     -- And see what they are now
-    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance "5000000000000000000000") (newBalance "4999965625687492695330")
-    Assert Log DelegateVotesChanged (delegate (Address Torrey)) (previousBalance "0") (newBalance "34374312507304670")
+    Assert Log DelegateVotesChanged (delegate (Address Geoff)) (previousBalance 5000000000000000000000) (newBalance 4999965625687492695330)
+    Assert Log DelegateVotesChanged (delegate (Address Torrey)) (previousBalance 0) (newBalance 34374312507304670)
     Assert Equal (PToken pPIE ExchangeRate) 0.02000040000375 --- XXX: Verify this
     Assert Equal (Erc20 pPIE TokenBalance Geoff) 4999965625687492695330 --
     Assert Equal (Erc20 pPIE TokenBalance Torrey) 34374312507304670 --

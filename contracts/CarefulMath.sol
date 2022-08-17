@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.15;
 
 /**
   * @title Careful Math
@@ -23,15 +23,16 @@ contract CarefulMath {
     * @dev Multiplies two numbers, returns an error on overflow.
     */
     function mulUInt(uint a, uint b) internal pure returns (MathError, uint) {
-        if (a == 0) {
-            return (MathError.NO_ERROR, 0);
-        }
+        unchecked {
+            if (a == 0) {
+                return (MathError.NO_ERROR, 0);
+            }
 
-        uint c = a * b;
+            uint c = a * b;
+            if (c / a != b) {
+                return (MathError.INTEGER_OVERFLOW, 0);
+            }
 
-        if (c / a != b) {
-            return (MathError.INTEGER_OVERFLOW, 0);
-        } else {
             return (MathError.NO_ERROR, c);
         }
     }
@@ -62,11 +63,12 @@ contract CarefulMath {
     * @dev Adds two numbers, returns an error on overflow.
     */
     function addUInt(uint a, uint b) internal pure returns (MathError, uint) {
-        uint c = a + b;
+        unchecked {
+            uint c = a + b;
+            if (c >= a) {
+                return (MathError.NO_ERROR, c);
+            }
 
-        if (c >= a) {
-            return (MathError.NO_ERROR, c);
-        } else {
             return (MathError.INTEGER_OVERFLOW, 0);
         }
     }

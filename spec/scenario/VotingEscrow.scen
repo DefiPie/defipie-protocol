@@ -1,0 +1,19 @@
+Macro DeployGov
+    SetBlockNumber 1
+    Counter Deploy CNT1
+    Timelock Deploy Scenario Jared 604800
+    Pie Deploy Bank
+    NewController
+    ListedPPIEToken pPIE Pie
+    Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian 19710
+    Timelock SetAdmin (Address LegitGov)
+
+Macro NewVotingEscrow name
+    DeployGov
+    VotingEscrow Deploy name (Address RegistryProxy) (Pie Address) (Address LegitGov)
+    From Guardian (Governor LegitGov SetVotingEscrow (VotingEscrow Address name))
+
+Test "Deploy VE XXX"
+    NewVotingEscrow VE
+    Assert Equal (VotingEscrow getAdmin VE) (Address Root)
+    Assert Equal (RegistryProxy Admin) (Address Root)

@@ -45,6 +45,8 @@ export interface GovernorMethods {
   __executeSetTimelockPendingAdmin(newPendingAdmin: string, eta: encodedNumber): Sendable<void>;
   __acceptAdmin(): Sendable<void>;
   __abdicate(): Sendable<void>;
+  votingEscrow(): Callable<string>;
+  setVotingEscrow(_votingEscrow: string): Sendable<void>;
 }
 
 export interface Governor extends Contract {

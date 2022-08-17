@@ -18,6 +18,9 @@ import {
   StringV,
   Value
 } from '../Value';
+import {
+  toBN,
+} from 'web3-utils';
 import { Arg, View, processCommandEvent } from '../Command';
 
 async function assertApprox(world: World, given: NumberV, expected: NumberV, tolerance: NumberV): Promise<World> {
@@ -180,7 +183,7 @@ async function assertReadError(world: World, event: Event, message: string, isRe
 
 function getLogValue(value: any): Value {
   if (typeof value === 'number' || (typeof value === 'string' && value.match(/^[0-9]+$/))) {
-    return new NumberV(Number(value));
+    return new NumberV(toBN(value.toString()).toString());
   } else if (typeof value === 'string') {
     return new StringV(value);
   } else if (typeof value === 'boolean') {

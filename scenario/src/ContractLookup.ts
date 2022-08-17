@@ -19,6 +19,7 @@ import { PriceOracle } from './Contract/PriceOracle';
 import { Timelock } from './Contract/Timelock';
 import { Registry } from './Contract/Registry';
 import { RegistryProxy } from './Contract/RegistryProxy';
+import { VotingEscrow } from './Contract/VotingEscrow';
 
 type ContractDataEl = string | Map<string, object> | undefined;
 
@@ -114,6 +115,10 @@ export async function getDistributorProxy(world: World): Promise<DistributorProx
 
 export function getPTokenAddress(world: World, pTokenArg: string): string {
   return getContractDataString(world, [['pTokens', pTokenArg, 'address']]);
+}
+
+export function getVotingEscrow(world: World): Promise<VotingEscrow> {
+  return getWorldContract(world, [['Contracts', 'VotingEscrow']]);
 }
 
 export function getPTokenDelegateAddress(world: World, pTokenDelegateArg: string): string {
@@ -250,7 +255,8 @@ export function getAddress(world: World, addressArg: string): string {
     ['Distributor', addressArg, 'address'],
     ['DistributorProxy', addressArg, 'address'],
     ['Registry', addressArg, 'address'],
-    ['RegistryProxy', addressArg, 'address']
+    ['RegistryProxy', addressArg, 'address'],
+    ['VotingEscrow', addressArg]
   ]);
 }
 

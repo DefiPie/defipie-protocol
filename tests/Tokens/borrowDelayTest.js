@@ -10,7 +10,6 @@ const {
     makePTokenFactory,
     makeRegistryProxy
 } = require('../Utils/DeFiPie');
-const bn = require('bignumber.js');
 
 describe('Fee Token tests', () => {
     let root, admin, accounts;

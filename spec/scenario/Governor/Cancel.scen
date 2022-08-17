@@ -5,17 +5,20 @@ Macro DeployGov
     Pie Deploy Bank
     NewController
     ListedPPIEToken pPIE Pie
-    From Bank (Pie Approve pPIE 150000002e18)
-    From Bank (PToken pPIE Mint 150000002e18)
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian 19710
+    VotingEscrow Deploy VE (Address RegistryProxy) (Pie Address) (Address LegitGov)
+    From Guardian (Governor LegitGov SetVotingEscrow (VotingEscrow Address VE))
+    From Bank (Pie Approve VotingEscrow 7000000e18)
+    From Bank (VotingEscrow CreateLock 7000000e18 125798400)
     Timelock SetAdmin (Address LegitGov)
-    Enfranchise Root 75000001e18
-    Enfranchise Jared 75000000e18
+    Enfranchise Root 7000000e18
+    Enfranchise Jared 7000000e18
     Assert Equal (RegistryProxy pPIE) (Address pPIE)
 
 Macro Enfranchise user amount
-    From Bank (PToken pPIE Transfer user amount)
-    From user (PToken pPIE Delegate user)
+    From Bank (Pie Transfer user amount)
+    From user (Pie Approve VotingEscrow amount)
+    From user (VotingEscrow CreateLock amount 125798400)
 
 Macro GivenPendingProposal
     DeployGov
@@ -52,7 +55,7 @@ Macro GivenExecutedProposal
 
 Test "Cancel a Pending proposal"
     GivenPendingProposal
-    From Root (PToken pPIE Delegate Geoff)
+    From Root (VotingEscrow Delegate Geoff)
     Assert Equal ("Pending") (Governor LegitGov Proposal LastProposal State)
     --sending away delegates takes a block, so proposal will be "Active" by time it is cancelable
     Governor LegitGov Proposal LastProposal Cancel
@@ -61,14 +64,14 @@ Test "Cancel a Pending proposal"
 
 Test "Cancel an Active proposal"
     GivenActiveProposal
-    From Root (PToken pPIE Delegate Geoff)
+    From Root (VotingEscrow Delegate Geoff)
     Governor LegitGov Proposal LastProposal Cancel
     Assert Log ProposalCanceled (id 1)
     Assert Equal ("Canceled") (Governor LegitGov Proposal LastProposal State)
 
 Test "Cancel a Succeded proposal"
     GivenSucceededProposal
-    From Root (PToken pPIE Delegate Geoff)
+    From Root (VotingEscrow Delegate Geoff)
     Governor LegitGov Proposal LastProposal Cancel
     Assert Log ProposalCanceled (id 1)
     Assert Equal ("Canceled") (Governor LegitGov Proposal LastProposal State)
@@ -77,7 +80,7 @@ Test "Cancel a queued proposal"
     GivenQueuedProposal
     Assert True (Timelock QueuedTransaction (Timelock TxHash (Address CNT1) 0 (Governor LegitGov Proposal LastProposal Eta) "increment(uint256,uint256)" 7 4))
     Assert True (Timelock QueuedTransaction (Timelock TxHash (Address CNT1) 0 (Governor LegitGov Proposal LastProposal Eta) "decrement(uint256)" 2))
-    From Root (PToken pPIE Delegate Geoff)
+    From Root (VotingEscrow Delegate Geoff)
     Governor LegitGov Proposal LastProposal Cancel
     Assert Log ProposalCanceled (id 1)
     Assert False (Timelock QueuedTransaction (Timelock TxHash (Address CNT1) 0 (Governor LegitGov Proposal LastProposal Eta) "increment(uint256,uint256)" 7 4))
@@ -86,7 +89,7 @@ Test "Cancel a queued proposal"
 
 Test "Revert when trying to cancel an executed proposal"
     GivenExecutedProposal
-    From Root (PToken pPIE Delegate Geoff)
+    From Root (VotingEscrow Delegate Geoff)
     AllowFailures
     Governor LegitGov Proposal LastProposal Cancel
     Assert Revert "revert Governor::cancel: cannot cancel executed proposal"

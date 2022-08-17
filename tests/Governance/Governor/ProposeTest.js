@@ -6,7 +6,9 @@ const {
 } = require('../../Utils/Ethereum');
 
 const {
-    makePToken
+    makePToken,
+    makeRegistryProxy,
+    makeVotingEscrow
 } = require('../../Utils/DeFiPie');
 
 describe('Governor#propose/5', () => {
@@ -15,16 +17,21 @@ describe('Governor#propose/5', () => {
 
   beforeAll(async () => {
     [root, acct, ...accounts] = accounts;
-    pie = await deploy('Pie', [root]);
-    ppie = await makePToken({ kind: 'ppie', underlying: pie});
-    registryAddress = await call(ppie, 'registry');
-    gov = await deploy('Governor', [address(0), registryAddress, address(0), period]);
+
+    registryProxy = await makeRegistryProxy();
+    registryAddress = registryProxy._address;
+    ppie = await makePToken({registryProxy: registryProxy, kind: 'ppie', exchangeRate: 1});
+    pie = ppie.underlying;
+    gov = await deploy('Governor', [address(0), registryAddress, root, '19710']);
+    votingEscrow = await makeVotingEscrow({token: pie, registryProxy: registryProxy, governor: gov._address});
+    await send(gov, 'setVotingEscrow', [votingEscrow._address]);
   });
 
   let trivialProposal, targets, values, signatures, callDatas;
   let proposalBlock;
   let delay = 1;
-  let threshold = 15000001e8; //15,000,000e8
+  let amount = '8000000000000000000000000';
+  let maxDuration = '125798400';
 
   beforeAll(async () => {
     targets = [root];
@@ -32,9 +39,9 @@ describe('Governor#propose/5', () => {
     signatures = ["getBalanceOf(address)"];
     callDatas = [encodeParameters(['address'], [acct])];
 
-    await send(pie, 'approve', [ppie._address, threshold]);
-    await send(ppie, 'mint', [threshold]);
-    await send(ppie, 'delegate', [root]);
+    await send(pie, 'approve', [votingEscrow._address, amount]);
+    await send(votingEscrow, 'createLock', [amount, maxDuration]);
+
     await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"]);
     proposalBlock = +(await web3.eth.getBlockNumber());
     proposalId = await call(gov, 'latestProposalIds', [root]);
@@ -132,10 +139,9 @@ describe('Governor#propose/5', () => {
     });
 
     it("This function returns the id of the newly created proposal. # proposalId(n) = succ(proposalId(n-1))", async () => {
-      await send(pie, 'transfer', [accounts[2], threshold]);
-      await send(pie, 'approve', [ppie._address, threshold], {from: accounts[2]});
-      await send(ppie, 'mint', [threshold], {from: accounts[2]});
-      await send(ppie, 'delegate', [accounts[2]], {from: accounts[2]});
+      await send(pie, 'transfer', [accounts[2], amount]);
+      await send(pie, 'approve', [votingEscrow._address, amount], {from: accounts[2]});
+      await send(votingEscrow, 'createLock', [amount, maxDuration], {from: accounts[2]});
 
       await mineBlock();
       let nextProposalId = await gov.methods['propose'](targets, values, signatures, callDatas, "yoot").call({ from: accounts[2] });
@@ -145,11 +151,13 @@ describe('Governor#propose/5', () => {
     });
 
     it("emits log with id and description", async () => {
-      await send(pie, 'transfer', [accounts[3], threshold]);
-      await send(pie, 'approve', [ppie._address, threshold], {from: accounts[3]});
-      await send(ppie, 'mint', [threshold], {from: accounts[3]});
-      await send(ppie, 'delegate', [accounts[3]], {from: accounts[3]});
+      await send(pie, 'transfer', [accounts[3], amount]);
+      await send(pie, 'approve', [votingEscrow._address, amount], {from: accounts[3]});
+      await send(votingEscrow, 'createLock', [amount, maxDuration], {from: accounts[3]});
+
       await mineBlock();
+      await mineBlock();
+
       let nextProposalId = await gov.methods['propose'](targets, values, signatures, callDatas, "yoot").call({ from: accounts[3] });
       let startBlock = 62;
       

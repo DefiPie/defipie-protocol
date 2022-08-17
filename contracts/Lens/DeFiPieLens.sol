@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.15;
 
 import "../Tokens/PErc20.sol";
 import "../Oracles/PriceOracle.sol";
@@ -339,9 +338,11 @@ contract DeFiPieLens {
     }
 
     function add(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
-        uint c = a + b;
-        require(c >= a, errorMessage);
-        return c;
+        unchecked {
+            uint c = a + b;
+            require(c >= a, errorMessage);
+            return c;
+        }
     }
 
     function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {

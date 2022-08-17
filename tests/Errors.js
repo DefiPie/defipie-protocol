@@ -5,7 +5,7 @@
  */
 
 const path = require('path');
-const solparse = require('solparse');
+const solparse = require('solparse-0.8.0');
 
 const errorReporterPath = path.join(__dirname, '..', 'contracts', 'ErrorReporter.sol');
 const contents = solparse.parseFile(errorReporterPath);
@@ -14,7 +14,8 @@ const [
   TokenErrorReporter,
   OracleErrorReporter,
   FactoryErrorReporter,
-  RegistryErrorReporter
+  RegistryErrorReporter,
+  VotingEscrowErrorReporter
 ] = contents.body.filter(k => k.type === 'ContractStatement');
 
 function invert(object) {
@@ -40,6 +41,7 @@ module.exports = {
   OracleErr: parse(OracleErrorReporter),
   FactoryErr: parse(FactoryErrorReporter),
   RegistryErr: parse(RegistryErrorReporter),
+  VotingEscrowErr: parse(VotingEscrowErrorReporter),
   MathErr: {
     Error: MathError,
     ErrorInv: MathErrorInv

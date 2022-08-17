@@ -4,8 +4,11 @@ const {
   encodeParameters,
 } = require('../Utils/Ethereum');
 const {
+  makePToken,
+  makeDistributor,
   makeController,
-  makePToken, makeDistributor,
+  makeRegistryProxy,
+  makeVotingEscrow
 } = require('../Utils/DeFiPie');
 
 const BigNumber = require('bignumber.js');
@@ -134,7 +137,7 @@ describe('DeFiPieLens', () => {
           borrowBalanceCurrent: "0",
           pToken: pErc20._address,
           tokenAllowance: "0",
-          tokenBalance: "10000000000000000000000000",
+          tokenBalance: "100000000000000000000000000",
         }
       );
     });
@@ -173,7 +176,7 @@ describe('DeFiPieLens', () => {
           borrowBalanceCurrent: "0",
           pToken: pErc20._address,
           tokenAllowance: "0",
-          tokenBalance: "10000000000000000000000000",
+          tokenBalance: "100000000000000000000000000",
         },
         {
           balanceOf: "0",
@@ -251,21 +254,24 @@ describe('DeFiPieLens', () => {
     let pie, ppie, registryAddress, gov;
     let targets, values, signatures, callDatas;
     let proposalBlock, proposalId;
-    let threshold = new BigNumber(15000001e18); //15,000,000e18, 1e8 ppie = 1e18 pie
+    let amount = '8000000000000000000000000'; //1e8 ppie = 1e18 pie
+    let maxDuration = '125798400'; 
 
     beforeEach(async () => {
-      pie = await deploy('Pie', [acct]);
-      ppie = await makePToken({ kind: 'ppie', underlying: pie, exchangeRate: 1});
-      registryAddress = await call(ppie, 'registry');
-      gov = await deploy('Governor', [address(0), registryAddress, address(0), '19710']);
+      registryProxy = await makeRegistryProxy();
+      registryAddress = registryProxy._address;
+      ppie = await makePToken({registryProxy: registryProxy, kind: 'ppie', exchangeRate: 1});
+      pie = ppie.underlying;
+      gov = await deploy('Governor', [address(0), registryAddress, acct, '19710']);
+      votingEscrow = await makeVotingEscrow({token: pie, registryProxy: registryProxy, governor: gov._address});
+      await send(gov, 'setVotingEscrow', [votingEscrow._address]);
       targets = [acct];
       values = ["0"];
       signatures = ["getBalanceOf(address)"];
       callDatas = [encodeParameters(['address'], [acct])];
 
-      await send(pie, 'approve', [ppie._address, threshold]);
-      await send(ppie, 'mint', [threshold]);
-      await send(ppie, 'delegate', [acct]);
+      await send(pie, 'approve', [votingEscrow._address, amount]);
+      await send(votingEscrow, 'createLock', [amount, maxDuration]);
       await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"]);
       proposalBlock = +(await web3.eth.getBlockNumber());
       proposalId = await call(gov, 'latestProposalIds', [acct]);

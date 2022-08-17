@@ -16,6 +16,7 @@ import { controllerCommands, processControllerEvent } from './Event/ControllerEv
 import { processUnitrollerEvent, unitrollerCommands } from './Event/UnitrollerEvent';
 import { controllerImplCommands, processControllerImplEvent } from './Event/ControllerImplEvent';
 import { pTokenCommands, processPTokenEvent } from './Event/PTokenEvent';
+import { votingEscrowCommands, processVotingEscrowEvent } from './Event/VotingEscrowEvent';
 import { pTokenDelegateCommands, processPTokenDelegateEvent } from './Event/PTokenDelegateEvent';
 import { erc20Commands, processErc20Event } from './Event/Erc20Event';
 import { registryCommands, processRegistryEvent } from './Event/RegistryEvent';
@@ -249,7 +250,7 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
     `
       #### PrintTransactionLogs
 
-      * "PrintTransactionLogs" - Prints logs from all transacions
+      * "PrintTransactionLogs" - Prints logs from all transactions
     `,
     'PrintTransactionLogs',
     [],
@@ -682,6 +683,19 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
     [new Arg('event', getEventV, { variadic: true })],
     (world, from, { event }) => processPTokenEvent(world, event.val, from),
     { subExpressions: pTokenCommands() }
+  ),
+
+  new Command<{ event: EventV }>(
+    `
+      #### VotingEscrow
+
+      * "VotingEscrow ...event" - Runs given VotingEscrow event
+        * E.g. "VotingEscrow Deploy name (Address RegistryProxy) (Pie Address) (Address LegitGov)"
+    `,
+    'VotingEscrow',
+    [new Arg('event', getEventV, { variadic: true })],
+    (world, from, { event }) => processVotingEscrowEvent(world, event.val, from),
+    { subExpressions: votingEscrowCommands() }
   ),
 
   new Command<{ event: EventV }>(

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.15;
 
 import '../../contracts/Oracles/UniswapV2PriceOracle.sol';
 import '../../contracts/Oracles/UniswapV3PriceOracle.sol';

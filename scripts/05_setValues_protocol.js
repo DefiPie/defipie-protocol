@@ -53,7 +53,7 @@ async function main() {
     tx = await unitrollerWithControllerInterface._setPauseGuardian(process.env.CONTROLLER_PAUSE_GUARDIAN);
     console.log("Tx8 hash: ", tx.hash);
     tx = await unitrollerWithControllerInterface._setUserModeratePoolData(
-        process.env.CONTROLLER_USET_PAUSE_DEPOSIT_AMOUNT,
+        process.env.CONTROLLER_USER_PAUSE_DEPOSIT_AMOUNT,
         process.env.CONTROLLER_GUARDIAN_MODERATE_TIME
     );
     console.log("Tx8_ hash: ", tx.hash);
