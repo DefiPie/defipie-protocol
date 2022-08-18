@@ -3,7 +3,7 @@ pragma solidity ^0.8.15;
 
 import "./IERC20.sol";
 import "../SafeMath.sol";
-import "./Address.sol";
+import "../Governance/VotingEscrowImports/Address.sol";
 
 /**
  * @title SafeERC20

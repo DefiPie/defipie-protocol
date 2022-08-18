@@ -5,6 +5,7 @@ import './Interfaces/uniswapV3/OracleLibrary.sol';
 import './Interfaces/uniswapV3/PoolAddress.sol';
 import './Interfaces/uniswapV3/IUniswapV3Factory.sol';
 import './Interfaces/uniswapV3/LiquidityAmounts.sol';
+import "./Interfaces/IPriceOracle.sol";
 
 import "./PriceOracle.sol";
 import "../ErrorReporter.sol";
@@ -248,6 +249,28 @@ contract UniswapV3PriceOracle is UniswapCommon, UniswapV3PriceOracleStorageV1 {
 
     function isPeriodElapsed(address /*asset*/) public view override returns (bool) {
         return false;
+    }
+
+    /**
+     * @notice Returns the type of underlying asset with maximum liquidity, belonging to V3 pools
+     * @param asset The address of the underlying asset
+     * @return uint Type of the asset
+     * @return uint112 Liquidity of the asset
+     */
+    function getUnderlyingTypeAndLiquidity(address asset) public view override returns (uint, uint112) {
+        address pool;
+        uint112 liquidity;
+        uint112 maxLiquidity;
+        IPriceOracle.UnderlyingType typeAsset = IPriceOracle.UnderlyingType.BadUnderlying;
+
+        (pool, liquidity) = searchPair(asset);
+
+        if (pool != address(0) && liquidity > maxLiquidity) {
+            maxLiquidity = liquidity;
+            typeAsset = IPriceOracle.UnderlyingType.RegularAsset;
+        }
+
+        return (uint(typeAsset), maxLiquidity);
     }
 
     function _updateAssetPair(address asset, address pair) public returns (uint) {

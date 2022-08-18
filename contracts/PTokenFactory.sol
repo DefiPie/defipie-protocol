@@ -10,7 +10,7 @@ import "./SafeMath.sol";
 import "./Tokens/PEtherDelegator.sol";
 import "./Tokens/PPIEDelegator.sol";
 import "./Control/Controller.sol";
-import "./Oracles/PriceOracle.sol";
+import "./Oracles/Interfaces/IPriceOracle.sol";
 import "./Tokens/PTokenInterfaces.sol";
 import "./PTokenFactoryStorage.sol";
 
@@ -54,11 +54,13 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.INVALID_POOL, FailureInfo.UNDERLYING_IN_BLACKLIST);
         }
 
-        if (!checkPair(underlying_)) {
-            return fail(Error.INVALID_POOL, FailureInfo.DEFICIENCY_LIQUIDITY_IN_POOL_OR_PAIR_IS_NOT_EXIST);
+        (uint underlyingType_, uint112 liquidity) = getOracle().getUnderlyingTypeAndLiquidity(underlying_);
+
+        if ((underlyingType_ == uint(IPriceOracle.UnderlyingType.BadUnderlying)) || (liquidity < minOracleLiquidity)) {
+            return fail(Error.INVALID_UNDERLYING, FailureInfo.DEFICIENCY_LIQUIDITY_IN_POOL_OR_BAD_PAIR);
         }
 
-        (string memory name, string memory symbol) = _createPTokenNameAndSymbol(underlying_);
+        (string memory name, string memory symbol) = _createPTokenNameAndSymbol(underlying_, underlyingType_);
 
         uint power = EIP20Interface(underlying_).decimals();
         uint exchangeRateMantissa = calcExchangeRate(power);
@@ -70,17 +72,24 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
 
-        RegistryInterface(registry).addPToken(underlying_, address(newPToken));
+        result = RegistryInterface(registry).addPToken(underlying_, address(newPToken));
+        if (result != 0) {
+            return fail(Error.MARKET_NOT_LISTED, FailureInfo.ADD_PTOKEN_BAD_RESULT);
+        }
 
         uint startBorrowTimestamp = PErc20ExtInterface(address(newPToken)).startBorrowTimestamp();
-        emit PTokenCreated(address(newPToken), startBorrowTimestamp);
 
-        getOracle().update(underlying_);
-
+        result = getOracle().update(underlying_);
+        if (result != 0) {
+            return fail(Error.MARKET_NOT_LISTED, FailureInfo.UPDATE_PRICE_BAD_RESULT);
+        }
+        
         if (createPoolFeeAmount > 0) {
             EIP20Interface(PErc20Interface(RegistryInterface(registry).pPIE()).underlying()).transferFrom(msg.sender, controller, createPoolFeeAmount);
             ControllerInterface(controller).setFreezePoolAmount(address(newPToken), createPoolFeeAmount);
         }
+
+        emit PTokenCreated(address(newPToken), startBorrowTimestamp);
 
         return uint(Error.NO_ERROR);
     }
@@ -103,7 +112,10 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
 
-        RegistryInterface(registry).addPETH(address(newPETH));
+        result = RegistryInterface(registry).addPETH(address(newPETH));
+        if (result != 0) {
+            return fail(Error.MARKET_NOT_LISTED, FailureInfo.ADD_PTOKEN_BAD_RESULT);
+        }
 
         emit PTokenCreated(address(newPETH), block.timestamp);
 
@@ -128,19 +140,19 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
 
-        RegistryInterface(registry).addPPIE(address(newPPIE));
+        result = RegistryInterface(registry).addPPIE(address(newPPIE));
+        if (result != 0) {
+            return fail(Error.MARKET_NOT_LISTED, FailureInfo.ADD_PTOKEN_BAD_RESULT);
+        }
+
+        result = getOracle().update(underlying_);
+        if (result != 0) {
+            return fail(Error.MARKET_NOT_LISTED, FailureInfo.UPDATE_PRICE_BAD_RESULT);
+        }
 
         emit PTokenCreated(address(newPPIE), block.timestamp);
 
-        getOracle().update(underlying_);
-
         return uint(Error.NO_ERROR);
-    }
-
-    function checkPair(address asset) public view returns (bool) {
-        (, address pair, uint112 ethEquivalentReserves) = getOracle().searchPair(asset);
-
-        return bool(pair != address(0) && ethEquivalentReserves >= minOracleLiquidity);
     }
 
     function _setMinOracleLiquidity(uint minOracleLiquidity_) public returns (uint) {
@@ -273,9 +285,33 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
         return PriceOracle(RegistryInterface(registry).oracle());
     }
 
-    function _createPTokenNameAndSymbol(address underlying_) internal view returns (string memory, string memory) {
+    function _createPTokenNameAndSymbol(address underlying_, uint underlyingType_) internal view returns (string memory, string memory) {
+        if (underlyingType_ == uint(IPriceOracle.UnderlyingType.RegularAsset)) {
+            return _createPTokenNameAndSymbolForAsset(underlying_);
+        } else if (underlyingType_ == uint(IPriceOracle.UnderlyingType.UniswapV2LP)) {
+            return _createPTokenNameAndSymbolForUniswapV2LP(underlying_);
+        } else {
+            return ("","");
+        }
+    }
+
+    function _createPTokenNameAndSymbolForAsset(address underlying_) internal view returns (string memory, string memory) {
         string memory name = string(abi.encodePacked("DeFiPie ", EIP20Interface(underlying_).name()));
         string memory symbol = string(abi.encodePacked("p", EIP20Interface(underlying_).symbol()));
+        return (name, symbol);
+    }
+
+    function _createPTokenNameAndSymbolForUniswapV2LP(address underlying_) internal view returns (string memory, string memory) {
+        IUniswapV2Pair pool = IUniswapV2Pair(underlying_);
+
+        address token0 = pool.token0();
+        address token1 = pool.token1();
+
+        string memory symbol0 = EIP20Interface(token0).symbol();
+        string memory symbol1 = EIP20Interface(token1).symbol();
+
+        string memory name = string(abi.encodePacked("DeFiPie uniLP ", symbol0, "-", symbol1));
+        string memory symbol = string(abi.encodePacked("pUniLP", symbol0, "-", symbol1));
         return (name, symbol);
     }
 
