@@ -20,7 +20,7 @@ describe('PToken Factory tests', () => {
         registryProxy = await makeRegistryProxy();
         mockPriceFeed = await deploy('MockPriceFeed');
         mockUniswapV2Factory = await deploy('MockUniswapV2Factory');
-        mockUniswapV2Pool = await deploy('MockUniswapV2Pool');
+        mockUniswapV2Pool = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
         WETHToken = await makeToken();
         asset = await makeToken();
 

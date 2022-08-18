@@ -76,7 +76,7 @@ describe.skip('Proxy Protocol tests', () => {
 
         factoryUniswapAddr = await call(uniswapOracle, "poolFactories", [0]);
         factoryUniswap = await saddle.getContractAt('MockUniswapV2Factory', factoryUniswapAddr);
-        pair = await deploy('MockUniswapV2Pool');
+        pair = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
         let tx00_ = await send(factoryUniswap, 'setPairExist', [true]);
         expect(tx00_).toSucceed();

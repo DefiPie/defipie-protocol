@@ -37,7 +37,7 @@ describe('UniswapV2PriceOracle', () => {
 
         mockPriceFeed = await deploy('MockPriceFeed');
         mockUniswapV2Factory = await deploy('MockUniswapV2Factory');
-        mockUniswapV2Pool = await deploy('MockUniswapV2Pool');
+        mockUniswapV2Pool = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
         WETHToken = await makeToken();
         asset = await makeToken();
 
@@ -123,7 +123,7 @@ describe('UniswapV2PriceOracle', () => {
             let newAsset = await makeToken();
 
             let newMockUniswapV2Factory = await deploy('MockUniswapV2Factory');
-            let newMockUniswapV2Pool = await deploy('MockUniswapV2Pool');
+            let newMockUniswapV2Pool = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
             let tx1 = await send(newMockUniswapV2Factory, 'setPair', [newMockUniswapV2Pool._address]);
             let tx2 = await send(newMockUniswapV2Factory, 'setPairExist', [true]);
 
@@ -395,13 +395,13 @@ describe('UniswapV2PriceOracle', () => {
     describe("check getPoolPair function", () => {
         it("check data", async () => {
             let newMockUniswapV2Factory1 = await deploy('MockUniswapV2Factory');
-            let newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool');
+            let newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             let tx1 = await send(newMockUniswapV2Factory1, 'setPair', [newMockUniswapV2Pool1._address]);
             let tx2 = await send(newMockUniswapV2Factory1, 'setPairExist', [true]);
 
             let newMockUniswapV2Factory2 = await deploy('MockUniswapV2Factory');
-            let newMockUniswapV2Pool2 = await deploy('MockUniswapV2Pool');
+            let newMockUniswapV2Pool2 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             let tx3 = await send(newMockUniswapV2Factory2, 'setPair', [newMockUniswapV2Pool2._address]);
             let tx4 = await send(newMockUniswapV2Factory2, 'setPairExist', [true]);
@@ -1155,9 +1155,9 @@ describe('UniswapV2PriceOracle', () => {
             expect(decimals).toEqual('18');
 
             newMockUniswapV2Factory1 = await deploy('MockUniswapV2FactoryV2');
-            newMockUniswapV2PoolDAI = await deploy('MockUniswapV2Pool');
-            newMockUniswapV2PoolUSDT = await deploy('MockUniswapV2Pool');
-            newMockUniswapV2PoolUSDC = await deploy('MockUniswapV2Pool');
+            newMockUniswapV2PoolDAI = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
+            newMockUniswapV2PoolUSDT = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
+            newMockUniswapV2PoolUSDC = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             // real data (blockTimeStamp 1617976989)
             await send(newMockUniswapV2PoolUSDT, 'setData', [
@@ -1214,8 +1214,8 @@ describe('UniswapV2PriceOracle', () => {
             await send(uniswapV2PriceOracle, 'update', [usdc._address]);
 
             newMockUniswapV2Factory2 = await deploy('MockUniswapV2FactoryV2');
-            newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool');
-            newMockUniswapV2Pool2 = await deploy('MockUniswapV2Pool');
+            newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
+            newMockUniswapV2Pool2 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             await send(newMockUniswapV2Pool1, 'setData', [
                 newAsset._address,
@@ -1239,7 +1239,7 @@ describe('UniswapV2PriceOracle', () => {
             let tx4 = await send(newMockUniswapV2Factory2, 'addPair', [newAsset._address, dai._address, newMockUniswapV2Pool2._address]);
 
             newMockUniswapV2Factory3 = await deploy('MockUniswapV2FactoryV2');
-            newMockUniswapV2Pool3 = await deploy('MockUniswapV2Pool');
+            newMockUniswapV2Pool3 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             await send(newMockUniswapV2Pool3, 'setData', [
                 newAsset._address,
@@ -1429,7 +1429,7 @@ describe('UniswapV2PriceOracle', () => {
             await send(uniswapV2PriceOracle, '_updatePool', ['0', uniswapFactory1._address]);
 
             token = await makeToken();
-            pair = await deploy('MockUniswapV2Pool');
+            pair = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             // set data for pair token/weth blockNum = 1620830269
             await send(pair, 'setData', [
@@ -1484,7 +1484,7 @@ describe('UniswapV2PriceOracle', () => {
             result = await send(uniswapV2PriceOracle, '_addStableCoin', [stableCoin._address]);
             expect(result).toSucceed();
 
-            stableCoinPair = await deploy('MockUniswapV2Pool');
+            stableCoinPair = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             // blockNum = 1620831787
             await send(stableCoinPair, 'setData', [
@@ -1504,7 +1504,7 @@ describe('UniswapV2PriceOracle', () => {
             // update stableCoin
             await send(uniswapV2PriceOracle, 'update', [stableCoin._address]);
 
-            tokenPairWithStableCoin = await deploy('MockUniswapV2Pool');
+            tokenPairWithStableCoin = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             //1620832537
             await send(tokenPairWithStableCoin, 'setData', [
@@ -1559,7 +1559,7 @@ describe('UniswapV2PriceOracle', () => {
             result = await send(uniswapV2PriceOracle, '_addStableCoin', [newStableCoin._address]);
             expect(result).toSucceed();
 
-            newStableCoinPair = await deploy('MockUniswapV2Pool');
+            newStableCoinPair = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             // 1620844261
             await send(newStableCoinPair, 'setData', [
@@ -1580,7 +1580,7 @@ describe('UniswapV2PriceOracle', () => {
             // update stableCoin
             await send(uniswapV2PriceOracle, 'update', [newStableCoin._address]);
 
-            tokenPairWithNewStableCoin = await deploy('MockUniswapV2Pool');
+            tokenPairWithNewStableCoin = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             // 1620845011
             await send(tokenPairWithNewStableCoin, 'setData', [
@@ -1654,9 +1654,9 @@ describe('UniswapV2PriceOracle', () => {
             expect(decimals).toEqual('18');
 
             newMockUniswapV2Factory1 = await deploy('MockUniswapV2FactoryV2');
-            newMockUniswapV2PoolDAI = await deploy('MockUniswapV2Pool');
-            newMockUniswapV2PoolUSDT = await deploy('MockUniswapV2Pool');
-            newMockUniswapV2PoolUSDC = await deploy('MockUniswapV2Pool');
+            newMockUniswapV2PoolDAI = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
+            newMockUniswapV2PoolUSDT = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
+            newMockUniswapV2PoolUSDC = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             // real data (blockTimeStamp 1617976989)
             await send(newMockUniswapV2PoolUSDT, 'setData', [
@@ -1704,9 +1704,9 @@ describe('UniswapV2PriceOracle', () => {
             await send(uniswapV2PriceOracle, 'update', [usdc._address]);
 
             newMockUniswapV2Factory2 = await deploy('MockUniswapV2FactoryV2');
-            newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool');
-            newMockUniswapV2Pool2 = await deploy('MockUniswapV2Pool');
-            newMockUniswapV2Pool3 = await deploy('MockUniswapV2Pool');
+            newMockUniswapV2Pool1 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
+            newMockUniswapV2Pool2 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
+            newMockUniswapV2Pool3 = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
 
             await send(newMockUniswapV2Pool1, 'setData', [
                 newAsset._address,

@@ -45,4 +45,10 @@ contract MockUniswapV2FactoryV2 {
         getPair[token1][token0] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
     }
+
+    function setPair(address) public { //dummie function for compatibleness 
+    }
+
+    function setPairExist(bool) public { //dummie function for compatibleness 
+    }
 }

@@ -193,9 +193,9 @@ async function makePToken(opts = {}) {
   const controller = opts.controller || await makeController(opts.controllerOpts);
   const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
   const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
-  const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool');
+  const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
   const WETHToken = opts.WETHToken || await makeToken();
-
+  
   let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
   let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
 
@@ -346,7 +346,7 @@ async function makePriceOracle(opts = {}) {
   if (kind == 'uniswap') {
       const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
       const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
-      const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool');
+      const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
       const WETHToken = opts.WETHToken || await makeToken();
 
       let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
@@ -429,7 +429,7 @@ async function makePTokenFactory(opts = {}) {
     let pTokenFactory;
     const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
     const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
-    const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool');
+    const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
     let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
     let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
 

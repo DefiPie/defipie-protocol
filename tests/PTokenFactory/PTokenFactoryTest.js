@@ -29,7 +29,7 @@ describe('PToken Factory tests', () => {
 
         mockPriceFeed = await deploy('MockPriceFeed');
         mockUniswapV2Factory = await deploy('MockUniswapV2Factory');
-        mockUniswapV2Pool = await deploy('MockUniswapV2Pool');
+        mockUniswapV2Pool = await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
         WETHToken = await makeToken();
         asset = await makeToken();
 
@@ -179,7 +179,7 @@ describe('PToken Factory tests', () => {
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
-            expect(result).toHaveFactoryFailure('INVALID_POOL', 'DEFICIENCY_LIQUIDITY_IN_POOL_OR_PAIR_IS_NOT_EXIST');
+            expect(result).toHaveFactoryFailure('INVALID_UNDERLYING', 'DEFICIENCY_LIQUIDITY_IN_POOL_OR_BAD_PAIR');
         });
 
         it("invalid pool, pool not exist", async () => {
@@ -189,7 +189,7 @@ describe('PToken Factory tests', () => {
 
             let result = await send(pTokenFactory, 'createPToken', [underlying._address]);
 
-            expect(result).toHaveFactoryFailure('INVALID_POOL', 'DEFICIENCY_LIQUIDITY_IN_POOL_OR_PAIR_IS_NOT_EXIST');
+            expect(result).toHaveFactoryFailure('INVALID_UNDERLYING', 'DEFICIENCY_LIQUIDITY_IN_POOL_OR_BAD_PAIR');
         });
     });
 

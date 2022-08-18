@@ -1,6 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-ethers");
+require('hardhat-abi-exporter');
 require("dotenv/config");
 
 const fs = require('fs');
@@ -89,5 +90,11 @@ module.exports = {
     },
     mocha: {
         timeout: 30000
-    }
+    },
+    abiExporter: {
+        path: './data/abi',
+        clear: true,
+        only: ['PEther$', 'PErc20$', 'Controller$', 'Registry$', 'PTokenFactory$', 'InterestRateModel$', 'Governor$', 'PriceOracle$'],
+        flat: true
+    }      
 };
