@@ -22,7 +22,7 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
      * @param newPToken Address of new PToken proxy contract
      * @param startBorrowTimestamp Timestamp for borrow start
      */
-    event PTokenCreated(address newPToken, uint startBorrowTimestamp);
+    event PTokenCreated(address newPToken, uint startBorrowTimestamp, uint underlyingType);
 
     event AddedBlackList(address _underlying);
     event RemovedBlackList(address _underlying);
@@ -89,7 +89,7 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             ControllerInterface(controller).setFreezePoolAmount(address(newPToken), createPoolFeeAmount);
         }
 
-        emit PTokenCreated(address(newPToken), startBorrowTimestamp);
+        emit PTokenCreated(address(newPToken), startBorrowTimestamp, underlyingType_);
 
         return uint(Error.NO_ERROR);
     }
@@ -117,7 +117,7 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.ADD_PTOKEN_BAD_RESULT);
         }
 
-        emit PTokenCreated(address(newPETH), block.timestamp);
+        emit PTokenCreated(address(newPETH), block.timestamp, uint(IPriceOracle.UnderlyingType.RegularAsset));
 
         return uint(Error.NO_ERROR);
     }
@@ -150,7 +150,7 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.UPDATE_PRICE_BAD_RESULT);
         }
 
-        emit PTokenCreated(address(newPPIE), block.timestamp);
+        emit PTokenCreated(address(newPPIE), block.timestamp, uint(IPriceOracle.UnderlyingType.RegularAsset));
 
         return uint(Error.NO_ERROR);
     }

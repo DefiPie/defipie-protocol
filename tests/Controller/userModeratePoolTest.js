@@ -132,7 +132,8 @@ describe('User moderate pool', () => {
 
         expect(result).toHaveLog('PTokenCreated', {
           newPToken: pTokenAddress,
-          startBorrowTimestamp: startBorrowTimestamp
+          startBorrowTimestamp: startBorrowTimestamp,
+          underlyingType: '1'
         });
 
         let balanceOfUserAfter = await call(controller.pie, 'balanceOf', [accounts[1]]);

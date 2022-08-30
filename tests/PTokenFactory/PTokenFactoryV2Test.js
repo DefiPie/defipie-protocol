@@ -187,12 +187,11 @@ describe('PToken Factory tests', () => {
             await send(mockUniswapV2Pool, 'setBlockTimeStampLast', [block.timestamp]);
 
             let result = await send(pTokenFactory, 'createPToken', [mockUniswapV2Pool3._address]);
-            console.log(result);
 
             let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
 
             expect(result).toSucceed();
-            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
+            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp, underlyingType: '2'});
         });
 
         it("short create LP pToken", async () => {

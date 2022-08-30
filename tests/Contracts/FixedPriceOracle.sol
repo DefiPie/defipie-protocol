@@ -52,7 +52,6 @@ contract FixedPriceOracleV2 is IPriceOracle {
     uint underlyingType = uint(IPriceOracle.UnderlyingType.RegularAsset);
     uint112 public reserves = 1000000000000000000;
     address public pair = address(1);
-    uint public underlyingType = 1;
     uint112 public liquidity = 1000000000000000000;
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
@@ -110,8 +109,7 @@ contract FixedUniswapPriceOracle is IPriceOracle {
     uint underlyingType = uint(IPriceOracle.UnderlyingType.RegularAsset);
     uint112 public liquidity = 1000000000000000000;
     address public pair;
-    uint public underlyingType = 1;
-    uint112 public liquidity = 10000000;
+    uint112 public reserves = 10000000;
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
         return underlyingPrice[pToken];

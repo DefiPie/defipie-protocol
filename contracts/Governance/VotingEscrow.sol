@@ -789,6 +789,7 @@ contract VotingEscrow is VotingEscrowStorageV1, ReentrancyGuard, IVotingEscrow {
      */
     function setMaxDuration(uint newMaxDuration) external {
         require(msg.sender == getAdmin(), "VE: Only admin");
+        require(newMaxDuration >= minDuration, "VE: Cannot be less than min time");
         require(newMaxDuration <= maxDuration, "VE: Cannot exceed max time");
         
         uint oldMaxDuration = maxDuration;
