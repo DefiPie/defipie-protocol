@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "./PriceOracle.sol";
 import "../ErrorReporter.sol";
 import "../Tokens/PTokenInterfaces.sol";
+import "./Interfaces/IPriceOracle.sol";
 import "../SafeMath.sol";
 import "./UniswapV2PriceOracleStorage.sol";
 import "../Tokens/EIP20Interface.sol";
@@ -52,6 +52,27 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
     }
 
     function update(address asset) public override returns (uint) {
+        uint typeAsset = uint(IPriceOracle.UnderlyingType.BadUnderlying);
+
+        (typeAsset, ) = getUnderlyingTypeAndLiquidity(asset);
+
+        if(typeAsset == uint(IPriceOracle.UnderlyingType.RegularAsset)) {
+            updateRegularAsset(asset);
+        } else if(typeAsset == uint(IPriceOracle.UnderlyingType.UniswapV2LP)) {
+            address token0 = IUniswapV2Pair(asset).token0();
+            address token1 = IUniswapV2Pair(asset).token1();
+
+            updateRegularAsset(token0);
+            updateRegularAsset(token1);
+
+            averagePrices[asset] = getLPTokenPrice(asset);
+        } else {
+            return fail(Error.UPDATE_PRICE, FailureInfo.NO_PAIR);
+        }
+        return uint(Error.NO_ERROR);
+    }
+
+    function updateRegularAsset(address asset) public returns (uint) {
         uint112 reserve0;
         uint112 reserve1;
         uint32 blockTimeStamp;
@@ -224,6 +245,19 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
     }
 
     function searchPair(address asset) public view override returns (address, uint112) {
+        uint112 liquidity;
+        uint typeAsset;
+
+        (typeAsset, liquidity) = getUnderlyingTypeAndLiquidity(asset);
+
+        if (typeAsset == uint(IPriceOracle.UnderlyingType.UniswapV2LP)) {
+            return (address(asset), liquidity);
+        } else {
+            return searchRegularPair(asset);
+        }
+    }
+
+    function searchRegularPair(address asset) public view returns (address, uint112) {
         address pair;
         uint112 maxReserves;
 
@@ -299,6 +333,96 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
         return update(asset);
     }
 
+    /**
+     * @notice Returns the type of underlying asset with maximum liquidity, belonging to V2 pools
+     * @param asset Address of the underlying asset
+     * @return uint Type of the V2 asset
+     * @return uint112 Liquidity of the asset
+     */
+    function getUnderlyingTypeAndLiquidity(address asset) public view override returns (uint, uint112) {
+        address pool;
+        uint112 liquidity;
+        uint112 maxLiquidity;
+        IPriceOracle.UnderlyingType typeAsset = IPriceOracle.UnderlyingType.BadUnderlying;
+
+        (pool, liquidity) = searchRegularPair(asset);
+
+        if (pool != address(0) && liquidity > maxLiquidity) {
+            maxLiquidity = liquidity;
+            typeAsset = IPriceOracle.UnderlyingType.RegularAsset;
+        }
+
+        if (checkUniswapLP(asset)) {
+            liquidity = getPoolLiquidityETH(asset);
+
+            if (liquidity > maxLiquidity) {
+                maxLiquidity = liquidity;
+                typeAsset = IPriceOracle.UnderlyingType.UniswapV2LP;
+            }
+        }
+
+        return (uint(typeAsset), maxLiquidity);
+    }
+
+    /**
+     * @notice Calculates the liquidity of the given V2 pool
+     * @param pool Address of the V2 pool
+     * @return uint112 = Liquidity of the pool, measured in ETH
+     */
+    function getPoolLiquidityETH(address pool) public view returns (uint112) {
+        uint price = getLPTokenPrice(pool);
+        uint totalSupply = IUniswapV2Pair(pool).totalSupply();
+
+        return uint112(price * totalSupply / 1e18);
+    }
+
+    /**
+     * @notice Calculates the pprice of one LP token
+     * @param pool Address of the V2 pool
+     * @return uint256 = Price of one LP token, measured in underlying tokens
+     */
+    function getLPTokenPrice(address pool) public view returns (uint256) {
+        address token0 = IUniswapV2Pair(pool).token0();
+        address token1 = IUniswapV2Pair(pool).token1();
+        uint256 totalSupply = IUniswapV2Pair(pool).totalSupply();
+        (uint256 r0, uint256 r1, ) = IUniswapV2Pair(pool).getReserves();
+        uint256 sqrtR = SafeMath.sqrt(r0 * r1);
+        uint256 p0 = getCourseInETH(token0);
+        uint256 p1 = getCourseInETH(token1);
+        uint256 sqrtP = SafeMath.sqrt(p0 * p1);
+
+        return 2 * sqrtR * sqrtP / totalSupply;
+    }
+
+    /**
+     * @notice Verifies if V2 pool is valid, and possibly contains LP tokens
+     * @param pool Address of the V2 pool
+     * @return bool = true if given address is a liquidity pool  
+     */
+    function checkUniswapLP(address pool) internal view returns (bool) {
+        bool token0Exist = _callOptionalReturn(pool, abi.encodeWithSelector(IUniswapV2Pair(pool).token0.selector));
+        bool token1Exist = _callOptionalReturn(pool, abi.encodeWithSelector(IUniswapV2Pair(pool).token1.selector));
+        bool factoryIsExist = _callOptionalReturn(pool, abi.encodeWithSelector(IUniswapV2Pair(pool).factory.selector));
+
+        if (!token0Exist || !token1Exist || !factoryIsExist) {
+            return false;
+        }
+
+        address token0 = IUniswapV2Pair(pool).token0();
+        address token1 = IUniswapV2Pair(pool).token1();
+        address factory = IUniswapV2Pair(pool).factory();
+
+        for (uint i = 0; i < poolFactories.length; i++) {
+            if (poolFactories[i] == factory) {
+                address realPair = IUniswapV2Factory(factory).getPair(token0, token1);
+
+                return bool(address(realPair) == address(pool));
+            }
+        }
+
+        return false;
+    }
+
     function _updateAssetPair(address asset, address pair) public returns (uint) {
         // Check caller = admin
         if (msg.sender != getMyAdmin()) {
@@ -331,5 +455,4 @@ contract UniswapV2PriceOracle is UniswapCommon, UniswapV2PriceOracleStorageV1 {
     function uqdiv(uint224 x, uint112 y) internal pure returns (uint224 z) {
         z = x / uint224(y);
     }
-
 }

@@ -3,8 +3,10 @@ pragma solidity ^0.8.15;
 
 import "../../contracts/Oracles/PriceOracle.sol";
 
-contract FixedPriceOracle is PriceOracleProxyStorage, PriceOracleCore {
+contract FixedPriceOracle is PriceOracleProxyStorage, IPriceOracle {
     uint public price;
+    uint underlyingType = uint(IPriceOracle.UnderlyingType.RegularAsset);
+    uint112 public liquidity = 1000000000000000000;
 
     constructor(uint _price) {
         price = _price;
@@ -33,13 +35,24 @@ contract FixedPriceOracle is PriceOracleProxyStorage, PriceOracleCore {
     function setUnderlyingPrice(address, uint _price) public {
         price = _price;
     }
+
+    function getUnderlyingTypeAndLiquidity(address asset) public view returns (uint, uint112) {
+        return (underlyingType, liquidity);
+    }
+    
+    function setUnderlyingTypeAndLiquidity(uint underlyingType_, uint112 liquidity_) public {
+        underlyingType = underlyingType_;
+        liquidity = liquidity_;
+    }
 }
 
-contract FixedPriceOracleV2 is PriceOracleCore {
+contract FixedPriceOracleV2 is IPriceOracle {
     mapping(address => uint) public underlyingPrice;
     mapping(address => uint) public price;
+    uint underlyingType = uint(IPriceOracle.UnderlyingType.RegularAsset);
     uint112 public reserves = 1000000000000000000;
     address public pair = address(1);
+    uint112 public liquidity = 1000000000000000000;
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
         return underlyingPrice[pToken];
@@ -71,8 +84,7 @@ contract FixedPriceOracleV2 is PriceOracleCore {
         _registry; //
     }
 
-    function update(address asset) public returns (uint) {
-        asset;//
+    function update(address) public returns (uint) {
         return 0;
     }
 
@@ -80,13 +92,24 @@ contract FixedPriceOracleV2 is PriceOracleCore {
         pToken; //shh
         return 0;
     }
+
+    function getUnderlyingTypeAndLiquidity(address asset) public view returns (uint, uint112) {
+        return (underlyingType, liquidity);
+    }
+
+    function setUnderlyingTypeAndLiquidity(uint underlyingType_, uint112 liquidity_) public {
+        underlyingType = underlyingType_;
+        liquidity = liquidity_;
+    }
 }
 
-contract FixedUniswapPriceOracle is PriceOracleCore {
+contract FixedUniswapPriceOracle is IPriceOracle {
     mapping(address => uint) public underlyingPrice;
     mapping(address => uint) public price;
-    uint112 public reserves = 1000000000000000000;
+    uint underlyingType = uint(IPriceOracle.UnderlyingType.RegularAsset);
+    uint112 public liquidity = 1000000000000000000;
     address public pair;
+    uint112 public reserves = 10000000;
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
         return underlyingPrice[pToken];
@@ -126,5 +149,14 @@ contract FixedUniswapPriceOracle is PriceOracleCore {
     function updateUnderlyingPrice(address pToken) external override returns (uint) {
         pToken; //shh
         return 0;
+    }
+
+    function getUnderlyingTypeAndLiquidity(address asset) public view returns (uint, uint112) {
+        return (underlyingType, liquidity);
+    }
+
+    function setUnderlyingTypeAndLiquidity(uint underlyingType_, uint112 liquidity_) public {
+        underlyingType = underlyingType_;
+        liquidity = liquidity_;
     }
 }

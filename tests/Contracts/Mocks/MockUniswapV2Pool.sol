@@ -7,20 +7,27 @@ contract MockUniswapV2Pool {
     uint32 public blockTimeStampLast;
     uint public price0CumLast;
     uint public price1CumLast;
+    uint public totalSupply;
+    uint public decimals = 18;
 
     address public token0;
     address public token1;
+    address public factory;
 
-    constructor() {
-        init();
+    mapping (address => uint) public balanceOf;
+
+    constructor(address _factory) {
+        init(_factory);
     }
 
-    function init() public {
+    function init(address _factory) public {
         reserve0 = 1265853603707383427790000;
         reserve1 = 253170720741476685558;
         blockTimeStampLast = uint32(block.timestamp);
         price0CumLast =       16605707706021539124070921915727672600000000;
         price1CumLast = 39194436442927457763557598254579840882221574000000;
+        totalSupply = 1000000000000000000000000;
+        factory = _factory;
     }
 
     function getReserves() public view returns (uint112, uint112, uint32) {
@@ -52,5 +59,19 @@ contract MockUniswapV2Pool {
         (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         (reserve0, reserve1) = tokenA < tokenB ? (reserveA, reserveB) : (reserveB, reserveA);
         (price0CumLast, price1CumLast) = tokenA < tokenB ? (price0_, price1_) : (price1_, price0_);
+    }
+
+    function transferFrom(address from, address to, uint amount) public {
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+    }
+
+    function mint(address to, uint amount) public {
+        balanceOf[to] += amount;
+    }
+
+    function transfer(address to, uint amount) public {
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
     }
 }

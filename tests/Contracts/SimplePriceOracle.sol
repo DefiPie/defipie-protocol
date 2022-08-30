@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "./PriceOracle.sol";
-import "../Tokens/PErc20.sol";
+import '../../contracts/Oracles/PriceOracle.sol';
+import "../../contracts/Tokens/PErc20.sol";
 
-contract SimplePriceOracle is PriceOracleProxyStorage, PriceOracleCore {
+contract SimplePriceOracle is PriceOracleProxyStorage, IPriceOracle {
     mapping(address => uint) prices;
+    uint typeAsset = uint(IPriceOracle.UnderlyingType.RegularAsset);
+    uint112 public reserves = 1000000000000000000;
+
     event PricePosted(address asset, uint previousPriceMantissa, uint requestedPriceMantissa, uint newPriceMantissa);
 
     function getUnderlyingPrice(address pToken) public view override returns (uint) {
@@ -15,6 +18,11 @@ contract SimplePriceOracle is PriceOracleProxyStorage, PriceOracleCore {
             return prices[address(PErc20(pToken).underlying())];
         }
     }
+
+    function getUnderlyingTypeAndLiquidity(address asset) public view returns (uint, uint112) {
+        return (typeAsset, reserves);
+    }
+
 
     function setUnderlyingPrice(address pToken, uint underlyingPriceMantissa) public {
         address asset = address(PErc20(pToken).underlying());

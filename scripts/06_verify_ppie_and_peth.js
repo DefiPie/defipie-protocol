@@ -36,9 +36,9 @@ async function main() {
     const fileName = network + '.json';
     let data = JSON.parse(await fs.readFileSync(dir + fileName, { encoding: 'utf8' }));
 
-    let pETHDelegatorAddress = '0xDa75D1996610b7FC159C882A49bedc5D62ae797c';
-    let pPIEDelegatorAddress = '0x7c657198140d58eeC21841F61DEc8644a269415e';
-    let pTokenFactoryAddress = data.pTokenFactory;
+    let pETHDelegatorAddress = '0x99a3f36e53b07fd5dab0bb0cb129d334fdda9675';
+    let pPIEDelegatorAddress = '0x8e1ffa84fe83e595cfc4af81afc99cdf18af84f3';
+    let pTokenFactoryAddress = data.pTokenFactoryProxy;
 
     // We get the contract
     let PETHDelegator = await ethers.getContractFactory("PETHDelegator");
@@ -82,7 +82,7 @@ async function main() {
                 decimals,
                 registry
             ],
-            contract: "contracts/PEtherDelegator.sol:PETHDelegator"
+            contract: "contracts/Tokens/PEtherDelegator.sol:PETHDelegator"
         });
     } catch (e) {
         console.log(e);
@@ -128,7 +128,7 @@ async function main() {
                 decimals,
                 registry
             ],
-            contract: "contracts/PPIEDelegator.sol:PPIEDelegator"
+            contract: "contracts/Tokens/PPIEDelegator.sol:PPIEDelegator"
         });
     } catch (e) {
         console.log(e);

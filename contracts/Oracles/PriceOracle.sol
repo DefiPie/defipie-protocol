@@ -4,6 +4,7 @@ pragma solidity ^0.8.15;
 import '../RegistryInterface.sol';
 import "../ErrorReporter.sol";
 import "./Interfaces/IPriceFeeds.sol";
+import "./Interfaces/IPriceOracle.sol";
 import "../Tokens/PTokenInterfaces.sol";
 import "../Tokens/EIP20Interface.sol";
 import "../SafeMath.sol";
@@ -12,19 +13,7 @@ import "./PriceOracleProxy.sol";
 import "../Control/Controller.sol";
 import "../PTokenFactory.sol";
 
-abstract contract PriceOracleCore {
-    /**
-      * @notice Get the underlying price of a pToken asset
-      * @param pToken The pToken to get the underlying price of
-      * @return The underlying asset price mantissa (scaled by 1e18).
-      *  Zero means the price is unavailable.
-      */
-    function getUnderlyingPrice(address pToken) external view virtual returns (uint);
-
-    function updateUnderlyingPrice(address pToken) external virtual returns (uint);
-}
-
-contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorReporter {
+contract PriceOracle is PriceOracleProxyStorage, IPriceOracle, OracleErrorReporter {
     using SafeMath for uint;
 
     address public ETHUSDPriceFeed;
@@ -298,4 +287,28 @@ contract PriceOracle is PriceOracleProxyStorage, PriceOracleCore, OracleErrorRep
         return priceOracles.length;
     }
 
+    /**
+     * @notice Returns the type of the asset with maximum liquidity
+     * @param asset Address of the underlying asset
+     * @return uint Type of the asset
+     * @return uint112 Liquidity of the asset
+     */
+    function getUnderlyingTypeAndLiquidity(address asset) public view returns (uint, uint112) {
+        uint112 liquidity;
+        uint112 maxLiquidity;
+        uint tmpTypeAsset;
+        UnderlyingType typeAsset = IPriceOracle.UnderlyingType.BadUnderlying;
+
+        for(uint i = 0; i < priceOracles.length; i++) {
+            
+            (tmpTypeAsset, liquidity) = UniswapCommon(priceOracles[i]).getUnderlyingTypeAndLiquidity(asset);
+
+            if (UnderlyingType(tmpTypeAsset) != UnderlyingType.BadUnderlying && liquidity > maxLiquidity) {
+                maxLiquidity = liquidity;
+                typeAsset = UnderlyingType(tmpTypeAsset);
+            }
+        }
+
+        return (uint(typeAsset), maxLiquidity);
+    }
 }

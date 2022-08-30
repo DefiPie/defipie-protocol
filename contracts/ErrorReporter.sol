@@ -228,14 +228,16 @@ contract FactoryErrorReporter {
     enum Error {
         NO_ERROR,
         INVALID_POOL,
+        INVALID_UNDERLYING,
         MARKET_NOT_LISTED,
         UNAUTHORIZED
     }
 
     enum FailureInfo {
+        ADD_PTOKEN_BAD_RESULT,
         CREATE_PETH_POOL,
         CREATE_PPIE_POOL,
-        DEFICIENCY_LIQUIDITY_IN_POOL_OR_PAIR_IS_NOT_EXIST,
+        DEFICIENCY_LIQUIDITY_IN_POOL_OR_BAD_PAIR,
         SET_MIN_LIQUIDITY_OWNER_CHECK,
         SET_NEW_CONTROLLER,
         SET_NEW_CREATE_POOL_FEE_AMOUNT,
@@ -248,6 +250,7 @@ contract FactoryErrorReporter {
         ADD_UNDERLYING_TO_BLACKLIST,
         REMOVE_UNDERLYING_FROM_BLACKLIST,
         UNDERLYING_IN_BLACKLIST,
+        UPDATE_PRICE_BAD_RESULT,
         WITHDRAW_ERC20
     }
 

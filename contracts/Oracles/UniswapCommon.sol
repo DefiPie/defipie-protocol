@@ -44,6 +44,8 @@ abstract contract UniswapCommon is UniswapProxyStorage, UniswapCommonStorage, Or
 
     function isPeriodElapsed(address asset) public view virtual returns (bool);
 
+    function getUnderlyingTypeAndLiquidity(address asset) public view virtual returns (uint, uint112);
+
     function getMyAdmin() public view returns (address) {
         return RegistryInterface(registry).admin();
     }
@@ -237,6 +239,22 @@ abstract contract UniswapCommon is UniswapProxyStorage, UniswapCommonStorage, Or
         emit StableCoinUpdated(coinId, stableCoin_);
 
         return uint(Error.NO_ERROR);
+    }
+
+    /**
+     * @notice Verifies if the given address is a contract, containing specific static variable
+     * @param destination Address of the given contract
+     * @param data Encoded signature of static variable
+     * @return bool = true if destination contract contains specified static variable 
+     */
+    function _callOptionalReturn(address destination, bytes memory data) internal view returns (bool) {
+        if (!(destination.code.length > 0)) {
+            return false;
+        }
+
+        (bool success,) = destination.staticcall(data);
+
+        return success;
     }
 
     function getAllPoolFactories() public view returns (address[] memory) {

@@ -26,6 +26,7 @@ contract DeFiPieLens {
         address underlyingAssetAddress;
         uint pTokenDecimals;
         uint underlyingDecimals;
+        uint underlyingType;
     }
 
     function pTokenMetadata(address pToken) public returns (PTokenMetadata memory) {
@@ -43,6 +44,8 @@ contract DeFiPieLens {
             underlyingAssetAddress = pErc20.underlying();
             underlyingDecimals = EIP20Interface(pErc20.underlying()).decimals();
         }
+        
+        (uint underlyingType, ) = Controller(controller).getOracle().getUnderlyingTypeAndLiquidity(underlyingAssetAddress);
 
         return PTokenMetadata({
             pToken: pToken,
@@ -58,7 +61,8 @@ contract DeFiPieLens {
             collateralFactorMantissa: collateralFactorMantissa,
             underlyingAssetAddress: underlyingAssetAddress,
             pTokenDecimals: EIP20Interface(pToken).decimals(),
-            underlyingDecimals: underlyingDecimals
+            underlyingDecimals: underlyingDecimals,
+            underlyingType: underlyingType
         });
     }
 

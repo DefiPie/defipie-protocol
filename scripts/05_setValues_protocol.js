@@ -66,12 +66,8 @@ async function main() {
     const RegistryInterface = await hre.ethers.getContractFactory("Registry");
     const registryInterface = await RegistryInterface.attach(data.registryProxy);
 
-    tx = await registryInterface._setFactoryContract(data.pTokenFactory);
-    console.log("Tx10 hash", tx.hash);
-    await tx.wait();
-
     tx = await registryInterface._setOracle(data.priceOracleProxy);
-    console.log("Tx11 hash", tx.hash);
+    console.log("Tx10 hash", tx.hash);
     await tx.wait();
 
     // 3. PriceOracle transactions
@@ -79,24 +75,28 @@ async function main() {
     const priceOracleInterface = await PriceOracleInterface.attach(data.priceOracleProxy);
 
     tx = await priceOracleInterface._addOracle(data.uniswapV2PriceOracleProxy);
-    console.log("Tx11_ hash", tx.hash);
+    console.log("Tx10_ hash", tx.hash);
     await tx.wait();
 
     if (network !== 'bsc' && network !== 'bscTestnet') {
         // 3a. Add uniswap v3
         tx = await priceOracleInterface._addOracle(data.uniswapV3PriceOracleProxy);
-        console.log("Tx11_2 hash", tx.hash);
+        console.log("Tx10_2 hash", tx.hash);
         await tx.wait();
     }
 
     // 4. Factory transactions
     const PTokenFactoryInterface = await hre.ethers.getContractFactory("PTokenFactory");
-    const pTokenFactoryInterface = await PTokenFactoryInterface.attach(data.pTokenFactory);
+    const pTokenFactoryInterface = await PTokenFactoryInterface.attach(data.pTokenFactoryProxy);
+
+    tx = await registryInterface._setFactoryContract(data.pTokenFactoryProxy);
+    console.log("Tx11 hash", tx.hash);
+    await tx.wait();
 
     tx = await pTokenFactoryInterface._createPETH(data.pEtherDelegate, "ETH");
     console.log("Tx12 hash", tx.hash);
     await tx.wait();
-
+    console.log(PIE_ADDRESS);
     tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
     console.log("Tx13 hash", tx.hash);
     await tx.wait();
