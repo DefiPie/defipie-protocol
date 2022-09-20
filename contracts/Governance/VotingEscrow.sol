@@ -316,7 +316,6 @@ contract VotingEscrow is VotingEscrowStorageV1, ReentrancyGuard, IVotingEscrow {
 
         if (amount > 0) {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-            IERC20(token).approve(registry.pPIE(), amount);
             PErc20Interface(registry.pPIE()).mint(amount);
         }
 
@@ -547,7 +546,7 @@ contract VotingEscrow is VotingEscrowStorageV1, ReentrancyGuard, IVotingEscrow {
         uint amount = _locked.amount.toUint256();
 
         if (amount > 0) {
-            uint ppieAmount = PTokenInterface(registry.pPIE()).balanceOfUnderlying(address(this)) * amount / supply_before;
+            uint ppieAmount = PTokenInterface(registry.pPIE()).balanceOf(address(this)) * amount / supply_before;
             IERC20(registry.pPIE()).safeTransfer(msg.sender, ppieAmount);
         }
 
@@ -871,5 +870,23 @@ contract VotingEscrow is VotingEscrowStorageV1, ReentrancyGuard, IVotingEscrow {
 
     function getDelegate(address delegator) public view returns (address) {
         return delegateOf[delegator];
+    }
+
+    function depositPie(uint amount) external {
+        require(msg.sender == getAdmin() || msg.sender == controller, "VE: Only admin or controller");
+
+        PErc20Interface(registry.pPIE()).mint(amount);
+    }
+
+    function _setController(address newController) external {
+        require(msg.sender == getAdmin(), "VE: Only admin");
+
+        controller = newController;
+    }
+
+    function _approvePIE() external {
+        require(msg.sender == getAdmin(), "VE: Only admin");
+
+        IERC20(token).approve(registry.pPIE(), type(uint256).max);
     }
 }

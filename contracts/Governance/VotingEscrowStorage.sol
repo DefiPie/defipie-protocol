@@ -51,4 +51,6 @@ contract VotingEscrowStorageV1 is VotingEscrowStorage {
 
     Governor public governor;
     mapping(address => bool) public isWhiteListed;
+
+    address public controller;
 }

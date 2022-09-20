@@ -56,4 +56,6 @@ interface IVotingEscrow {
     function totalSupply() external view returns (uint);
     function totalSupply(uint t) external view returns (uint);
     function totalSupplyAt(uint block) external view returns (uint);
+
+    function depositPie(uint amount) external;
 }

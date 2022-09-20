@@ -9,6 +9,7 @@ import "./ControllerStorage.sol";
 import "../Tokens/PTokenInterfaces.sol";
 import "../Tokens/EIP20Interface.sol";
 import "./Unitroller.sol";
+import '../Governance/VotingEscrowImports/IVotingEscrow.sol';
 
 /**
  * @title DeFiPie's Controller Contract
@@ -781,6 +782,12 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
 
     /*** Admin Functions ***/
 
+    function setVotingEscrow(address _votingEscrow) public {
+        require(msg.sender == getAdmin(), "Controller::setVotingEscrow: only admin");
+
+        votingEscrow = _votingEscrow;
+    }
+
     /**
       * @notice Sets the closeFactor used when liquidating borrows
       * @dev Admin function to set closeFactor
@@ -1208,7 +1215,8 @@ contract Controller is ControllerStorage, ControllerInterface, ControllerErrorRe
         uint poolReward = sub_(balance, totalFreeze);
 
         if (poolReward > 0 ) {
-            EIP20Interface(pieAddress).transfer(ppieAddress, poolReward);
+            EIP20Interface(pieAddress).transfer(votingEscrow, poolReward);
+            IVotingEscrow(votingEscrow).depositPie(poolReward);
 
             emit ModeratePoolReward(poolReward);
         }
