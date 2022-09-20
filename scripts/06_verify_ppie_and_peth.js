@@ -36,8 +36,8 @@ async function main() {
     const fileName = network + '.json';
     let data = JSON.parse(await fs.readFileSync(dir + fileName, { encoding: 'utf8' }));
 
-    let pETHDelegatorAddress = '0x99a3f36e53b07fd5dab0bb0cb129d334fdda9675';
-    let pPIEDelegatorAddress = '0x8e1ffa84fe83e595cfc4af81afc99cdf18af84f3';
+    let pETHDelegatorAddress = '0x3577f54ec052ee2dfb6c58938d32f214ba1f1884';
+    let pPIEDelegatorAddress = '0x327516e90448D66a8314CD6dfD4CaE0145cf2b65';
     let pTokenFactoryAddress = data.pTokenFactoryProxy;
 
     // We get the contract

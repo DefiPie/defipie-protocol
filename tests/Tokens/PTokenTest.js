@@ -10,7 +10,7 @@ const {
   pretendBorrow
 } = require('../Utils/DeFiPie');
 
-const blocksPerYear = 2102400;
+const blocksPerYear = 2628000;
 
 describe('PToken', function () {
   let root, admin, accounts;

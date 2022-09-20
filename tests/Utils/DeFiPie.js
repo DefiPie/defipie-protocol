@@ -181,8 +181,6 @@ async function makePToken(opts = {}) {
   const reserveFactor = etherMantissa(dfn(opts.reserveFactor, 0.1));
   const symbol = opts.symbol || (kind === 'pether' ? 'pETH' : 'pOMG');
   const name = opts.name || `PToken ${symbol}`;
-  const poolTokenA = opts.poolTokenA || '';
-  const poolTokenB = opts.poolTokenB || '';
 
   const registryProxy = opts.registryProxy || await makeRegistryProxy(opts.registryProxyOpts);
 
@@ -197,13 +195,10 @@ async function makePToken(opts = {}) {
   const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
   const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
   const WETHToken = opts.WETHToken || await makeToken();
-
-  if(opts.uniswapFactoryVersion == 2){
-  } else {
-    let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
-    let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
-  }
   
+  let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
+  let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
+
   const priceOracle = opts.priceOracle || await deploy('PriceOracleMock', [
     mockPriceFeed._address
   ]);
@@ -253,7 +248,6 @@ async function makePToken(opts = {}) {
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
       token0 = await call(mockUniswapV2Pool, "token0");
       token1 = await call(mockUniswapV2Pool, "token1");
-
 
       if (token0 === '0x0000000000000000000000000000000000000000' || token1 === '0x0000000000000000000000000000000000000000') {
         await send(mockUniswapV2Pool, 'setData', [underlying._address, WETHToken._address]);
@@ -311,7 +305,7 @@ async function makeInterestRateModel(opts = {}) {
   const {
     root = saddle.account,
     kind = 'harnessed',
-    blocksPerYear = '2102400'
+    blocksPerYear = '2628000'
   } = opts || {};
 
   if (kind == 'harnessed') {
@@ -426,6 +420,7 @@ async function makePTokenFactory(opts = {}) {
             registryProxy: registryProxy
         }
     }
+
     const controller = opts.controller || await makeController(opts.controllerOpts);
     const interestRateModel = opts.interestRateModel || await makeInterestRateModel(opts.interestRateModelOpts);
     const exchangeRate = etherMantissa(dfn(opts.exchangeRate, 1));
@@ -435,11 +430,8 @@ async function makePTokenFactory(opts = {}) {
     const mockPriceFeed = opts.mockPriceFeed || await deploy('MockPriceFeed');
     const mockUniswapV2Factory = opts.mockUniswapV2Factory || await deploy('MockUniswapV2Factory');
     const mockUniswapV2Pool = opts.mockUniswapV2Pool || await deploy('MockUniswapV2Pool', [mockUniswapV2Factory._address]);
-
-    if (opts.uniswapFactoryVersion === undefined) {
-      let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
-      let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
-    }
+    let tx = await send(mockUniswapV2Factory, 'setPair', [mockUniswapV2Pool._address]);
+    let tx_ = await send(mockUniswapV2Factory, 'setPairExist', [true]);
 
     const priceOracle = opts.priceOracle || await deploy('PriceOracleMock', [
         mockPriceFeed._address
@@ -526,7 +518,8 @@ async function makeVotingEscrow(opts = {}) {
     ]);
 
     votingEscrow = await saddle.getContractAt('VotingEscrowHarness', votingEscrow._address);
-
+    await send(votingEscrow, '_approvePIE');
+    
     return Object.assign(votingEscrow, { token, registryProxy });
 }
 

@@ -1,7 +1,7 @@
 const BigNumber = require('bignumber.js');
 
 const {
-    blockNumber
+    blockNumber, increaseTime
 } = require('../Utils/Ethereum');
 
 const {
@@ -61,7 +61,7 @@ describe('PToken Factory tests', () => {
         let pair = await call(mockUniswapV2Factory, "getPair", [WETHToken._address, asset._address]);
         expect(pair).toEqual(mockUniswapV2Pool._address);
 
-        uniswapV2PriceOracle = await deploy('UniswapV2PriceOracleHarness', [
+        uniswapV2PriceOracle = await deploy('UniswapV2PriceOracleMock', [
             mockUniswapV2Factory._address,
             WETHToken._address
         ]);
@@ -105,8 +105,7 @@ describe('PToken Factory tests', () => {
             mockUniswapV2Factory: mockUniswapV2Factory,
             mockUniswapV2Pool: mockUniswapV2Pool,
             priceOracle: priceOracle,
-            WETHToken: WETHToken,
-            uniswapFactoryVersion: 2
+            WETHToken: WETHToken
         });
 
         pOther = await makePToken({
@@ -118,8 +117,7 @@ describe('PToken Factory tests', () => {
             mockUniswapV2Pool: mockUniswapV2Pool,
             priceOracle: priceOracle,
             underlying: asset,
-            WETHToken: WETHToken,
-            uniswapFactoryVersion: 2
+            WETHToken: WETHToken
         });
 
         pOther2 = await makePToken({
@@ -131,8 +129,7 @@ describe('PToken Factory tests', () => {
             mockUniswapV2Pool: mockUniswapV2Pool,
             priceOracle: priceOracle,
             underlying: asset2,
-            WETHToken: WETHToken,
-            uniswapFactoryVersion: 2
+            WETHToken: WETHToken
         });
 
         pTokenFactory = await makePTokenFactory({
@@ -143,9 +140,8 @@ describe('PToken Factory tests', () => {
             reserveFactor: reserveFactor,
             mockPriceFeed: mockPriceFeed,
             mockUniswapV2Factory: mockUniswapV2Factory,
-            mockUniswapV2Pool: mockUniswapV2Pool3,
-            priceOracle: priceOracle,
-            uniswapFactoryVersion: 2
+            mockUniswapV2Pool: mockUniswapV2Pool,
+            priceOracle: priceOracle
         });
 
         await send(registryProxy, '_setFactoryContract', [pTokenFactory._address]);
@@ -181,16 +177,21 @@ describe('PToken Factory tests', () => {
     });
 
     describe("Create token", () => {
-        it("create LP pToken", async () => {            
-            let result = await send(pTokenFactory, 'createPToken', [mockUniswapV2Pool3._address]);
-
-            let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
+        it("create LP pToken", async () => {
+            await increaseTime(86401);
 
             let block = await web3.eth.getBlock(await blockNumber());
             let startBorrowTimestamp = +block.timestamp;
 
+            await send(mockUniswapV2Pool2, 'setBlockTimeStampLast', [block.timestamp]);
+            await send(mockUniswapV2Pool, 'setBlockTimeStampLast', [block.timestamp]);
+
+            let result = await send(pTokenFactory, 'createPToken', [mockUniswapV2Pool3._address]);
+
+            let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
+
             expect(result).toSucceed();
-            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
+            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp, underlyingType: '2'});
         });
 
         it("short create LP pToken", async () => {

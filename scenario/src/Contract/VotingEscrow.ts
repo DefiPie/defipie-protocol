@@ -53,6 +53,7 @@ export interface VotingEscrowMethods {
   
     setBlockNumber(blockNumber: encodedNumber): Sendable<void>;
     setBlockTimestamp(blockTimestamp: encodedNumber): Sendable<void>;
+    _approvePIE(): Sendable<void>;
 }
   
 export interface VotingEscrow extends Contract {
