@@ -65,7 +65,8 @@ describe('Fee Token tests', () => {
             let startBorrowTimestamp = +block.timestamp + +borrowDelay;
             expect(tx5).toHaveLog('PTokenCreated', {
                 newPToken: pTokenAddress,
-                startBorrowTimestamp: startBorrowTimestamp
+                startBorrowTimestamp: startBorrowTimestamp,
+                underlyingType: '1'
             });
 
             let tx6 = await send(pTokenFactory, 'createPToken', [borrowToken._address]);
@@ -76,7 +77,8 @@ describe('Fee Token tests', () => {
             startBorrowTimestamp = +block.timestamp + +borrowDelay;
             expect(tx6).toHaveLog('PTokenCreated', {
                 newPToken: pBorrowTokenAddress,
-                startBorrowTimestamp: startBorrowTimestamp
+                startBorrowTimestamp: startBorrowTimestamp,
+                underlyingType: '1'
             });
 
             let tx7 = await send(oracle, 'setUnderlyingPrice', [pTokenAddress, '1000000000000000000']); // $1

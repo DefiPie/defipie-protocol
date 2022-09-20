@@ -92,7 +92,8 @@ describe('PriceOracle', () => {
             mockUniswapV2Pool: mockUniswapV2Pool,
             priceOracle: priceOracle,
             WETHToken: WETHToken,
-            uniswapFactoryVersion: 2
+            poolTokenA: WETHToken._address,
+            poolTokenB: asset._address
         });
 
         pOther = await makePToken({
@@ -105,7 +106,8 @@ describe('PriceOracle', () => {
             priceOracle: priceOracle,
             underlying: asset,
             WETHToken: WETHToken,
-            uniswapFactoryVersion: 2
+            poolTokenA: WETHToken._address,
+            poolTokenB: asset._address
         });
 
         pOther2 = await makePToken({
@@ -118,7 +120,8 @@ describe('PriceOracle', () => {
             priceOracle: priceOracle,
             underlying: asset2,
             WETHToken: WETHToken,
-            uniswapFactoryVersion: 2
+            poolTokenA: WETHToken._address,
+            poolTokenB: asset2._address
         });
     });
 

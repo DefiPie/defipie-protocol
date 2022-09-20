@@ -87,6 +87,17 @@ async function withdraw(
   );
 }
 
+async function approvePIE(
+  world: World,
+  from: string,
+  votingEscrow: VotingEscrow,
+): Promise<World> {
+  return addAction(
+    world,
+    `Create lock from ${from}`,
+    await invoke(world, votingEscrow.methods._approvePIE(), from, NoErrorReporter)
+  );
+}
 
 export function votingEscrowCommands() {
   return [
@@ -148,7 +159,7 @@ export function votingEscrowCommands() {
     ),
     new Command<{ votingEscrow: VotingEscrow }>(
       `
-        #### delegate
+        #### withdraw
 
         * "withdraw"
         * E.g. "VotingEscrow withdraw"
@@ -158,6 +169,19 @@ export function votingEscrowCommands() {
         new Arg('votingEscrow', getVotingEscrow, { implicit: true })
       ],
       (world, from, { votingEscrow }) => withdraw(world, from, votingEscrow)
+    ),
+    new Command<{ votingEscrow: VotingEscrow }>(
+      `
+        #### approvePIE
+
+        * "approvePIE"
+        * E.g. "VotingEscrow approvePPIE"
+    `,
+      'approvePIE',
+      [
+        new Arg('votingEscrow', getVotingEscrow, { implicit: true })
+      ],
+      (world, from, { votingEscrow }) => approvePIE(world, from, votingEscrow)
     )
   ];
 }

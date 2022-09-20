@@ -1,13 +1,15 @@
 const {
   etherMantissa,
-  both, blockNumber
+  both, blockNumber,
+  address
 } = require('../Utils/Ethereum');
 
 const {
   makeController,
   makePTokenFactory,
   makePToken,
-  makeToken
+  makeToken,
+  makeVotingEscrow
 } = require('../Utils/DeFiPie');
 
 const mine = (timestamp) => {
@@ -106,6 +108,12 @@ describe('User moderate pool', () => {
         ppieAddress = res1.events['PTokenCreated'].returnValues['newPToken'];
 
         underlying = await makeToken();
+
+        governor = await deploy('Governor', [address(0), controller.registryProxy._address, guardian, '19710']);
+        votingEscrow = await makeVotingEscrow({token: controller.pie, registryProxy: controller.registryProxy, governor: governor._address});
+
+        await send(controller, 'setVotingEscrow', [votingEscrow._address]);
+        await send(votingEscrow, '_setController', [controller._address]);
       });
 
       it("Check revert without approve and values", async () => {
@@ -132,7 +140,8 @@ describe('User moderate pool', () => {
 
         expect(result).toHaveLog('PTokenCreated', {
           newPToken: pTokenAddress,
-          startBorrowTimestamp: startBorrowTimestamp
+          startBorrowTimestamp: startBorrowTimestamp,
+          underlyingType: '1'
         });
 
         let balanceOfUserAfter = await call(controller.pie, 'balanceOf', [accounts[1]]);
@@ -222,15 +231,16 @@ describe('User moderate pool', () => {
           let startBorrowTimestamp = +block.timestamp + +86400;
           let timestamp = +startBorrowTimestamp + +guardianModerateTime +1;
 
-          await expect(
-            send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: guardian})
-          ).rejects.toRevert('revert bad reward state');
+          result = await send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: guardian});
+          expect(result).toSucceed();
+
+          await send(controller, '_setBorrowPaused', [pTokenAddress, true], {from: guardian});
 
           mine(timestamp);
 
           await expect(
-              send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: guardian})
-          ).rejects.toRevert('revert only pause after start borrow and moderate time');
+              send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: accounts[1]})
+          ).rejects.toRevert('revert only pause');
         });
 
         it("Check moderate (reverts for user)", async () => {
@@ -263,6 +273,9 @@ describe('User moderate pool', () => {
           let approveTokens = await send(controller.pie, 'approve', [factory._address, createPoolFeeAmount], {from: accounts[1]});
           let result = await send(factory, 'createPToken', [underlying._address], {from: accounts[1]});
           let pTokenAddress = result.events['PTokenCreated'].returnValues['newPToken'];
+
+          let ppieAddr = await call(controller.registryProxy, 'pPIE');
+          pPIE = await saddle.getContractAt('PPIEDelegateHarness', ppieAddr);
 
           let block = await web3.eth.getBlock(await blockNumber());
           let startBorrowTimestamp = +block.timestamp + +86400;
@@ -310,8 +323,14 @@ describe('User moderate pool', () => {
             send(controller, 'harvestUnusedReward', [pTokenAddress])
           ).rejects.toRevert('revert reward must be unused');
 
+          let VEBalanceBefore = await call(pPIE, 'balanceOfUnderlying', [votingEscrow._address]);
+          expect(VEBalanceBefore).toEqual('0');
+
           let res5 = await send(controller, 'transferModeratePoolReward');
           expect(res5).toSucceed();
+  
+          let VEBalanceAfter = await call(pPIE, 'balanceOfUnderlying', [votingEscrow._address]);
+          expect(VEBalanceAfter).toEqual(feeAmountAndUserDeposit);
 
           let balanceOfPPiePoolAfter = await call(controller.pie, 'balanceOf', [ppieAddress]);
           expect(balanceOfPPiePoolAfter).toEqual(feeAmountAndUserDeposit);

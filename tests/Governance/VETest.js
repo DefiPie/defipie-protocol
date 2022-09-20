@@ -15,7 +15,8 @@ const {
     address,
     blockNumber,
     increaseTime,
-    setTime
+    setTime,
+    etherMantissa
 } = require('../Utils/Ethereum');
 const BigNumber = require('bignumber.js');
 
@@ -36,9 +37,10 @@ describe('Voting Escrow', () => {
     minDuration = '604800';
     minLockAmount = '1000000000000000000000';
     oneWeekInSeconds = '604800';
+    exchangeRate = 50;
 
     registryProxy = await makeRegistryProxy();
-    ppie = await makePToken({registryProxy: registryProxy, kind: 'ppie'});
+    ppie = await makePToken({registryProxy: registryProxy, kind: 'ppie', exchangeRate: (exchangeRate * 0.0000000001).toString()});
     underlying = ppie.underlying;
 
     governor = await deploy('Governor', [address(0), registryProxy._address, guardian, '19710']);
@@ -302,7 +304,7 @@ describe('Voting Escrow', () => {
           .decimalPlaces(0, BigNumber.ROUND_DOWN)).multipliedBy(oneWeekInSecondsBN);
 
       expect(await call(votingEscrow, 'supply')).toEqual(amount);
-      expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual(amount);
+      expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual((amount/exchangeRate).toString());
       expect(await call(votingEscrow, 'getAmount', [root])).toEqual(amount);
       expect(await call(votingEscrow, 'getStartTime', [root])).toEqual((block.timestamp).toString());
       expect(await call(votingEscrow, 'getUnlockTime', [root])).toEqual(endTime.toString());
@@ -591,7 +593,7 @@ describe('Voting Escrow', () => {
         supply: totalAmount,
       });
 
-      expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual(totalAmount);
+      expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual((totalAmount/exchangeRate).toString());
       expect(await call(votingEscrow, 'getAmount', [root])).toEqual(totalAmount);
     });
 
@@ -975,7 +977,7 @@ describe('Voting Escrow', () => {
         await send(votingEscrow, 'createLock', [halfAmount, lockTime], { from: accounts[0] });
         await send(votingEscrow, 'depositFor', [accounts[0], halfAmount], { from: accounts[0] });
   
-        expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual(amount);
+        expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual((amount/exchangeRate).toString());
         expect(await call(votingEscrow, 'getAmount', [accounts[0]])).toEqual(amount);
       });
   
@@ -998,7 +1000,7 @@ describe('Voting Escrow', () => {
   
         await send(votingEscrow, 'depositFor', [accounts[0], halfAmount], { from: accounts[1] });
   
-        expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual(totalAmount);
+        expect(await call(ppie, 'balanceOf', [votingEscrow._address])).toEqual((totalAmount/exchangeRate).toString());
   
         expect(await call(votingEscrow, 'getAmount', [accounts[0]])).toEqual(afterDepositFor);
         expect(await call(votingEscrow, 'getAmount', [accounts[1]])).toEqual(halfAmount);

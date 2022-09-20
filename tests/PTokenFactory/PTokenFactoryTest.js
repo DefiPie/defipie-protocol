@@ -114,7 +114,7 @@ describe('PToken Factory tests', () => {
             let startBorrowTimestamp = +block.timestamp + +86400;
 
             expect(result).toSucceed();
-            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
+            expect(result).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp, underlyingType: '1' });
         });
 
         it("create token (black list usage)", async () => {
@@ -150,7 +150,7 @@ describe('PToken Factory tests', () => {
             let startBorrowTimestamp = +block.timestamp + +86400;
 
             expect(result).toSucceed();
-            expect(result).toHaveLog('PTokenCreated', { newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp });
+            expect(result).toHaveLog('PTokenCreated', { newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp, underlyingType: '1' });
         });
     });
 

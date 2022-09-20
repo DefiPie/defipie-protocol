@@ -7,6 +7,7 @@ Macro DeployGov
     ListedPPIEToken pPIE Pie
     Governor Deploy Governor LegitGov (Address Timelock) (Address RegistryProxy) Guardian 19710
     VotingEscrow Deploy VE (Address RegistryProxy) (Pie Address) (Address LegitGov)
+    VotingEscrow approvePIE
     From Guardian (Governor LegitGov SetVotingEscrow (VotingEscrow Address VE))
     Timelock SetAdmin (Address LegitGov)
     Enfranchise Root 7000000e18

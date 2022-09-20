@@ -27,6 +27,9 @@ async function main() {
     const UnitrollerInterface = await hre.ethers.getContractFactory("Unitroller");
     const unitrollerInterface = await UnitrollerInterface.attach(data.unitroller);
 
+    const VotingEscrowInterface = await hre.ethers.getContractFactory("VotingEscrow");
+    const votingEscrowInterface = await VotingEscrowInterface.attach(data.votingEscrowProxy);
+
     let tx = await unitrollerInterface._setPendingImplementation(data.controller);
     console.log("Tx1 hash: ", tx.hash);
     await tx.wait();
@@ -61,13 +64,17 @@ async function main() {
     console.log("Tx9 hash: ", tx.hash);
     tx = await unitrollerWithControllerInterface._setDistributor(data.distributorProxy);
     console.log("Tx9_ hash: ", tx.hash);
+    tx = await unitrollerWithControllerInterface.setVotingEscrow(data.votingEscrowProxy);
+    console.log("Tx10_ hash: ", tx.hash);
+    tx = await votingEscrowInterface._setController(data.unitroller);
+    console.log("Tx11_ hash: ", tx.hash);
 
     // 2. Registry transactions
     const RegistryInterface = await hre.ethers.getContractFactory("Registry");
     const registryInterface = await RegistryInterface.attach(data.registryProxy);
 
     tx = await registryInterface._setOracle(data.priceOracleProxy);
-    console.log("Tx10 hash", tx.hash);
+    console.log("Tx12 hash", tx.hash);
     await tx.wait();
 
     // 3. PriceOracle transactions
@@ -75,13 +82,13 @@ async function main() {
     const priceOracleInterface = await PriceOracleInterface.attach(data.priceOracleProxy);
 
     tx = await priceOracleInterface._addOracle(data.uniswapV2PriceOracleProxy);
-    console.log("Tx10_ hash", tx.hash);
+    console.log("Tx12_ hash", tx.hash);
     await tx.wait();
 
     if (network !== 'bsc' && network !== 'bscTestnet') {
         // 3a. Add uniswap v3
         tx = await priceOracleInterface._addOracle(data.uniswapV3PriceOracleProxy);
-        console.log("Tx10_2 hash", tx.hash);
+        console.log("Tx12_2 hash", tx.hash);
         await tx.wait();
     }
 
@@ -90,19 +97,22 @@ async function main() {
     const pTokenFactoryInterface = await PTokenFactoryInterface.attach(data.pTokenFactoryProxy);
 
     tx = await registryInterface._setFactoryContract(data.pTokenFactoryProxy);
-    console.log("Tx11 hash", tx.hash);
-    await tx.wait();
-
-    tx = await pTokenFactoryInterface._createPETH(data.pEtherDelegate, "ETH");
-    console.log("Tx12 hash", tx.hash);
-    await tx.wait();
-    console.log(PIE_ADDRESS);
-    tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
     console.log("Tx13 hash", tx.hash);
     await tx.wait();
 
+    tx = await pTokenFactoryInterface._createPETH(data.pEtherDelegate, "ETH");
+    console.log("Tx14 hash", tx.hash);
+    await tx.wait();
+    console.log(PIE_ADDRESS);
+    tx = await pTokenFactoryInterface._createPPIE(PIE_ADDRESS, data.ppieDelegate);
+    console.log("Tx15 hash", tx.hash);
+    await tx.wait();
+
     tx = await pTokenFactoryInterface._setCreatePoolFeeAmount(process.env.FACTORY_POOL_FEE_AMOUNT);
-    console.log("Tx14 hash: ", tx.hash);
+    console.log("Tx16 hash: ", tx.hash);
+
+    tx = await votingEscrowInterface._approvePIE();
+    console.log("Tx17 hash: ", tx.hash);
 
     console.log('Finish!');
 }
