@@ -170,9 +170,7 @@ describe('Controller', () => {
               state = await call(controller, `${camelCase}GuardianPaused`, [pToken._address]);
               expect(state).toEqual(true);
 
-              result = await send(controller, `_set${method}Paused`, [pToken._address, false], {from: pauseGuardian});
-              expect(result).toSucceed();
-
+              await expect(send(controller, `_set${method}Paused`, [pToken._address, false], {from: pauseGuardian})).rejects.toRevert("revert bad reward state");
               result = await send(controller, `_set${method}Paused`, [pToken._address, false]);
 
               expect(result).toHaveLog(`ActionPaused`, {pToken: pToken._address, action: method, pauseState: false});

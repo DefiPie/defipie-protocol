@@ -171,4 +171,4 @@ contract PriceOracleMock is PriceOracle {
     function _setRegistry(address _registry) public {
         registry = _registry;
     }
-}   
+}

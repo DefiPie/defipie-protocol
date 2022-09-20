@@ -14,8 +14,6 @@ contract MockUniswapV2Pool {
     address public token1;
     address public factory;
 
-    mapping (address => uint) public balanceOf;
-
     constructor(address _factory) {
         init(_factory);
     }
@@ -59,19 +57,5 @@ contract MockUniswapV2Pool {
         (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         (reserve0, reserve1) = tokenA < tokenB ? (reserveA, reserveB) : (reserveB, reserveA);
         (price0CumLast, price1CumLast) = tokenA < tokenB ? (price0_, price1_) : (price1_, price0_);
-    }
-
-    function transferFrom(address from, address to, uint amount) public {
-        balanceOf[from] -= amount;
-        balanceOf[to] += amount;
-    }
-
-    function mint(address to, uint amount) public {
-        balanceOf[to] += amount;
-    }
-
-    function transfer(address to, uint amount) public {
-        balanceOf[msg.sender] -= amount;
-        balanceOf[to] += amount;
     }
 }

@@ -132,8 +132,7 @@ describe('User moderate pool', () => {
 
         expect(result).toHaveLog('PTokenCreated', {
           newPToken: pTokenAddress,
-          startBorrowTimestamp: startBorrowTimestamp,
-          underlyingType: '1'
+          startBorrowTimestamp: startBorrowTimestamp
         });
 
         let balanceOfUserAfter = await call(controller.pie, 'balanceOf', [accounts[1]]);
@@ -223,16 +222,15 @@ describe('User moderate pool', () => {
           let startBorrowTimestamp = +block.timestamp + +86400;
           let timestamp = +startBorrowTimestamp + +guardianModerateTime +1;
 
-          result = await send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: guardian});
-          expect(result).toSucceed();
-
-          await send(controller, '_setBorrowPaused', [pTokenAddress, true], {from: guardian});
+          await expect(
+            send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: guardian})
+          ).rejects.toRevert('revert bad reward state');
 
           mine(timestamp);
 
           await expect(
-              send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: accounts[1]})
-          ).rejects.toRevert('revert only pause');
+              send(controller, '_setBorrowPaused', [pTokenAddress, false], {from: guardian})
+          ).rejects.toRevert('revert only pause after start borrow and moderate time');
         });
 
         it("Check moderate (reverts for user)", async () => {
