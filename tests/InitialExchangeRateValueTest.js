@@ -115,15 +115,15 @@ describe('PToken Factory tests', () => {
             let pTokenAddress5 = tx5.events['PTokenCreated'].returnValues['newPToken'];
 
             expect(tx1).toSucceed();
-            expect(tx1).toHaveLog('PTokenCreated', {newPToken: pTokenAddress1, startBorrowTimestamp: startBorrowTimestamp1, underlyingType: '1'});
+            expect(tx1).toHaveLog('PTokenCreated', {newPToken: pTokenAddress1, startBorrowTimestamp: startBorrowTimestamp1});
             expect(tx2).toSucceed();
-            expect(tx2).toHaveLog('PTokenCreated', {newPToken: pTokenAddress2, startBorrowTimestamp: startBorrowTimestamp2, underlyingType: '1'});
+            expect(tx2).toHaveLog('PTokenCreated', {newPToken: pTokenAddress2, startBorrowTimestamp: startBorrowTimestamp2});
             expect(tx3).toSucceed();
-            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress3, startBorrowTimestamp: startBorrowTimestamp3, underlyingType: '1'});
+            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress3, startBorrowTimestamp: startBorrowTimestamp3});
             expect(tx4).toSucceed();
-            expect(tx4).toHaveLog('PTokenCreated', {newPToken: pTokenAddress4, startBorrowTimestamp: startBorrowTimestamp4, underlyingType: '1'});
+            expect(tx4).toHaveLog('PTokenCreated', {newPToken: pTokenAddress4, startBorrowTimestamp: startBorrowTimestamp4});
             expect(tx5).toSucceed();
-            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress5, startBorrowTimestamp: startBorrowTimestamp5, underlyingType: '1'});
+            expect(tx5).toHaveLog('PTokenCreated', {newPToken: pTokenAddress5, startBorrowTimestamp: startBorrowTimestamp5});
 
             let pToken1 = await saddle.getContractAt('PToken', pTokenAddress1);
             let pToken2 = await saddle.getContractAt('PToken', pTokenAddress2);

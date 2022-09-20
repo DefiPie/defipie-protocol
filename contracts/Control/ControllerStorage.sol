@@ -122,4 +122,6 @@ contract ControllerStorage is UnitrollerAdminStorage {
     mapping(address => ModerateData) public moderatePools;
     uint public guardianModerateTime;
     uint public totalFreeze;
+
+    address public votingEscrow;
 }

@@ -62,7 +62,7 @@ describe('EvilX Token tests', () => {
             let block = await web3.eth.getBlock(await blockNumber());
             let startBorrowTimestamp = +block.timestamp + +borrowDelay;
 
-            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp, underlyingType: '1'});
+            expect(tx3).toHaveLog('PTokenCreated', {newPToken: pTokenAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx4 = await send(oracle, 'setUnderlyingPrice', [pTokenAddress, '10000000000000000000']);
             let tx4_ = await send(controller, '_setCollateralFactor', [pTokenAddress, '500000000000000000']);
@@ -85,7 +85,7 @@ describe('EvilX Token tests', () => {
             block = await web3.eth.getBlock(await blockNumber());
             startBorrowTimestamp = +block.timestamp + +borrowDelay;
 
-            expect(tx8).toHaveLog('PTokenCreated', {newPToken: pTokenEvilAddress, startBorrowTimestamp: startBorrowTimestamp, underlyingType: '1'});
+            expect(tx8).toHaveLog('PTokenCreated', {newPToken: pTokenEvilAddress, startBorrowTimestamp: startBorrowTimestamp});
 
             let tx9 = await send(oracle, 'setUnderlyingPrice', [pTokenEvilAddress, '10000000000000000000']);
 

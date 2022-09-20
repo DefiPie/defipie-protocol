@@ -54,8 +54,7 @@ describe('DeFiPieLens', () => {
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(pErc20, 'underlying', []),
           pTokenDecimals: "8",
-          underlyingDecimals: "18",
-          underlyingType: "1"
+          underlyingDecimals: "18"
         }
       );
     });
@@ -79,7 +78,6 @@ describe('DeFiPieLens', () => {
         totalSupply: "0",
         underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
         underlyingDecimals: "18",
-        underlyingType: "1"
       });
     });
   });
@@ -105,8 +103,7 @@ describe('DeFiPieLens', () => {
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(pErc20, 'underlying', []),
           pTokenDecimals: "8",
-          underlyingDecimals: "18",
-          underlyingType: "1"
+          underlyingDecimals: "18"
         },
         {
           borrowRatePerBlock: "0",
@@ -123,7 +120,6 @@ describe('DeFiPieLens', () => {
           totalSupply: "0",
           underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
           underlyingDecimals: "18",
-          underlyingType: "1"
         }
       ]);
     });

@@ -46,9 +46,7 @@ contract MockUniswapV2FactoryV2 {
         allPairs.push(pair);
     }
 
-    function setPair(address) public { //dummie function for compatibleness 
-    }
-
-    function setPairExist(bool) public { //dummie function for compatibleness 
+    function setPair(address pair_) public { //dummie function for compatibleness 
+        getPair[pair_][address(0)] = address(0);
     }
 }
