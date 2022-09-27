@@ -22,6 +22,15 @@ module.exports = {
             timeoutBlocks: 1000,
             network_id: "4"
         },
+        goerli: {
+            url: "https://goerli.infura.io/v3/7e8450f38dce45ec88ecff6d8bb99d4e",
+            accounts: [privateKey],
+            gasPrice: 3e9,
+            gasLimit: 8000000,
+            confirmations: 10,
+            timeoutBlocks: 1000,
+            network_id: "5"
+        },
         mainnet: {
             url: "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
             accounts: [privateKey],
@@ -82,6 +91,7 @@ module.exports = {
         apiKey: {
             rinkeby: process.env.ETHERSCAN_API_KEY,
             mainnet: process.env.ETHERSCAN_API_KEY,
+            goerli: process.env.ETHERSCAN_API_KEY,
             bsc: process.env.BSCSCAN_API_KEY,
             bscTestnet: process.env.BSCSCAN_API_KEY,
             polygon: process.env.POLYGONSCAN_API_KEY,

@@ -27,14 +27,14 @@ Test "Propose 💍 [1 Action]"
     Assert Log ProposalCreated (targets [(Address Counter)])
     Assert Log ProposalCreated (values [1])
     Assert Log ProposalCreated (signatures ["increment(uint256)"])
-    Assert Log ProposalCreated (startBlock 50)
-    Assert Log ProposalCreated (endBlock 19760)
+    Assert Log ProposalCreated (startBlock 51)
+    Assert Log ProposalCreated (endBlock 19761)
     Assert Log ProposalCreated (calldatas ["0x0000000000000000000000000000000000000000000000000000000000000005"])
     Assert Log ProposalCreated (proposer (Address Root))
     Assert Equal (Governor LegitGov Proposal LastProposal Id) 1
     Assert Equal (Governor LegitGov Proposal LastProposal Proposer) (Address Root)
-    Assert Equal (Governor LegitGov Proposal LastProposal StartBlock) 50
-    Assert Equal (Governor LegitGov Proposal LastProposal EndBlock) 19760
+    Assert Equal (Governor LegitGov Proposal LastProposal StartBlock) 51
+    Assert Equal (Governor LegitGov Proposal LastProposal EndBlock) 19761
     Assert Equal (Governor LegitGov Proposal LastProposal ForVotes) 0
     Assert Equal (Governor LegitGov Proposal LastProposal AgainstVotes) 0
     Assert Equal (Governor LegitGov Proposal LastProposal Eta) 0

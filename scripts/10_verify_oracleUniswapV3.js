@@ -35,7 +35,7 @@ async function main() {
         await hre.run("verify:verify", {
             address: dataOracleV3.uniswapV3PriceOracle,
             constructorArguments: [],
-            contract: "contracts/UniswapV3PriceOracle.sol:UniswapV3PriceOracle"
+            contract: "contracts/Oracles/UniswapV3PriceOracle.sol:UniswapV3PriceOracle"
         });
     } catch (e) {
         console.log(e);
@@ -54,7 +54,7 @@ async function main() {
                 EXCHANGE_FACTORY_V3,
                 WNATIVE_ADDRESS
             ],
-            contract: "contracts/UniswapV3PriceOracleProxy.sol:UniswapV3PriceOracleProxy"
+            contract: "contracts/Oracles/UniswapV3PriceOracleProxy.sol:UniswapV3PriceOracleProxy"
         });
     } catch (e) {
         console.log(e);
