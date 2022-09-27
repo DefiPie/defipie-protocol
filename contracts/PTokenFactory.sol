@@ -60,6 +60,11 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.INVALID_UNDERLYING, FailureInfo.DEFICIENCY_LIQUIDITY_IN_POOL_OR_BAD_PAIR);
         }
 
+        uint256 result = getOracle().update(underlying_);
+        if (result != 0 && result != 4) {
+            revert('PTokenFactory: failure updating price');
+        }
+
         (string memory name, string memory symbol) = _createPTokenNameAndSymbol(underlying_, underlyingType_);
 
         uint power = EIP20Interface(underlying_).decimals();
@@ -67,7 +72,7 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
 
         PErc20Delegator newPToken = new PErc20Delegator(underlying_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, registry);
 
-        uint256 result = Controller(controller)._supportMarket(address(newPToken));
+        result = Controller(controller)._supportMarket(address(newPToken));
         if (result != 0) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
@@ -78,11 +83,6 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
         }
 
         uint startBorrowTimestamp = PErc20ExtInterface(address(newPToken)).startBorrowTimestamp();
-
-        result = getOracle().update(underlying_);
-        if (result != 0) {
-            return fail(Error.MARKET_NOT_LISTED, FailureInfo.UPDATE_PRICE_BAD_RESULT);
-        }
         
         if (createPoolFeeAmount > 0) {
             EIP20Interface(PErc20Interface(RegistryInterface(registry).pPIE()).underlying()).transferFrom(msg.sender, controller, createPoolFeeAmount);
@@ -127,15 +127,26 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.CREATE_PPIE_POOL);
         }
 
+        (uint underlyingType_, uint112 liquidity) = getOracle().getUnderlyingTypeAndLiquidity(underlying_);
+
+        if ((underlyingType_ == uint(IPriceOracle.UnderlyingType.BadUnderlying)) || (liquidity < minOracleLiquidity)) {
+            return fail(Error.INVALID_UNDERLYING, FailureInfo.DEFICIENCY_LIQUIDITY_IN_POOL_OR_BAD_PAIR);
+        }
+
         string memory name = "DeFiPie PIE";
         string memory symbol = "pPIE";
 
         uint power = EIP20Interface(underlying_).decimals();
         uint exchangeRateMantissa = calcExchangeRate(power);
 
+        uint256 result = getOracle().update(underlying_);
+        if (result != 0 && result != 4) {
+            revert('PTokenFactory: failure updating price');
+        }
+
         PPIEDelegator newPPIE = new PPIEDelegator(underlying_, pPIEImplementation_, controller, interestRateModel, exchangeRateMantissa, initialReserveFactorMantissa, name, symbol, decimals, address(registry));
 
-        uint256 result = Controller(controller)._supportMarket(address(newPPIE));
+        result = Controller(controller)._supportMarket(address(newPPIE));
         if (result != 0) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.SUPPORT_MARKET_BAD_RESULT);
         }
@@ -143,11 +154,6 @@ contract PTokenFactory is PTokenFactoryStorageV1, FactoryErrorReporter {
         result = RegistryInterface(registry).addPPIE(address(newPPIE));
         if (result != 0) {
             return fail(Error.MARKET_NOT_LISTED, FailureInfo.ADD_PTOKEN_BAD_RESULT);
-        }
-
-        result = getOracle().update(underlying_);
-        if (result != 0) {
-            return fail(Error.MARKET_NOT_LISTED, FailureInfo.UPDATE_PRICE_BAD_RESULT);
         }
 
         emit PTokenCreated(address(newPPIE), block.timestamp, uint(IPriceOracle.UnderlyingType.RegularAsset));
